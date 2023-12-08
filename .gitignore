@@ -1,0 +1,7 @@
+build
+xcode
+test.*
+test-*.*
+*test.*
+.vscode
+.DS_Store
