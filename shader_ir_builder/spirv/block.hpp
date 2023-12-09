@@ -12,7 +12,7 @@ private:
 
     //TODO: support comments
     std::string _addCode(const std::string& instruction, std::string registerToAssign, const std::string& comment) {
-        uint8_t beginSpaceCount = 15;
+        uint8_t beginSpaceCount = 22;
         if (registerToAssign.size() != 0) {
             registerToAssign += " = ";
             beginSpaceCount = std::max((int)beginSpaceCount - (int)registerToAssign.size(), 0);
