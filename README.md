@@ -51,9 +51,7 @@ entry_point vertexMain(myBuffer: constant buffer struct BufferContents* [[descri
 
 Here are the outputs for each backend:
 
-<details>
-<summary>SPIRV</summary>
-    ```assembly
+```assembly
 ; Magic:     0x07230203 (SPIR-V)
 ; Version:   0x00010000 (Version: 1.0.0)
 ; Generator: 0x00080001 (Lvslang Front End; 1)
@@ -140,8 +138,7 @@ Here are the outputs for each backend:
                OpUnreachable
 
                OpFunctionEnd
-    ```
-</details>
+```
 
 ## Roadmap
 
