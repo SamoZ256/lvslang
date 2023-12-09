@@ -7,11 +7,11 @@ This is a compiler for the Lava Shading Language (LVSL). It compiles into other 
 ### Installation
 
 1. Clone the repo
-   ```sh
+   ```console
    git clone https://github.com/SamoZ256/lvslang.git
    ```
 2. Build the project
-   ```
+   ```console
    cd /path/to/lvslang
    mkdir build
    cd build
