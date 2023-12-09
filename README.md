@@ -288,8 +288,8 @@ vertex VertexOut vertexMain(constant BufferContents* myBuffer [[buffer(0)]], tex
 - [ ] Fragment shaders
 - [ ] Shader input
 - [ ] Vectors
-    - [ ] Operators
-    - [ ] Swizzling
+    - [x] Operators
+    - [x] Swizzling
     - [ ] Assigning to individual components
     - [ ] Initialization
 - [ ] Matrices
