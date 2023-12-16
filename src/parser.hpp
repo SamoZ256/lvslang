@@ -601,15 +601,7 @@ public:
 struct Argument {
     std::string name;
     irb::Type* type;
-    std::vector<irb::Attribute> attributes;
-};
-
-struct ArgumentAttributes {
-    uint32_t set = 0, binding = 0;
-    int8_t isConstant = -1;
-    bool isBuffer = false;
-    bool isTexture = false;
-    bool isSampler = false;
+    irb::Attributes attributes;
 };
 
 //Function declaration
@@ -619,7 +611,6 @@ private:
     irb::Type* type;
     irb::Type* returnType; //Different than type in case of GLSL and SPIR
     std::vector<Argument> _arguments;
-    std::vector<ArgumentAttributes> argAttribs;
     //std::vector<int> attributes;
     bool isDefined;
     bool isEntryPoint;
@@ -630,7 +621,6 @@ private:
 
 public:
     FunctionPrototypeAST(const std::string& aName, irb::Type* aType, std::vector<Argument> aArguments/*, const std::vector<int>& aAttributes*/, bool aIsDefined, bool aIsEntryPoint, bool aIsSTDFunction = false) : _name(aName), type(aType), _arguments(aArguments)/*, attributes(aAttributes)*/, isDefined(aIsDefined), isEntryPoint(aIsEntryPoint), isSTDFunction(aIsSTDFunction) {
-        argAttribs.resize(_arguments.size());
         std::vector<irb::Type*> argumentTypes;
         if (!isEntryPoint) {
             argumentTypes.resize((_arguments.size()));
@@ -638,7 +628,7 @@ public:
                 argumentTypes[i] = new irb::PointerType(context, _arguments[i].type, irb::StorageClass::Function);
         }
         returnType = type;
-        if (irb::target == irb::Target::GLSL && isEntryPoint)
+        if (isEntryPoint && (irb::target == irb::Target::GLSL || irb::target == irb::Target::SPIRV))
             returnType = new irb::ScalarType(context, irb::TypeID::Void, 0, false);
         functionType = new irb::FunctionType(context, returnType, argumentTypes);
     }
@@ -650,34 +640,14 @@ public:
 
         for (uint32_t i = 0; i < _arguments.size(); i++) {
             Argument& arg = _arguments[i];
-            auto& attr = argAttribs[i];
-            for (auto& attrib : arg.attributes) {
-                switch (attrib.attrib) {
-                case irb::Attribute::Enum::AddressSpace:
-                    if (attrib.values[0] == 2)
-                        attr.isConstant = 1;
-                    else if (attrib.values[0] == 1)
-                        attr.isConstant = 0;
-                    break;
-                case irb::Attribute::Enum::Buffer:
-                    attr.isBuffer = true;
-                    break;
-                case irb::Attribute::Enum::DescriptorSet:
-                    attr.set = attrib.values[0];
-                    attr.binding = attrib.values[1];
-                    break;
-                default:
-                    //TODO: do something
-                    break;
-                }
-            }
-            if (attr.isConstant != -1) {
+            auto& attr = arg.attributes;
+            if (attr.addressSpace != 0) {
                 irb::PointerType* pointerType = dynamic_cast<irb::PointerType*>(arg.type);
                 if (!pointerType) {
                     logError("only pointers can be used with an address space");
                     return nullptr;
                 }
-                pointerType->setAddressSpace(attr.isConstant == 1 ? 2 : 1);
+                pointerType->setAddressSpace(attr.addressSpace);
             }
             if (arg.type->isTexture())
                 attr.isTexture = true;
@@ -690,12 +660,12 @@ public:
             std::string argsStr;
             for (uint32_t i = 0; i < _arguments.size(); i++) {
                 Argument& arg = _arguments[i];
-                auto& attr = argAttribs[i];
+                auto& attr = arg.attributes;
                 if (irb::target == irb::Target::GLSL) {
                     if (isEntryPoint) {
                         std::string typeName;
                         if (attr.isBuffer) {
-                            if (attr.isConstant == 1)
+                            if (attr.addressSpace == 2)
                                 typeName = "uniform ";
                             else
                                 typeName = "readonly buffer "; //TODO: support other types of buffer as well
@@ -715,9 +685,9 @@ public:
                         argsStr += ", ";
 
                     std::string addressSpace;
-                    if (attr.isConstant == 1)
+                    if (attr.addressSpace == 2)
                         addressSpace = "constant ";
-                    else if (attr.isConstant == 0)
+                    else if (attr.addressSpace == 1)
                         addressSpace = "device ";
                     
                     std::string attribute;
@@ -774,8 +744,8 @@ public:
         return _arguments;
     }
 
-    ArgumentAttributes& getArgumentAttributes(uint32_t index) {
-        return argAttribs[index];
+    irb::Attributes& getArgumentAttributes(uint32_t index) {
+        return _arguments[index].attributes;
     }
 
     irb::Type* getType() {
@@ -847,22 +817,25 @@ public:
                     irb::Type* type = arg.type;
                     auto& attr = declaration->getArgumentAttributes(i);
                     irb::StorageClass storageClass = irb::StorageClass::UniformConstant;
-                    if (attr.isBuffer) {
-                        type = type->getElementType();
+                    type = type->getElementType();
+                    if (attr.isBuffer)
                         storageClass = irb::StorageClass::Uniform;
-                    }
                     irb::Value* value = builder->opVariable(new irb::PointerType(context, type, storageClass), storageClass);
                     builder->opDecorate(value, irb::Decoration::DescriptorSet, {std::to_string(attr.set)});
                     builder->opDecorate(value, irb::Decoration::Binding, {std::to_string(attr.binding)});
                     if (attr.isBuffer) {
-                        //HACK: only do this for SPIRV, since it crash on AIR
                         if (irb::target == irb::Target::SPIRV)
                             builder->opDecorate(value->getType()->getElementType()->getValue(builder), irb::Decoration::Block);
                     }
+                    static_cast<irb::SPIRVBuilder*>(builder)->addInterfaceVariable(value);
 
                     variables[arg.name] = {value, false};
                 } else {
-                    variables[arg.name] = {builder->opFunctionParameter(arg.type), false};
+                    irb::Value* argValue = builder->opFunctionParameter(arg.type);
+                    variables[arg.name] = {argValue, false};
+                    if (irb::target == irb::Target::AIR) {
+                        //TODO: decorate the argument
+                    }
                 }
             }
         }
@@ -1005,14 +978,9 @@ public:
                 std::string code;
                 for (auto& member : structure->members) {
                     //TODO: save this in the type instead
-                    bool isPosition = false;
-                    for (auto& attr : member.attributes) {
-                        if (attr.attrib == irb::Attribute::Enum::Position)
-                            isPosition = true;
-                    }
 
                     std::string memberStr = returnV->getRawName() + "." + member.name;
-                    if (isPosition)
+                    if (member.attributes.isPosition)
                         code += "gl_Position = " + memberStr + ";\n";
                 }
 
@@ -1495,12 +1463,8 @@ public:
         std::string codeStr = "struct " + name + " {\n";
         for (auto& member : members) {
             std::string attributesEnd;
-            for (auto& attr : member.attributes) {
-                if (attr.attrib == irb::Attribute::Enum::Position) {
-                    if (irb::target == irb::Target::Metal)
-                        attributesEnd += " [[position]]";
-                }
-            }
+            if (irb::target == irb::Target::Metal && member.attributes.isPosition)
+                attributesEnd += " [[position]]";
             codeStr += "\t" + member.type->getNameBegin() + " " + member.name + member.type->getNameEnd() + attributesEnd + ";\n";
         }
         codeStr += "};";
@@ -1646,7 +1610,7 @@ irb::Type* _parseTypeExpression() {
 
             type = new irb::TextureType(context, viewType, scalarType);
             //TODO: check if it really is a pointer
-            if (irb::target == irb::Target::AIR) {
+            if (TARGET_IS_IR(irb::target)) {
                 irb::PointerType* pointerType = new irb::PointerType(context, type, irb::StorageClass::Function);
                 pointerType->setAddressSpace(1);
                 type = pointerType;
@@ -1654,7 +1618,7 @@ irb::Type* _parseTypeExpression() {
         } else if (crntToken == TOKEN_TYPE_SAMPLER) {
             type = new irb::SamplerType(context);
             //TODO: check if it really is a pointer
-            if (irb::target == irb::Target::AIR) {
+            if (TARGET_IS_IR(irb::target)) {
                 irb::PointerType* pointerType = new irb::PointerType(context, type, irb::StorageClass::Function);
                 pointerType->setAddressSpace(2);
                 type = pointerType;
@@ -1736,7 +1700,8 @@ irb::Type* _parseTypeExpression() {
     return type;
 }
 
-irb::Type* _parseTypeWithAttributesExpression(std::vector<irb::Attribute>* attributes = nullptr) {
+irb::Type* _parseTypeWithAttributesExpression(irb::Attributes* attributes = nullptr) {
+    std::vector<irb::Attribute> attribs;
     while (/*crntToken == '['*/tokenIsAttrib(crntToken)) {
         //getNextToken(); // '['
         //if (tokenIsType(crntToken)) {
@@ -1758,7 +1723,7 @@ irb::Type* _parseTypeWithAttributesExpression(std::vector<irb::Attribute>* attri
             logError("cannot use attribute on this expression");
             return nullptr;
         }
-        attributes->push_back(getAttributeFromToken(crntToken));
+        attribs.push_back(getAttributeFromToken(crntToken));
         getNextToken(); //Attribute
         /*
         for (uint8_t i = 0; i < 2; i++) {
@@ -1821,11 +1786,37 @@ irb::Type* _parseTypeWithAttributesExpression(std::vector<irb::Attribute>* attri
             }
             getNextToken(); // ']'
         }
-        attributes->push_back(attrib);
+        attribs.push_back(attrib);
 
         if (crntToken != '[')
             break;
         getNextToken(); // '['
+    }
+
+    for (const auto& attrib : attribs) {
+        switch (attrib.attrib) {
+        case irb::Attribute::Enum::AddressSpace:
+            attributes->addressSpace = attrib.values[0];
+            break;
+        case irb::Attribute::Enum::Buffer:
+            attributes->isBuffer = true;
+            break;
+        case irb::Attribute::Enum::DescriptorSet:
+            attributes->set = attrib.values[0];
+            attributes->binding = attrib.values[1];
+            break;
+        case irb::Attribute::Enum::Position:
+            attributes->isPosition = true;
+            break;
+        case irb::Attribute::Enum::Input:
+            attributes->isInput = true;
+            break;
+        case irb::Attribute::Enum::Output:
+            attributes->isOutput = true;
+            break;
+        default:
+            break;
+        }
     }
 
     return type;
@@ -2277,7 +2268,7 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, bool isEntr
             std::string name = identifierStr;
             if (getNextToken() == ':') {
                 getNextToken(); // ':'
-                std::vector<irb::Attribute> argAttributes;
+                irb::Attributes argAttributes;
                 irb::Type* type = _parseTypeWithAttributesExpression(&argAttributes);
                 if (!type)
                     return nullptr;
@@ -2297,7 +2288,7 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, bool isEntr
     }
 
     irb::Type* functionType = createScalarType(TOKEN_TYPE_VOID);
-    std::vector<irb::Attribute> attributes;
+    irb::Attributes attributes;
     if (getNextToken() == TOKEN_OPERATOR_FUNCTION_RETURN_TYPE) {
         /*
         if (getNextToken() != '>') {
@@ -2373,7 +2364,7 @@ StructureDefinitionAST* parseStructureDeclaration() {
             return nullptr;
         }
         getNextToken(); // ':'
-        std::vector<irb::Attribute> attributes;
+        irb::Attributes attributes;
         irb::Type* memberType = _parseTypeWithAttributesExpression(&attributes);
         members.push_back({memberName, memberType, attributes});
 

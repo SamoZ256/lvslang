@@ -15,10 +15,10 @@ struct Attribute {
         AddressSpace,
         Buffer,
 
+        DescriptorSet,
         Position,
         Input,
         Output,
-        DescriptorSet,
 
         //NoAlias,
         //ReadOnly,
@@ -29,10 +29,21 @@ struct Attribute {
     std::vector<int> values;
 };
 
+struct Attributes {
+    int8_t addressSpace = 0;
+    uint32_t set = 0, binding = 0;
+    bool isBuffer = false;
+    bool isTexture = false;
+    bool isSampler = false;
+    bool isPosition = false;
+    bool isInput = false;
+    bool isOutput = false;
+};
+
 struct StructureMember {
     std::string name;
     Type* type;
-    std::vector<Attribute> attributes;
+    Attributes attributes;
 };
 
 struct Structure {

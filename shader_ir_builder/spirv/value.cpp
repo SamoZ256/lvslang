@@ -9,7 +9,7 @@ Value* ScalarType::getValue(IRBuilder* builder, bool decorate) {
     if (!isSigned)
         comment += ", sign-less";
     
-    return static_cast<SPIRVBuilder*>(builder)->addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), comment);
+    return static_cast<SPIRVBuilder*>(builder)->_addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), comment);
 }
 
 Value* PointerType::getValue(IRBuilder* builder, bool decorate) {
@@ -17,7 +17,7 @@ Value* PointerType::getValue(IRBuilder* builder, bool decorate) {
     GET_STORAGE_CLASS_NAME(storageClass);
     std::string code = "OpTypePointer " + storageClassStr + " " + baseValue->getName();
 
-    return static_cast<SPIRVBuilder*>(builder)->addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), _baseType->getNameForRegister() + "*");
+    return static_cast<SPIRVBuilder*>(builder)->_addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), _baseType->getNameForRegister() + "*");
 }
 
 Value* ArrayType::getValue(IRBuilder* builder, bool decorate) {
@@ -27,7 +27,7 @@ Value* ArrayType::getValue(IRBuilder* builder, bool decorate) {
     Value* sizeValue = builder->opConstant(new ConstantInt(context, size, 32, false));
     std::string code = "OpTypeArray " + arrayValue->getName() + " " + sizeValue->getName();
 
-    return static_cast<SPIRVBuilder*>(builder)->addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), arrayType->getNameForRegister() + "[" + std::to_string(size) + "]");
+    return static_cast<SPIRVBuilder*>(builder)->_addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), arrayType->getNameForRegister() + "[" + std::to_string(size) + "]");
 }
 
 Value* StructureType::getValue(IRBuilder* builder, bool decorate) {
@@ -38,7 +38,7 @@ Value* StructureType::getValue(IRBuilder* builder, bool decorate) {
     for (auto* memberValue : memberValues)
         code += " " + memberValue->getName();
 
-    Value* value = static_cast<SPIRVBuilder*>(builder)->addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), nameBegin);
+    Value* value = static_cast<SPIRVBuilder*>(builder)->_addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), nameBegin);
 
     if (decorate) {
         uint32_t offset = 0;
@@ -70,14 +70,14 @@ Value* FunctionType::getValue(IRBuilder* builder, bool decorate) {
     }
     comment += ")";
     
-    return static_cast<SPIRVBuilder*>(builder)->addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), comment);
+    return static_cast<SPIRVBuilder*>(builder)->_addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), comment);
 }
 
 Value* VectorType::getValue(IRBuilder* builder, bool decorate) {
     Value* componentValue = componentType->getValue(builder);
     std::string code = "OpTypeVector " + componentValue->getName() + " " + std::to_string(componentCount);
     
-    return static_cast<SPIRVBuilder*>(builder)->addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), "vector(" + std::to_string(componentCount) + ") of " + componentType->getNameForRegister());
+    return static_cast<SPIRVBuilder*>(builder)->_addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), "vector(" + std::to_string(componentCount) + ") of " + componentType->getNameForRegister());
 }
 
 Value* TextureType::getValue(IRBuilder* builder, bool decorate) {
@@ -86,11 +86,11 @@ Value* TextureType::getValue(IRBuilder* builder, bool decorate) {
     Value* scalarValue = type->getValue(builder);
     std::string code = "OpTypeImage " + scalarValue->getName() + " " + viewName + " 0 0 0 1 Unknown";
     
-    return static_cast<SPIRVBuilder*>(builder)->addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), "image"); //TODO: use different comment
+    return static_cast<SPIRVBuilder*>(builder)->_addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), "image"); //TODO: use different comment
 }
 
 Value* SamplerType::getValue(IRBuilder* builder, bool decorate) {
-    return static_cast<SPIRVBuilder*>(builder)->addCodeToTypesVariablesConstantsBlock(this, "OpTypeSampler", getNameForRegister(), "sampler"); //TODO: use different comment
+    return static_cast<SPIRVBuilder*>(builder)->_addCodeToTypesVariablesConstantsBlock(this, "OpTypeSampler", getNameForRegister(), "sampler"); //TODO: use different comment
 }
 
 } //namespace irb

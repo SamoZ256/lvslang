@@ -9,7 +9,7 @@ namespace irb {
 
 class SPIRVBuilder : public IRBuilder {
 private:
-    std::vector<Value*> entryPointInterfaces; //TODO: fill this
+    std::string entryPointCode;
 
     std::map<std::string, Value*> typesVariablesConstantsDefinitions;
 
@@ -80,8 +80,7 @@ public:
     }
 
     void opEntryPoint(Value* entryPoint, const std::string& executionModel, const std::string& name = "main") override {
-        //TODO: use interfaces
-        blockHeader->addCode("OpEntryPoint " + executionModel + " " + entryPoint->getName() + " \"" + name + "\"");
+        entryPointCode = "OpEntryPoint " + executionModel + " " + entryPoint->getName() + " \"" + name + "\"";
     }
 
     void opExecutionMode(Value* entryPoint, const std::string& origin = "OriginLowerLeft") override {
@@ -103,7 +102,7 @@ public:
     Value* opConstant(ConstantValue* val) override {
         Value* typeV = val->getType()->getValue(this);
 
-        return addCodeToTypesVariablesConstantsBlock(typeV->getType(), "OpConstant " + typeV->getName() + " " + val->getName(), context.popRegisterName());
+        return _addCodeToTypesVariablesConstantsBlock(typeV->getType(), "OpConstant " + typeV->getName() + " " + val->getName(), context.popRegisterName());
     }
 
     Value* opStructureDefinition(StructureType* structureType) override {
@@ -387,7 +386,11 @@ public:
         return value;
     }
 
-    Value* addCodeToTypesVariablesConstantsBlock(Type* type, const std::string& code, const std::string& registerName, const std::string& comment = "") {
+    void addInterfaceVariable(Value* val) {
+        entryPointCode += " " + val->getName();
+    }
+
+    Value* _addCodeToTypesVariablesConstantsBlock(Type* type, const std::string& code, const std::string& registerName, const std::string& comment = "") {
         auto& mappedValue = typesVariablesConstantsDefinitions[code];
         if (!mappedValue) {
             mappedValue = new Value(context, type, registerName);
@@ -399,6 +402,8 @@ public:
 
     //Getters
     std::string getCode() override {
+        blockHeader->addCode(entryPointCode);
+
         return blockHeader->getCode() + blockDebug->getCode() + blockAnnotations->getCode() + blockTypesVariablesConstants->getCode() + blockMain->getCode();
     }
 };
