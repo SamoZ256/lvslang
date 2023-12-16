@@ -254,24 +254,24 @@ irb::ScalarType* createScalarType(int intType) {
     return new irb::ScalarType(context, typeID, bitCount, isSigned);
 }
 
-irb::Attribute::Enum getAttributeFromToken(int attrib) {
+irb::Attribute getAttributeFromToken(int attrib) {
     switch (attrib) {
     case TOKEN_ATTRIB_CONSTANT:
-        return irb::Attribute::Enum::Constant;
+        return {irb::Attribute::Enum::AddressSpace, {2}};
     case TOKEN_ATTRIB_DEVICE:
-        return irb::Attribute::Enum::Device;
+        return {irb::Attribute::Enum::AddressSpace, {1}};
     case TOKEN_ATTRIB_BUFFER:
-        return irb::Attribute::Enum::Buffer;
+        return {irb::Attribute::Enum::Buffer};
     case TOKEN_ATTRIB_POSITION:
-        return irb::Attribute::Enum::Position;
+        return {irb::Attribute::Enum::Position};
     case TOKEN_ATTRIB_INPUT:
-        return irb::Attribute::Enum::Input;
+        return {irb::Attribute::Enum::Input};
     case TOKEN_ATTRIB_OUTPUT:
-        return irb::Attribute::Enum::Output;
+        return {irb::Attribute::Enum::Output};
     case TOKEN_ATTRIB_DESCRIPTOR_SET:
-        return irb::Attribute::Enum::DescriptorSet;
+        return {irb::Attribute::Enum::DescriptorSet};
     default:
-        return irb::Attribute::Enum::MaxEnum;
+        return {irb::Attribute::Enum::MaxEnum};
     }
 }
 
@@ -653,11 +653,11 @@ public:
             auto& attr = argAttribs[i];
             for (auto& attrib : arg.attributes) {
                 switch (attrib.attrib) {
-                case irb::Attribute::Enum::Constant:
-                    attr.isConstant = 1;
-                    break;
-                case irb::Attribute::Enum::Device:
-                    attr.isConstant = 0;
+                case irb::Attribute::Enum::AddressSpace:
+                    if (attrib.values[0] == 2)
+                        attr.isConstant = 1;
+                    else if (attrib.values[0] == 1)
+                        attr.isConstant = 0;
                     break;
                 case irb::Attribute::Enum::Buffer:
                     attr.isBuffer = true;
@@ -671,6 +671,14 @@ public:
                     break;
                 }
             }
+            if (attr.isConstant != -1) {
+                irb::PointerType* pointerType = dynamic_cast<irb::PointerType*>(arg.type);
+                if (!pointerType) {
+                    logError("only pointers can be used with an address space");
+                    return nullptr;
+                }
+                pointerType->setAddressSpace(attr.isConstant == 1 ? 2 : 1);
+            }
             if (arg.type->isTexture())
                 attr.isTexture = true;
             else if (arg.type->isSampler())
@@ -683,10 +691,6 @@ public:
             for (uint32_t i = 0; i < _arguments.size(); i++) {
                 Argument& arg = _arguments[i];
                 auto& attr = argAttribs[i];
-                if (attr.isConstant != -1 && !arg.type->isPointer()) {
-                    logError("only pointers can be used with an address space");
-                    return nullptr;
-                }
                 if (irb::target == irb::Target::GLSL) {
                     if (isEntryPoint) {
                         std::string typeName;
@@ -1642,13 +1646,19 @@ irb::Type* _parseTypeExpression() {
 
             type = new irb::TextureType(context, viewType, scalarType);
             //TODO: check if it really is a pointer
-            if (irb::target == irb::Target::AIR)
-                type = new irb::PointerType(context, type, irb::StorageClass::Function);
+            if (irb::target == irb::Target::AIR) {
+                irb::PointerType* pointerType = new irb::PointerType(context, type, irb::StorageClass::Function);
+                pointerType->setAddressSpace(1);
+                type = pointerType;
+            }
         } else if (crntToken == TOKEN_TYPE_SAMPLER) {
             type = new irb::SamplerType(context);
             //TODO: check if it really is a pointer
-            if (irb::target == irb::Target::AIR)
-                type = new irb::PointerType(context, type, irb::StorageClass::Function);
+            if (irb::target == irb::Target::AIR) {
+                irb::PointerType* pointerType = new irb::PointerType(context, type, irb::StorageClass::Function);
+                pointerType->setAddressSpace(2);
+                type = pointerType;
+            }
         } /* else if (typeIsBuiltin) {
             getNextToken(); //Type
             Type* bufferType;
@@ -1748,7 +1758,7 @@ irb::Type* _parseTypeWithAttributesExpression(std::vector<irb::Attribute>* attri
             logError("cannot use attribute on this expression");
             return nullptr;
         }
-        attributes->push_back({getAttributeFromToken(crntToken)});
+        attributes->push_back(getAttributeFromToken(crntToken));
         getNextToken(); //Attribute
         /*
         for (uint8_t i = 0; i < 2; i++) {

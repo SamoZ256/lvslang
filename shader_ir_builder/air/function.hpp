@@ -16,6 +16,7 @@ public:
         AIRBlock* block = new AIRBlock(context);
         setInsertBlock(block);
 
+        //TODO: support attributes as well
         code = "define " + functionType->getReturnType()->getName() + " " + value->getName() + "(";
         //block->addCode("OpFunction " + returnV->getName() + " " + property + " " + functionV->getName(), value->getName(), name);
     }
@@ -30,11 +31,10 @@ public:
         code += "}";
     }
 
-    //TODO: support attributes as well
     void addArgument(Value* argument) {
         if (addedArgument)
             code += ", ";
-        code += argument->getType()->getName() + " " + argument->getName();
+        code += argument->getNameWithTypeAndAttributes();
         addedArgument = true;
     }
 

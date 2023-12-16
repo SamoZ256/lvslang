@@ -193,6 +193,10 @@ public:
         return "Unknown";
     }
 
+    virtual std::string getAttributes() {
+        return "noundef ";
+    }
+
     virtual bool isScalar() {
         return false;
     }
@@ -284,6 +288,10 @@ public:
 
     inline std::string getNameWithType() {
         return type->getName() + " " + getName();
+    }
+
+    inline std::string getNameWithTypeAndAttributes() {
+        return type->getName() + " " + type->getAttributes() + getName();
     }
 
     virtual bool isConstant() {
@@ -514,16 +522,14 @@ class PointerType : public Type {
 private:
     Type* _baseType;
     StorageClass storageClass;
-    std::vector<Attribute> attributes;
+    int addressSpace = -1;
 
 public:
-    PointerType(Context& aContext, Type* aBaseType, StorageClass aStorageClass, const std::vector<Attribute>& aAttributes = {}) : Type(aContext, TypeID::Pointer), _baseType(aBaseType), storageClass(aStorageClass), attributes(aAttributes) {
-        if (TARGET_IS_CODE(target)) {
+    PointerType(Context& aContext, Type* aBaseType, StorageClass aStorageClass) : Type(aContext, TypeID::Pointer), _baseType(aBaseType), storageClass(aStorageClass) {
+        if (TARGET_IS_CODE(target))
             nameBegin = _baseType->getName() + "*";
-        } else if (target == Target::AIR) {
-            //TODO: take attributes into account
+        else if (target == Target::AIR)
             nameBegin = "ptr";
-        }
     }
 
     ~PointerType() = default;
@@ -553,6 +559,10 @@ public:
 
     //TODO: override @ref getOpPrefix
 
+    std::string getAttributes() override {
+        return _baseType->getAttributes();
+    }
+
     bool isPointer() override {
         return true;
     }
@@ -563,6 +573,12 @@ public:
 
     bool isOperatorFriendly() override {
         return true;
+    }
+
+    inline void setAddressSpace(int aAddressSpace) {
+        addressSpace = aAddressSpace;
+        if (target == Target::AIR)
+            nameBegin = "ptr addrspace(" + std::to_string(addressSpace) + ")";
     }
 };
 
@@ -868,6 +884,10 @@ public:
         return type;
     }
 
+    std::string getAttributes() override {
+        return "";
+    }
+
     bool isTexture() override {
         return true;
     }
@@ -911,6 +931,10 @@ public:
 
     uint32_t getBitCount(bool align = false) override {
         return 64; //TODO: check if this is correct
+    }
+
+    std::string getAttributes() override {
+        return "";
     }
 
     bool isSampler() override {

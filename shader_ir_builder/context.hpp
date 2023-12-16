@@ -12,8 +12,7 @@ class SPIRVBlock;
 
 struct Attribute {
     enum class Enum {
-        Constant,
-        Device,
+        AddressSpace,
         Buffer,
 
         Position,
@@ -21,9 +20,9 @@ struct Attribute {
         Output,
         DescriptorSet,
 
-        NoAlias,
-        ReadOnly,
-        ReadNone,
+        //NoAlias,
+        //ReadOnly,
+        //ReadNone,
 
         MaxEnum
     } attrib;
