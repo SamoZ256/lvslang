@@ -262,14 +262,16 @@ irb::Attribute getAttributeFromToken(int attrib) {
         return {irb::Attribute::Enum::AddressSpace, {1}};
     case TOKEN_ATTRIB_BUFFER:
         return {irb::Attribute::Enum::Buffer};
+    case TOKEN_ATTRIB_DESCRIPTOR_SET:
+        return {irb::Attribute::Enum::DescriptorSet};
     case TOKEN_ATTRIB_POSITION:
         return {irb::Attribute::Enum::Position};
     case TOKEN_ATTRIB_INPUT:
         return {irb::Attribute::Enum::Input};
     case TOKEN_ATTRIB_OUTPUT:
         return {irb::Attribute::Enum::Output};
-    case TOKEN_ATTRIB_DESCRIPTOR_SET:
-        return {irb::Attribute::Enum::DescriptorSet};
+    case TOKEN_ATTRIB_LOCATION:
+        return {irb::Attribute::Enum::Location};
     default:
         return {irb::Attribute::Enum::MaxEnum};
     }
@@ -664,17 +666,28 @@ public:
                 if (irb::target == irb::Target::GLSL) {
                     if (isEntryPoint) {
                         std::string typeName;
-                        if (attr.isBuffer) {
-                            if (attr.addressSpace == 2)
-                                typeName = "uniform ";
-                            else
-                                typeName = "readonly buffer "; //TODO: support other types of buffer as well
-                            //We need to get element type, since GLSL treats it without pointer
-                            typeName += arg.type->getElementType()->getName() + "_Uniform {\n\t" + arg.type->getElementType()->getName() + " " + arg.name + ";\n}";
+                        if (attr.isInput) {
+                            //TODO: do this error check for every backend?
+                            if (!arg.type->isStructure()) {
+                                logError("Entry point argument declared with the 'input' attribute must have a structure type");
+                                return nullptr;
+                            }
+                            irb::StructureType* structureType = static_cast<irb::StructureType*>(arg.type);
+                            for (const auto& member : structureType->getStructure()->members)
+                                codeStr += "layout (location = " + std::to_string(member.attributes.locationIndex) + ") in " + member.type->getName() + " " + member.name + ";\n\n";
                         } else {
-                            typeName = "uniform " + arg.type->getName();
+                            if (attr.isBuffer) {
+                                if (attr.addressSpace == 2)
+                                    typeName = "uniform ";
+                                else
+                                    typeName = "readonly buffer "; //TODO: support other types of buffer as well
+                                //We need to get element type, since GLSL treats it without pointer
+                                typeName += arg.type->getElementType()->getName() + "_Uniform {\n\t" + arg.type->getElementType()->getName() + " " + arg.name + ";\n}";
+                            } else {
+                                typeName = "uniform " + arg.type->getName();
+                            }
+                            codeStr += "layout (set = " + std::to_string(attr.set) + ", binding = " + std::to_string(attr.binding) + ") " + typeName + " " + arg.name + ";\n\n";
                         }
-                        codeStr += "layout(set = " + std::to_string(attr.set) + ", binding = " + std::to_string(attr.binding) + ") " + typeName + " " + arg.name + ";\n\n";
                     } else {
                         if (i != 0)
                             argsStr += ", ";
@@ -697,6 +710,8 @@ public:
                         attribute = " [[texture(" + std::to_string(getTextureBinding(attr.set, attr.binding)) + ")]]";
                     if (attr.isSampler)
                         attribute = " [[sampler(" + std::to_string(getSamplerBinding(attr.set, attr.binding)) + ")]]";
+                    if (attr.isInput)
+                        attribute = " [[stage_in]]";
 
                     argsStr += addressSpace + arg.type->getName() + " " + arg.name + attribute;
                 }
@@ -807,26 +822,43 @@ public:
             }
         }
 
+        std::string functionHeader;
         for (uint32_t i = 0; i < declaration->arguments().size(); i++) {
             auto& arg = declaration->arguments()[i];
             if (TARGET_IS_CODE(irb::target)) {
-                variables[arg.name] = {new irb::Value(context, new irb::PointerType(context, arg.type, irb::StorageClass::Function), arg.name), false};
+                irb::Value* value = new irb::Value(context, new irb::PointerType(context, arg.type, irb::StorageClass::Function), arg.name);
+                variables[arg.name] = {value, false};
+                if (irb::target == irb::Target::GLSL && arg.attributes.isInput) {
+                    //TODO: throw an error if not structure?
+                    irb::StructureType* structureType = dynamic_cast<irb::StructureType*>(arg.type);
+                    //HACK: just assemble the input structure
+                    functionHeader += "\t" + structureType->getName() + " " + arg.name + ";\n";
+                    for (const auto& member : structureType->getStructure()->members)
+                        functionHeader += "\t" + arg.name + "." + member.name + " = " + member.name + ";\n";
+                }
             } else {
                 context.pushRegisterName(arg.name);
                 if (irb::target == irb::Target::SPIRV && declaration->getIsEntryPoint()) {
                     irb::Type* type = arg.type;
                     auto& attr = declaration->getArgumentAttributes(i);
-                    irb::StorageClass storageClass = irb::StorageClass::UniformConstant;
-                    type = type->getElementType();
+                    irb::StorageClass storageClass = irb::StorageClass::MaxEnum;
+                    //HACK: when the type is buffer, get the element type
+                    if (attr.isBuffer)
+                        type = type->getElementType();
+                    //TODO: do not hardcode the storage classes
                     if (attr.isBuffer)
                         storageClass = irb::StorageClass::Uniform;
+                    else if (attr.isTexture)
+                        storageClass = irb::StorageClass::UniformConstant;
+                    else if (attr.isSampler)
+                        storageClass = irb::StorageClass::UniformConstant;
+                    else if (attr.isInput)
+                        storageClass = irb::StorageClass::Input;
                     irb::Value* value = builder->opVariable(new irb::PointerType(context, type, storageClass), storageClass);
                     builder->opDecorate(value, irb::Decoration::DescriptorSet, {std::to_string(attr.set)});
                     builder->opDecorate(value, irb::Decoration::Binding, {std::to_string(attr.binding)});
-                    if (attr.isBuffer) {
-                        if (irb::target == irb::Target::SPIRV)
-                            builder->opDecorate(value->getType()->getElementType()->getValue(builder), irb::Decoration::Block);
-                    }
+                    if (irb::target == irb::Target::SPIRV && attr.isBuffer)
+                        builder->opDecorate(type->getValue(builder), irb::Decoration::Block);
                     static_cast<irb::SPIRVBuilder*>(builder)->addInterfaceVariable(value);
 
                     variables[arg.name] = {value, false};
@@ -850,7 +882,9 @@ public:
             return nullptr;
         
         if (TARGET_IS_CODE(irb::target)) {
-            std::string codeStr = declV->getRawName() + " " + bodyV->getRawName();
+            std::string bodyStr = bodyV->getRawName();
+            bodyStr = bodyStr.substr(0, 2) + functionHeader + bodyStr.substr(2);
+            std::string codeStr = declV->getRawName() + " " + bodyStr;
 
             value = new irb::Value(context, nullptr, codeStr);
         } else {
@@ -1323,7 +1357,7 @@ private:
     ExpressionAST* ptr;
     ExpressionAST* index;
 
-    irb::Type* type;
+    irb::PointerType* type;
 
 public:
     SubscriptExpressionAST(ExpressionAST* aPtr, ExpressionAST* aIndex) : ptr(aPtr), index(aIndex) {}
@@ -1340,13 +1374,13 @@ public:
             logError("only operator friendly types can be used for indexing");
             return nullptr;
         }
-        type = ptrV->getType();
-        if (type->pointerCount() == 0) {
+        type = dynamic_cast<irb::PointerType*>(ptrV->getType());
+        if (!type) {
             logError("cannot index into a non-pointer value");
             return nullptr;
         }
 
-        irb::PointerType* elementType = new irb::PointerType(context, type->getElementType()->getBaseType(), irb::StorageClass::Function);
+        irb::PointerType* elementType = new irb::PointerType(context, type->getElementType()->getBaseType(), type->getStorageClass());
         if (TARGET_IS_CODE(irb::target)) {
             return new irb::Value(context, elementType, ptrV->getRawName() + "[" + indexV->getRawName() + "]");
         } else {
@@ -1376,20 +1410,25 @@ public:
         irb::Value* exprV = expression->codegen();
         if (!exprV)
             return nullptr;
-        irb::Type* exprType = exprV->getType()->getElementType();
-        if (exprType->isStructure()) {
-            irb::Structure* structure = static_cast<irb::StructureType*>(exprType)->getStructure();
+        irb::PointerType* exprType = dynamic_cast<irb::PointerType*>(exprV->getType());
+        if (!exprType) {
+            logError("cannot access member of non-pointer value");
+            return nullptr;
+        }
+        irb::Type* elementExprType = exprType->getElementType();
+        if (elementExprType->isStructure()) {
+            irb::Structure* structure = static_cast<irb::StructureType*>(elementExprType)->getStructure();
             
             uint32_t memberIndex;
             for (memberIndex = 0; memberIndex < structure->members.size(); memberIndex++) {
                 if (memberName == structure->members[memberIndex].name) {
-                    type = new irb::PointerType(context, structure->members[memberIndex].type, irb::StorageClass::Function); //TODO: move this to structure definition
+                    type = new irb::PointerType(context, structure->members[memberIndex].type, exprType->getStorageClass()); //TODO: move this to structure definition
                     break;
                 }
             }
 
             if (!type) {
-                logError("structure '" + exprType->getName() + "' has no member named '" + memberName + "'");
+                logError("structure '" + elementExprType->getName() + "' has no member named '" + memberName + "'");
                 return nullptr;
             }
 
@@ -1403,8 +1442,8 @@ public:
 
                 return elementV;
             }
-        } else if (exprType->isVector()) {
-            irb::VectorType* type = new irb::VectorType(context, exprType->getBaseType(), memberName.size());
+        } else if (elementExprType->isVector()) {
+            irb::VectorType* type = new irb::VectorType(context, elementExprType->getBaseType(), memberName.size());
             if (TARGET_IS_CODE(irb::target)) {
                 return new irb::Value(context, type, exprV->getRawName() + "." + memberName);
             } else {
@@ -1463,8 +1502,12 @@ public:
         std::string codeStr = "struct " + name + " {\n";
         for (auto& member : members) {
             std::string attributesEnd;
-            if (irb::target == irb::Target::Metal && member.attributes.isPosition)
-                attributesEnd += " [[position]]";
+            if (irb::target == irb::Target::Metal) {
+                if (member.attributes.isPosition)
+                    attributesEnd += " [[position]]";
+                if (member.attributes.locationIndex != -1)
+                    attributesEnd += " [[attribute(" + std::to_string(member.attributes.locationIndex) + ")]]";
+            }
             codeStr += "\t" + member.type->getNameBegin() + " " + member.name + member.type->getNameEnd() + attributesEnd + ";\n";
         }
         codeStr += "};";
@@ -1609,16 +1652,14 @@ irb::Type* _parseTypeExpression() {
             }
 
             type = new irb::TextureType(context, viewType, scalarType);
-            //TODO: check if it really is a pointer
-            if (TARGET_IS_IR(irb::target)) {
+            if (irb::target == irb::Target::AIR) {
                 irb::PointerType* pointerType = new irb::PointerType(context, type, irb::StorageClass::Function);
                 pointerType->setAddressSpace(1);
                 type = pointerType;
             }
         } else if (crntToken == TOKEN_TYPE_SAMPLER) {
             type = new irb::SamplerType(context);
-            //TODO: check if it really is a pointer
-            if (TARGET_IS_IR(irb::target)) {
+            if (irb::target == irb::Target::AIR) {
                 irb::PointerType* pointerType = new irb::PointerType(context, type, irb::StorageClass::Function);
                 pointerType->setAddressSpace(2);
                 type = pointerType;
@@ -1813,6 +1854,9 @@ irb::Type* _parseTypeWithAttributesExpression(irb::Attributes* attributes = null
             break;
         case irb::Attribute::Enum::Output:
             attributes->isOutput = true;
+            break;
+        case irb::Attribute::Enum::Location:
+            attributes->locationIndex = attrib.values[0];
             break;
         default:
             break;
@@ -2210,18 +2254,6 @@ ExpressionAST* parseMain() {
 
 //Binary
 ExpressionAST* parseBinOpRHS(int expressionPrecedence, ExpressionAST* lhs) {
-    //TODO: move this into the loop
-    if (crntToken == TOKEN_OPERATOR_DOT) {
-        if (getNextToken() != TOKEN_IDENTIFIER) {
-            logError("expected member name after the '.' operator");
-
-            return nullptr;
-        }
-
-        lhs = new MemberAccessExpressionAST(lhs, identifierStr);
-        getNextToken(); //Member name
-    }
-
     while (true) {
         int tokenPrecedence = getTokenPrecedence();
 
@@ -2231,18 +2263,35 @@ ExpressionAST* parseBinOpRHS(int expressionPrecedence, ExpressionAST* lhs) {
         std::string binOp = operatorStr;
         getNextToken(); //binop
 
-        ExpressionAST* rhs = parseMain();
-        if (!rhs)
-            return nullptr;
+        ExpressionAST* rhs;
+        std::string memberName;
+        if (binOp == ".") {
+            if (crntToken != TOKEN_IDENTIFIER) {
+                logError("expected member name after the '.' operator");
+                return nullptr;
+            }
+
+            memberName = identifierStr;
+            getNextToken(); //Member name
+        } else {
+            rhs = parseMain();
+            if (!rhs)
+                return nullptr;
+        }
         
         int nextPrecedence = getTokenPrecedence();
         if (tokenPrecedence < nextPrecedence) {
+            if (binOp == ".")
+                throw std::runtime_error("For some reason, the '.' had lower precedence than something else");
             rhs = parseBinOpRHS(tokenPrecedence + 1, rhs);
             if (!rhs)
                 return nullptr;
         }
 
-        lhs = new BinaryExpressionAST(binOp, lhs, rhs);
+        if (binOp == ".")
+            lhs = new MemberAccessExpressionAST(lhs, memberName);
+        else
+            lhs = new BinaryExpressionAST(binOp, lhs, rhs);
     }
 }
 

@@ -404,14 +404,16 @@ int _getNextToken() {
         if (identifierStr == "buffer")
             return TOKEN_ATTRIB_BUFFER;
 
+        if (identifierStr == "descriptor_set")
+            return TOKEN_ATTRIB_DESCRIPTOR_SET;
         if (identifierStr == "position")
             return TOKEN_ATTRIB_POSITION;
         if (identifierStr == "input")
             return TOKEN_ATTRIB_INPUT;
         if (identifierStr == "output")
             return TOKEN_ATTRIB_OUTPUT;
-        if (identifierStr == "descriptor_set")
-            return TOKEN_ATTRIB_DESCRIPTOR_SET;
+        if (identifierStr == "location")
+            return TOKEN_ATTRIB_LOCATION;
         
         return TOKEN_IDENTIFIER;
     }

@@ -260,7 +260,7 @@ protected:
 
 public:
     //HACK: add "_" before the name to prevent LLVM error "instruction expected to be numbered '%n'"
-    Value(Context& aContext, Type* aType, std::string aName = "", const std::string aPrefix = "%_") : context(aContext), type(aType), prefix(aPrefix) {
+    Value(Context& aContext, Type* aType, std::string aName = "", const std::string aPrefix = "%_", bool checkIfNameIsAlreadyUsed = true) : context(aContext), type(aType), prefix(aPrefix) {
         std::string baseName;
         if (aName == "")
             baseName = std::to_string(context.crntRegisterNumber++);
@@ -269,7 +269,7 @@ public:
         name = baseName;
 
         //Check if the name isn't already used
-        if (TARGET_IS_IR(target)) {
+        if (TARGET_IS_IR(target) && checkIfNameIsAlreadyUsed) {
             uint32_t nb = 0;
             while (context.registerNames.contains(getName()))
                 name = baseName + std::to_string(nb++);
@@ -306,7 +306,7 @@ public:
 
 class UndefinedValue : public Value {
 public:
-    UndefinedValue(Context& aContext, Type* aType) : Value(aContext, aType, "undef", "") {}
+    UndefinedValue(Context& aContext, Type* aType) : Value(aContext, aType, "undef", "", false) {}
 };
 
 class ScalarType : public Type {
@@ -575,6 +575,12 @@ public:
         return true;
     }
 
+    //Getters
+    inline StorageClass getStorageClass() const {
+        return storageClass;
+    }
+
+    //Setters
     inline void setAddressSpace(int aAddressSpace) {
         addressSpace = aAddressSpace;
         if (target == Target::AIR)

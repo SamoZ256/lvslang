@@ -42,10 +42,14 @@ Value* StructureType::getValue(IRBuilder* builder, bool decorate) {
 
     if (decorate) {
         uint32_t offset = 0;
-        for (uint32_t i = 0; i < memberValues.size(); i++) {
+        for (uint32_t i = 0; i < structure->members.size(); i++) {
+            //Offset
             builder->opMemberDecorate(value, i, Decoration::Offset, {std::to_string(offset)});
-            //To bytes
-            offset += memberValues[i]->getType()->getBitCount(true) / 8; //TODO: pass 'true' for alignment
+            offset += memberValues[i]->getType()->getBitCount(true) / 8; //To bytes
+            //Location
+            int8_t locationIndex = structure->members[i].attributes.locationIndex;
+            if (locationIndex != -1)
+                builder->opMemberDecorate(value, i, Decoration::Location, {std::to_string(locationIndex)});
         }
     }
     
