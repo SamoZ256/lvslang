@@ -287,7 +287,7 @@ vertex VertexOut vertexMain(constant BufferContents* myBuffer [[buffer(0)]], tex
     - [ ] function call attributes
 - [ ] Shader output for SPIRV and GLSL backends
 - [ ] Fragment shaders
-- [ ] Shader input
+- [x] Shader input
 - [ ] Vectors
     - [x] Operators
     - [x] Swizzling
