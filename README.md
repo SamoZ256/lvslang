@@ -21,7 +21,7 @@ This is a compiler for the Lava Shading Language (LVSL). It compiles into other 
 
 ## Usage
 
-The code can be compiled with `lvslang --spirv /path/to/your/shader.lvsl -o output.spvasm`. This would emit SPIRV, but there are other viable backends as well. Use `--help`` to display all options (not working right now). Here is an example code:
+The code can be compiled with `lvslang --spirv /path/to/your/shader.lvsl -o output.spvasm`. This would emit SPIRV, but there are other viable backends as well. Use `--help` to display all options (not working right now). Here is an example code:
 ```rs
 struct BufferContents {
     member cameraPos: float3
