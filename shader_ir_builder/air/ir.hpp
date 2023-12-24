@@ -88,7 +88,7 @@ public:
         Value* argValue = new Value(context, type, context.popRegisterName());
         static_cast<AIRFunction*>(function)->addArgument(argValue);
         //This is required in order to maintain consistency with SPIRV
-        Value* value = opVariable(new PointerType(context, type, StorageClass::Function), StorageClass::Function, argValue);
+        Value* value = opVariable(new PointerType(context, type, StorageClass::Function), argValue);
 
         return value;
     }
@@ -369,7 +369,7 @@ public:
         return opSTDFunctionCall_EXT("sample_texture_2d.v4f32", type, {texture, sampler, coords, argument4, argument5, argument6, argument7, argument8, argument9});
     }
 
-    Value* opVariable(PointerType* type, StorageClass storageClass, Value* initializer = nullptr) override {
+    Value* opVariable(PointerType* type, Value* initializer = nullptr) override {
         Value* value = new Value(context, type, context.popRegisterName());
         //TODO: use proper alignment
         getAIRFunctionBlock()->addCode("alloca " + type->getElementType()->getName() + ", align 4", value->getName());

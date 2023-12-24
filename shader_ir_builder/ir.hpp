@@ -91,7 +91,7 @@ public:
     virtual Value* opSample(Value* texture, Value* sampler, Value* coords, Value* lod = nullptr) = 0;
 
     //Miscelanous
-    virtual Value* opVariable(PointerType* type, StorageClass storageClass, Value* initializer = nullptr) = 0;
+    virtual Value* opVariable(PointerType* type, Value* initializer = nullptr) = 0;
 
     //Getters
     virtual std::string getCode() = 0;

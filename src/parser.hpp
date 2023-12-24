@@ -657,7 +657,7 @@ public:
             //TODO: check if it should be decorated
             builder->opDecorate(type->getValue(builder), irb::Decoration::Block);
             context.pushRegisterName(_name + "_output");
-            returnVariable = builder->opVariable(new irb::PointerType(context, type, irb::StorageClass::Output), irb::StorageClass::Output);
+            returnVariable = builder->opVariable(new irb::PointerType(context, type, irb::StorageClass::Output));
             builder->opDecorate(returnVariable, irb::Decoration::Location, {"0"});
             //TODO: change this to static cast?
             dynamic_cast<irb::SPIRVBuilder*>(builder)->addInterfaceVariable(returnVariable);
@@ -939,7 +939,7 @@ public:
                         storageClass = irb::StorageClass::UniformConstant;
                     else if (attr.isInput)
                         storageClass = irb::StorageClass::Input;
-                    irb::Value* value = builder->opVariable(new irb::PointerType(context, type, storageClass), storageClass);
+                    irb::Value* value = builder->opVariable(new irb::PointerType(context, type, storageClass));
                     builder->opDecorate(value, irb::Decoration::DescriptorSet, {std::to_string(attr.set)});
                     builder->opDecorate(value, irb::Decoration::Binding, {std::to_string(attr.binding)});
                     if (irb::target == irb::Target::SPIRV && attr.isBuffer)
@@ -1021,7 +1021,7 @@ public:
             if (TARGET_IS_IR(irb::target) && !arg->isVariable() && !declaration->getIsSTDFunction()) {
                 irb::Value* paramV = argVs[i];
                 context.pushRegisterName("param");
-                argVs[i] = builder->opVariable(new irb::PointerType(context, paramV->getType(), irb::StorageClass::Function), irb::StorageClass::Function);
+                argVs[i] = builder->opVariable(new irb::PointerType(context, paramV->getType(), irb::StorageClass::Function));
                 builder->opStore(argVs[i], paramV);
             }
             if (i != 0)
@@ -1401,7 +1401,7 @@ public:
                 if (isConstant && isGlobal)
                     value = initV;
                 else
-                    value = builder->opVariable(varType, irb::StorageClass::Function, (initExpression && initExpression->isConstant() ? initV : nullptr));
+                    value = builder->opVariable(varType, (initExpression && initExpression->isConstant() ? initV : nullptr));
                 if (initExpression && !initExpression->isConstant())
                     builder->opStore(value, initV);
                 variables[varName] = {value, isGlobal};

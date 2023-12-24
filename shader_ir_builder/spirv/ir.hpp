@@ -372,9 +372,10 @@ public:
         return value;
     }
 
-    Value* opVariable(PointerType* type, StorageClass storageClass, Value* initializer = nullptr) override {
+    Value* opVariable(PointerType* type, Value* initializer = nullptr) override {
         Value* typeV = type->getValue(this);
         Value* value = new Value(context, type, context.popRegisterName());
+        StorageClass storageClass = type->getStorageClass();
         GET_STORAGE_CLASS_NAME(storageClass);
         std::string code = "OpVariable " + typeV->getName() + " " + storageClassStr;
         if (initializer)
