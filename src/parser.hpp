@@ -732,6 +732,7 @@ public:
                 } else if (irb::target == irb::Target::GLSL) {
                     _name = "main";
 
+                    /*
                     //TODO: do this error check for every backend?
                     if (!type->isStructure()) {
                         logError("Entry point argument declared with the 'input' attribute must have a structure type");
@@ -743,6 +744,8 @@ public:
                         if (!member.attributes.isPosition)
                             codeStr += "layout (location = " + std::to_string(index++) + ") out " + member.type->getName() + " " + member.name + ";\n\n";
                     }
+                    */
+                    codeStr += "layout (location = 0) out " + type->getName() + "_Output {\n\t" + type->getName() + " _output;\n} _output;\n\n";
                 }
             }
             codeStr += returnType->getName() + " " + _name + "(" + argsStr + ")";
@@ -1036,7 +1039,7 @@ public:
                     if (member.attributes.isPosition)
                         code += "gl_Position = " + memberStr;
                     else
-                        code += member.name + " = " + memberStr;
+                        code += "_output._output." + member.name + " = " + memberStr;
                     if (i != structure->members.size() - 1)
                         code += ";\n\t";
                 }
