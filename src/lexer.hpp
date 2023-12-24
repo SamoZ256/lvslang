@@ -355,8 +355,12 @@ int _getNextToken() {
 
         if (identifierStr == "func")
             return TOKEN_FUNC;
-        if (identifierStr == "entry_point")
-            return TOKEN_ENTRY_POINT;
+        if (identifierStr == "vertex")
+            return TOKEN_VERTEX;
+        if (identifierStr == "fragment")
+            return TOKEN_FRAGMENT;
+        if (identifierStr == "kernel")
+            return TOKEN_KERNEL;
         if (identifierStr == "extern")
             return TOKEN_EXTERN;
         if (identifierStr == "return")

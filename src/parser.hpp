@@ -606,6 +606,16 @@ struct Argument {
     irb::Attributes attributes;
 };
 
+//TODO: rename?
+enum class FunctionRole {
+    Normal,
+    Vertex,
+    Fragment,
+    Kernel,
+
+    MaxEnum
+};
+
 //Function declaration
 class FunctionPrototypeAST : public ExpressionAST {
 private:
@@ -615,7 +625,7 @@ private:
     std::vector<Argument> _arguments;
     //std::vector<int> attributes;
     bool isDefined;
-    bool isEntryPoint;
+    FunctionRole functionRole;
     bool isSTDFunction;
 
     irb::Value* value;
@@ -625,15 +635,15 @@ private:
     irb::Value* returnVariable;
 
 public:
-    FunctionPrototypeAST(const std::string& aName, irb::Type* aType, std::vector<Argument> aArguments/*, const std::vector<int>& aAttributes*/, bool aIsDefined, bool aIsEntryPoint, bool aIsSTDFunction = false) : _name(aName), type(aType), _arguments(aArguments)/*, attributes(aAttributes)*/, isDefined(aIsDefined), isEntryPoint(aIsEntryPoint), isSTDFunction(aIsSTDFunction) {
+    FunctionPrototypeAST(const std::string& aName, irb::Type* aType, std::vector<Argument> aArguments/*, const std::vector<int>& aAttributes*/, bool aIsDefined, FunctionRole aFunctionRole, bool aIsSTDFunction = false) : _name(aName), type(aType), _arguments(aArguments)/*, attributes(aAttributes)*/, isDefined(aIsDefined), functionRole(aFunctionRole), isSTDFunction(aIsSTDFunction) {
         std::vector<irb::Type*> argumentTypes;
-        if (!isEntryPoint) {
+        if (functionRole == FunctionRole::Normal) {
             argumentTypes.resize((_arguments.size()));
             for (uint32_t i = 0; i < argumentTypes.size(); i++)
                 argumentTypes[i] = new irb::PointerType(context, _arguments[i].type, irb::StorageClass::Function);
         }
         returnType = type;
-        if (isEntryPoint && (irb::target == irb::Target::GLSL || irb::target == irb::Target::SPIRV))
+        if (functionRole != FunctionRole::Normal && (irb::target == irb::Target::GLSL || irb::target == irb::Target::SPIRV))
             returnType = new irb::ScalarType(context, irb::TypeID::Void, 0, false);
         functionType = new irb::FunctionType(context, returnType, argumentTypes);
     }
@@ -643,10 +653,10 @@ public:
 
         functionDeclarations[_name] = this;
 
-        if (irb::target == irb::Target::SPIRV && isEntryPoint) {
+        if (irb::target == irb::Target::SPIRV && functionRole != FunctionRole::Normal) {
             //TODO: check if it should be decorated
             builder->opDecorate(type->getValue(builder), irb::Decoration::Block);
-            context.pushRegisterName("vertex_" + _name + "_output");
+            context.pushRegisterName(_name + "_output");
             returnVariable = builder->opVariable(new irb::PointerType(context, type, irb::StorageClass::Output), irb::StorageClass::Output);
             builder->opDecorate(returnVariable, irb::Decoration::Location, {"0"});
             //TODO: change this to static cast?
@@ -677,7 +687,7 @@ public:
                 Argument& arg = _arguments[i];
                 auto& attr = arg.attributes;
                 if (irb::target == irb::Target::GLSL) {
-                    if (isEntryPoint) {
+                    if (functionRole != FunctionRole::Normal) {
                         std::string typeName;
                         if (attr.isInput) {
                             //TODO: do this error check for every backend?
@@ -730,9 +740,21 @@ public:
                 }
             }
 
-            if (isEntryPoint) {
+            if (functionRole != FunctionRole::Normal) {
                 if (irb::target == irb::Target::Metal) {
-                    codeStr = "vertex "; //TODO: set this according to specified stage
+                    switch (functionRole) {
+                    case FunctionRole::Vertex:
+                        codeStr = "vertex ";
+                        break;
+                    case FunctionRole::Fragment:
+                        codeStr = "fragment ";
+                        break;
+                    case FunctionRole::Kernel:
+                        codeStr = "kernel ";
+                        break;
+                    default:
+                        break;
+                    }
                 } else if (irb::target == irb::Target::GLSL) {
                     _name = "main";
 
@@ -790,8 +812,8 @@ public:
         return type;
     }
 
-    bool getIsEntryPoint() {
-        return isEntryPoint;
+    FunctionRole getFunctionRole() {
+        return functionRole;
     }
 
     bool getIsSTDFunction() {
@@ -841,11 +863,22 @@ public:
             irb::FunctionType* functionType = static_cast<irb::FunctionType*>(declV->getType());
             context.pushRegisterName(declaration->name());
             value = builder->opFunction(functionType, declaration->getValue());
-            if (declaration->getIsEntryPoint()) {
-                //TODO: remove the hardcoded stage
+            if (declaration->getFunctionRole() != FunctionRole::Normal) {
+                std::string stageName;
+                switch (declaration->getFunctionRole()) {
+                case FunctionRole::Vertex:
+                    stageName = "Vertex";
+                    break;
+                case FunctionRole::Fragment:
+                    stageName = "Fragment";
+                    break;
+                //TODO: support kernel stage
+                default:
+                    break;
+                }
                 builder->opEntryPoint(value, "Vertex", declaration->name());
-                //TODO: do this in case of fragment stage
-                //builder->opExecutionMode(value);
+                if (declaration->getFunctionRole() == FunctionRole::Fragment)
+                    builder->opExecutionMode(value);
             }
         }
 
@@ -865,7 +898,7 @@ public:
                 }
             } else {
                 context.pushRegisterName(arg.name);
-                if (irb::target == irb::Target::SPIRV && declaration->getIsEntryPoint()) {
+                if (irb::target == irb::Target::SPIRV && declaration->getFunctionRole() != FunctionRole::Normal) {
                     irb::Type* type = arg.type;
                     auto& attr = declaration->getArgumentAttributes(i);
                     irb::StorageClass storageClass = irb::StorageClass::MaxEnum;
@@ -1026,7 +1059,7 @@ public:
             return nullptr;
 
         if (TARGET_IS_CODE(irb::target)) {
-            if (irb::target == irb::Target::GLSL && crntFunction->getIsEntryPoint()) {
+            if (irb::target == irb::Target::GLSL && crntFunction->getFunctionRole() != FunctionRole::Normal) {
                 irb::Type* type = returnV->getType();
                 //TODO: support other types besides structure
                 if (!type->isStructure()) {
@@ -1053,7 +1086,7 @@ public:
                 return new irb::Value(context, returnV->getType(), "return " + returnV->getRawName());
             }
         } else {
-            if (irb::target == irb::Target::SPIRV && crntFunction->getIsEntryPoint()) {
+            if (irb::target == irb::Target::SPIRV && crntFunction->getFunctionRole() != FunctionRole::Normal) {
                 builder->opStore(crntFunction->getReturnVariable(), returnV);
                 builder->opReturn();
             } else {
@@ -2327,7 +2360,7 @@ ExpressionAST* parseBinOpRHS(int expressionPrecedence, ExpressionAST* lhs) {
 }
 
 //Function declaration
-FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, bool isEntryPoint = false) {
+FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, FunctionRole functionRole = FunctionRole::Normal) {
     if (crntToken != TOKEN_IDENTIFIER) {
         logError("excpected function name");
 
@@ -2390,14 +2423,14 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, bool isEntr
         functionType = _parseTypeWithAttributesExpression(&attributes);
     }
 
-    return new FunctionPrototypeAST(functionName, functionType, arguments/*, attributes*/, isDefined, isEntryPoint);
+    return new FunctionPrototypeAST(functionName, functionType, arguments/*, attributes*/, isDefined, functionRole);
 }
 
 //TODO: support forward declarations
 //Function definition
-FunctionDefinitionAST* parseFunctionDefinition(bool isEntryPoint = false) {
+FunctionDefinitionAST* parseFunctionDefinition(FunctionRole functionRole = FunctionRole::Normal) {
     getNextToken(); // 'func' or 'entry_point'
-    FunctionPrototypeAST* declaration = parseFunctionPrototype(true, isEntryPoint);
+    FunctionPrototypeAST* declaration = parseFunctionPrototype(true, functionRole);
     if (!declaration)
         return nullptr;
     
@@ -2562,8 +2595,14 @@ void mainLoop() {
         case TOKEN_FUNC:
             expression = parseFunctionDefinition();
             break;
-        case TOKEN_ENTRY_POINT:
-            expression = parseFunctionDefinition(true);
+        case TOKEN_VERTEX:
+            expression = parseFunctionDefinition(FunctionRole::Vertex);
+            break;
+        case TOKEN_FRAGMENT:
+            expression = parseFunctionDefinition(FunctionRole::Fragment);
+            break;
+        case TOKEN_KERNEL:
+            expression = parseFunctionDefinition(FunctionRole::Kernel);
             break;
         case TOKEN_EXTERN:
             expression = parseExtern();
@@ -2593,7 +2632,7 @@ void mainLoop() {
 }
 
 inline void addStandardFuncion(const std::string& name, irb::Type* type, const std::vector<Argument>& arguments) {
-    FunctionPrototypeAST* declaration = new FunctionPrototypeAST(name, type, arguments, false, false, true);
+    FunctionPrototypeAST* declaration = new FunctionPrototypeAST(name, type, arguments, false, FunctionRole::Normal, true);
     functionDeclarations[name] = declaration;
     declaration->codegen();
 }

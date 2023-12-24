@@ -8,7 +8,7 @@ struct VertexOut {
     member color: float3
 }
 
-entry_point vertexMain(myBuffer: constant buffer struct BufferContents* [[descriptor_set(0, 0)]],
+vertex vertexMain(myBuffer: constant buffer struct BufferContents* [[descriptor_set(0, 0)]],
                        myTexture: texture2D<float> [[descriptor_set(0, 1)]],
                        mySampler: sampler [[descriptor_set(1, 0)]]) -> struct VertexOut [[output]] {
     var coords: float2
