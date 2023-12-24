@@ -93,11 +93,11 @@ public:
     }
 
     void opDecorate(Value* val, Decoration decoration, const std::vector<std::string>& values = {}) override {
-        return _opDecorate("OpDecorate " + val->getName(), decoration, values);
+        _opDecorate("OpDecorate " + val->getName(), decoration, values);
     }
 
     void opMemberDecorate(Value* val, uint32_t memberIndex, Decoration decoration, const std::vector<std::string>& values = {}) override {
-        return _opDecorate("OpMemberDecorate " + val->getName() + " " + std::to_string(memberIndex), decoration, values);
+        _opDecorate("OpMemberDecorate " + val->getName() + " " + std::to_string(memberIndex), decoration, values);
     }
 
     Value* opConstant(ConstantValue* val) override {

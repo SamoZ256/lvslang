@@ -13,7 +13,7 @@ Value* ScalarType::getValue(IRBuilder* builder, bool decorate) {
 }
 
 Value* PointerType::getValue(IRBuilder* builder, bool decorate) {
-    Value* baseValue = _baseType->getValue(builder, (storageClass != StorageClass::Function)); //TODO: decorate based on different criteria?
+    Value* baseValue = _baseType->getValue(builder, decorate);
     GET_STORAGE_CLASS_NAME(storageClass);
     std::string code = "OpTypePointer " + storageClassStr + " " + baseValue->getName();
 

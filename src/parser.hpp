@@ -643,8 +643,12 @@ public:
 
         functionDeclarations[_name] = this;
 
-        if (irb::target == irb::Target::SPIRV) {
+        if (irb::target == irb::Target::SPIRV && isEntryPoint) {
+            //TODO: check if it should be decorated
+            builder->opDecorate(type->getValue(builder), irb::Decoration::Block);
+            context.pushRegisterName("vertex_" + _name + "_output");
             returnVariable = builder->opVariable(new irb::PointerType(context, type, irb::StorageClass::Output), irb::StorageClass::Output);
+            builder->opDecorate(returnVariable, irb::Decoration::Location, {"0"});
             //TODO: change this to static cast?
             dynamic_cast<irb::SPIRVBuilder*>(builder)->addInterfaceVariable(returnVariable);
         }
@@ -881,7 +885,7 @@ public:
                     builder->opDecorate(value, irb::Decoration::DescriptorSet, {std::to_string(attr.set)});
                     builder->opDecorate(value, irb::Decoration::Binding, {std::to_string(attr.binding)});
                     if (irb::target == irb::Target::SPIRV && attr.isBuffer)
-                        builder->opDecorate(type->getValue(builder), irb::Decoration::Block);
+                        builder->opDecorate(type->getValue(builder, true), irb::Decoration::Block);
                     static_cast<irb::SPIRVBuilder*>(builder)->addInterfaceVariable(value);
 
                     variables[arg.name] = {value, false};
