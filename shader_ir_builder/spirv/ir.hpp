@@ -10,6 +10,7 @@ namespace irb {
 class SPIRVBuilder : public IRBuilder {
 private:
     std::string entryPointCode;
+    std::string interfaceCode;
 
     std::map<std::string, Value*> typesVariablesConstantsDefinitions;
 
@@ -387,7 +388,7 @@ public:
     }
 
     void addInterfaceVariable(Value* val) {
-        entryPointCode += " " + val->getName();
+        interfaceCode += " " + val->getName();
     }
 
     Value* _addCodeToTypesVariablesConstantsBlock(Type* type, const std::string& code, const std::string& registerName, const std::string& comment = "") {
@@ -402,7 +403,7 @@ public:
 
     //Getters
     std::string getCode() override {
-        blockHeader->addCode(entryPointCode);
+        blockHeader->addCode(entryPointCode + interfaceCode);
 
         return blockHeader->getCode() + blockDebug->getCode() + blockAnnotations->getCode() + blockTypesVariablesConstants->getCode() + blockMain->getCode();
     }

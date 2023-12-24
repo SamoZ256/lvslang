@@ -285,7 +285,8 @@ vertex VertexOut vertexMain(constant BufferContents* myBuffer [[buffer(0)]], tex
     - [x] address space attribute
     - [x] function declaration attributes
     - [ ] function call attributes
-- [ ] Shader output for SPIRV and GLSL backends
+- [x] Shader output for SPIRV and GLSL backends
+- [ ] Support non-structure types as input and output for SPIRV and GLSL backends
 - [ ] Fragment shaders
 - [x] Shader input
 - [ ] Vectors

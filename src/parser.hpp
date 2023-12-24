@@ -621,6 +621,9 @@ private:
     irb::Value* value;
     irb::FunctionType* functionType;
 
+    //Output for SPIRV
+    irb::Value* returnVariable;
+
 public:
     FunctionPrototypeAST(const std::string& aName, irb::Type* aType, std::vector<Argument> aArguments/*, const std::vector<int>& aAttributes*/, bool aIsDefined, bool aIsEntryPoint, bool aIsSTDFunction = false) : _name(aName), type(aType), _arguments(aArguments)/*, attributes(aAttributes)*/, isDefined(aIsDefined), isEntryPoint(aIsEntryPoint), isSTDFunction(aIsSTDFunction) {
         std::vector<irb::Type*> argumentTypes;
@@ -639,6 +642,12 @@ public:
         setDebugInfo();
 
         functionDeclarations[_name] = this;
+
+        if (irb::target == irb::Target::SPIRV) {
+            returnVariable = builder->opVariable(new irb::PointerType(context, type, irb::StorageClass::Output), irb::StorageClass::Output);
+            //TODO: change this to static cast?
+            dynamic_cast<irb::SPIRVBuilder*>(builder)->addInterfaceVariable(returnVariable);
+        }
 
         for (uint32_t i = 0; i < _arguments.size(); i++) {
             Argument& arg = _arguments[i];
@@ -718,15 +727,22 @@ public:
             }
 
             if (isEntryPoint) {
-                switch (irb::target) {
-                case irb::Target::Metal:
+                if (irb::target == irb::Target::Metal) {
                     codeStr = "vertex "; //TODO: set this according to specified stage
-                    break;
-                case irb::Target::GLSL:
+                } else if (irb::target == irb::Target::GLSL) {
                     _name = "main";
-                    break;
-                default:
-                    break;
+
+                    //TODO: do this error check for every backend?
+                    if (!type->isStructure()) {
+                        logError("Entry point argument declared with the 'input' attribute must have a structure type");
+                        return nullptr;
+                    }
+                    irb::StructureType* structureType = static_cast<irb::StructureType*>(type);
+                    uint32_t index = 0;
+                    for (const auto& member : structureType->getStructure()->members) {
+                        if (!member.attributes.isPosition)
+                            codeStr += "layout (location = " + std::to_string(index++) + ") out " + member.type->getName() + " " + member.name + ";\n\n";
+                    }
                 }
             }
             codeStr += returnType->getName() + " " + _name + "(" + argsStr + ")";
@@ -781,6 +797,10 @@ public:
 
     irb::FunctionType* getFunctionType() {
         return functionType;
+    }
+
+    irb::Value* getReturnVariable() {
+        return returnVariable;
     }
 };
 
@@ -1009,13 +1029,16 @@ public:
                 irb::StructureType* structType = static_cast<irb::StructureType*>(type);
                 irb::Structure* structure = structType->getStructure();
 
-                std::string code;
-                for (auto& member : structure->members) {
-                    //TODO: save this in the type instead
-
+                std::string code = "\n\t//Return\n\t";
+                for (uint32_t i = 0; i < structure->members.size(); i++) {
+                    const irb::StructureMember& member = structure->members[i];
                     std::string memberStr = returnV->getRawName() + "." + member.name;
                     if (member.attributes.isPosition)
-                        code += "gl_Position = " + memberStr + ";\n";
+                        code += "gl_Position = " + memberStr;
+                    else
+                        code += member.name + " = " + memberStr;
+                    if (i != structure->members.size() - 1)
+                        code += ";\n\t";
                 }
 
                 return new irb::Value(context, nullptr, code);
@@ -1024,7 +1047,8 @@ public:
             }
         } else {
             if (irb::target == irb::Target::SPIRV && crntFunction->getIsEntryPoint()) {
-                //TODO
+                builder->opStore(crntFunction->getReturnVariable(), returnV);
+                builder->opReturn();
             } else {
                 returnV = builder->opCast(returnV, funcReturnType);
                 builder->opReturn(returnV);
