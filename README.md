@@ -289,8 +289,9 @@ vertex VertexOut vertexMain(constant BufferContents* myBuffer [[buffer(0)]], tex
 - [ ] Support non-structure types as input and output for SPIRV and GLSL backends
 - [ ] Fragment shaders
     - [x] Basic support
-    - [x] Specific input and output
-    - [ ] Multiple entry points in SPIRV backend
+    - [x] Specific input and output in GLSL
+    - [ ] Specific input and output in SPIRV
+    - [x] Multiple entry points in SPIRV backend
 - [x] Shader input
 - [ ] Vectors
     - [x] Operators

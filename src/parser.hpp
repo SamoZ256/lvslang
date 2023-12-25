@@ -659,8 +659,6 @@ public:
             context.pushRegisterName(_name + "_output");
             returnVariable = builder->opVariable(new irb::PointerType(context, type, irb::StorageClass::Output));
             builder->opDecorate(returnVariable, irb::Decoration::Location, {"0"});
-            //TODO: change this to static cast?
-            dynamic_cast<irb::SPIRVBuilder*>(builder)->addInterfaceVariable(returnVariable);
         }
 
         for (uint32_t i = 0; i < _arguments.size(); i++) {
@@ -902,6 +900,8 @@ public:
                     break;
                 }
                 builder->opEntryPoint(value, "Vertex", declaration->name());
+                if (irb::target == irb::Target::SPIRV)
+                    dynamic_cast<irb::SPIRVBuilder*>(builder)->addInterfaceVariable(declaration->getReturnVariable()); //TODO: change this to static cast?
                 if (declaration->getFunctionRole() == FunctionRole::Fragment)
                     builder->opExecutionMode(value);
             }

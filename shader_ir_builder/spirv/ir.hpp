@@ -7,10 +7,14 @@
 
 namespace irb {
 
-class SPIRVBuilder : public IRBuilder {
-private:
+struct EntryPoint {
     std::string entryPointCode;
     std::string interfaceCode;
+};
+
+class SPIRVBuilder : public IRBuilder {
+private:
+    std::vector<EntryPoint> entryPoints;
 
     std::map<std::string, Value*> typesVariablesConstantsDefinitions;
 
@@ -81,7 +85,7 @@ public:
     }
 
     void opEntryPoint(Value* entryPoint, const std::string& executionModel, const std::string& name = "main") override {
-        entryPointCode = "OpEntryPoint " + executionModel + " " + entryPoint->getName() + " \"" + name + "\"";
+        entryPoints.push_back({"OpEntryPoint " + executionModel + " " + entryPoint->getName() + " \"" + name + "\""});
     }
 
     void opExecutionMode(Value* entryPoint, const std::string& origin = "OriginLowerLeft") override {
@@ -389,7 +393,11 @@ public:
     }
 
     void addInterfaceVariable(Value* val) {
-        interfaceCode += " " + val->getName();
+        if (entryPoints.size() == 0) {
+            IRB_ERROR("cannot add variable to interface when there is no entry point");
+            return;
+        }
+        entryPoints.back().interfaceCode += " " + val->getName();
     }
 
     Value* _addCodeToTypesVariablesConstantsBlock(Type* type, const std::string& code, const std::string& registerName, const std::string& comment = "") {
@@ -404,7 +412,8 @@ public:
 
     //Getters
     std::string getCode() override {
-        blockHeader->addCode(entryPointCode + interfaceCode);
+        for (const auto& entryPoint : entryPoints)
+            blockHeader->addCode(entryPoint.entryPointCode + entryPoint.interfaceCode);
 
         return blockHeader->getCode() + blockDebug->getCode() + blockAnnotations->getCode() + blockTypesVariablesConstants->getCode() + blockMain->getCode();
     }
