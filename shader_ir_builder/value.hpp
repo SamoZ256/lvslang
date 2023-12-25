@@ -255,6 +255,7 @@ protected:
     Context& context;
 
     Type* type;
+    bool _isConstant = false; //TODO: rename to isConstant?
     std::string name;
     std::string prefix;
 
@@ -294,13 +295,18 @@ public:
         return type->getName() + " " + type->getAttributes() + getName();
     }
 
-    virtual bool isConstant() {
-        return false;
+    inline bool isConstant() const {
+        return _isConstant;
     }
 
     //HACK: just for the "non-ir" backends
     virtual std::string getRawName() {
         return name;
+    }
+
+    //Setters
+    void setIsConstant(bool aIsConstant) {
+        _isConstant = aIsConstant;
     }
 };
 
@@ -487,7 +493,7 @@ protected:
 
 public:
     ConstantValue(Context& aContext, Type* aType, std::string aValueStr) : Value(aContext, aType), valueStr(aValueStr) {
-        
+        _isConstant = true;
     }
 
     std::string getName() override {
@@ -496,10 +502,6 @@ public:
 
     std::string getRawName() override {
         return valueStr;
-    }
-
-    bool isConstant() override {
-        return true;
     }
 };
 
@@ -634,6 +636,11 @@ public:
 
     bool isArray() override {
         return true;
+    }
+    
+    //Getters
+    inline uint32_t getSize() const {
+        return size;
     }
 };
 

@@ -279,10 +279,17 @@ public:
         }
         Value* typeV = type->getValue(this);
         Value* value = new Value(context, type, context.popRegisterName());
-        std::string code = "OpCompositeConstruct " + typeV->getName();
+        bool isAllConstants = true;
+        for (auto* component : components) {
+            if (!component->isConstant()) {
+                isAllConstants = false;
+                break;
+            }
+        }
+        std::string code = (isAllConstants ? "OpConstantComposite " : "OpCompositeConstruct ") + typeV->getName();
         for (auto* component : components)
             code += " " + component->getName();
-        getSPIRVInsertBlock()->addCode(code, value->getName());
+        (isAllConstants ? blockTypesVariablesConstants : getSPIRVInsertBlock())->addCode(code, value->getName());
 
         return value;
     }
@@ -404,6 +411,7 @@ public:
         auto& mappedValue = typesVariablesConstantsDefinitions[code];
         if (!mappedValue) {
             mappedValue = new Value(context, type, registerName);
+            mappedValue->setIsConstant(true);
             blockTypesVariablesConstants->addCode(code, mappedValue->getName(), comment);
         }
 

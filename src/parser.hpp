@@ -1554,6 +1554,8 @@ public:
     MemberAccessExpressionAST(ExpressionAST* aExpression, const std::string& aMemberName) : expression(aExpression), memberName(aMemberName) {}
 
     irb::Value* codegen(irb::Type* requiredType = nullptr) override {
+        setDebugInfo();
+
         expression->setLoadOnCodegen(false);
         irb::Value* exprV = expression->codegen();
         if (!exprV)
@@ -1641,7 +1643,9 @@ private:
 public:
     StructureDefinitionAST(const std::string& aName, const std::vector<irb::StructureMember>& aMembers) : name(aName), members(aMembers) {}
 
-    irb::Value* codegen(irb::Type* requiredType = nullptr) {
+    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
+        setDebugInfo();
+
         if (context.structures[name]) {
             logError("redefinition of structure '" + name + "'");
             return nullptr;
@@ -1683,7 +1687,9 @@ private:
 public:
     EnumDefinitionAST(const std::string& aName, const std::vector<EnumValue>& aValues) : name(aName), values(aValues) {}
 
-    irb::Value* codegen(irb::Type* requiredType = nullptr) {
+    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
+        setDebugInfo();
+
         if (enumerations[name]) {
             logError("redefinition of enum '" + name + "'");
             return nullptr;
@@ -1714,7 +1720,9 @@ private:
 public:
     EnumValueExpressionAST(Enumeration* aEnumeration, EnumValue& aValue) : enumeration(aEnumeration), value(aValue) {}
 
-    irb::Value* codegen(irb::Type* requiredType = nullptr) {
+    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
+        setDebugInfo();
+
         if (TARGET_IS_IR(irb::target)) {
             return builder->opConstant(new irb::ConstantValue(context, enumeration->type, std::to_string(value.value)));
         } else {
@@ -1723,6 +1731,94 @@ public:
             else
                 return new irb::Value(context, enumeration->type, std::to_string(value.value));
         }
+    }
+};
+
+//TODO: support other initializer lists as well (for instance sampler)
+//TODO: enable vector from vector initialization (for instance float3(float2(0.2, 0.3), 0.4))
+class InitializerListExpressionAST : public ExpressionAST {
+private:
+    irb::Type* type;
+    std::vector<ExpressionAST*> expressions;
+
+public:
+    InitializerListExpressionAST(irb::Type* aType, std::vector<ExpressionAST*> aExpressions) : type(aType), expressions(aExpressions) {}
+
+    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
+        setDebugInfo();
+
+        if (type->isScalar()) {
+            if (expressions.size() != 1) {
+                logError("scalar initializer list must have exactly one value");
+                return nullptr;
+            }
+        } else if (type->isArray()) {
+            uint32_t size = static_cast<irb::ArrayType*>(type)->getSize();
+            if (expressions.size() > size) {
+                logError("array initializer cannot be larger than the array itself (" + std::to_string(expressions.size()) + " > " + std::to_string(size) + ")");
+                return nullptr;
+            }
+        } else if (type->isVector()) {
+            uint32_t componentCount = static_cast<irb::VectorType*>(type)->getComponentCount();
+            if (expressions.size() > componentCount) {
+                logError("vector initializer cannot be larger than the vector itself (" + std::to_string(expressions.size()) + " > " + std::to_string(componentCount) + ")");
+                return nullptr;
+            }
+            if (expressions.size() != componentCount && expressions.size() != 1) {
+                logError("not enough components in initializer to construct a vector (got " + std::to_string(expressions.size()) + ", expected either " + std::to_string(componentCount) + " or 1)");
+                return nullptr;
+            }
+        } else {
+            logError("cannot use initializer list to create a type '" + type->getName() + "'"); //TODO: get the name in a different way?
+            return nullptr;
+        }
+
+        if (TARGET_IS_IR(irb::target)) {
+            if (type->isScalar())
+                return expressions[0]->codegen(type);
+            if (type->isArray()) {
+                //TODO: implement this
+                return nullptr;
+            }
+            if (type->isVector()) {
+                irb::VectorType* vectorType = static_cast<irb::VectorType*>(type);
+                std::vector<irb::Value*> components;
+                components.reserve((expressions.size()));
+                for (auto* expression : expressions)
+                    components.push_back(expression->codegen(vectorType->getBaseType()));
+                //Fill the list in case it is just a one value initializer
+                if (components.size() == 1) {
+                    //TODO: do this in a more elegant way?
+                    components.reserve(vectorType->getComponentCount());
+                    for (uint8_t i = 0; i < vectorType->getComponentCount() - 1; i++)
+                        components.push_back(components[0]);
+                }
+                context.pushRegisterName("const_vector");
+
+                return builder->opVectorConstruct(vectorType, components);
+            }
+
+            return nullptr;
+        } else {
+            std::string codeStr = type->getName() + "(";
+            for (uint32_t i = 0; i < expressions.size(); i++) {
+                irb::Value* value = expressions[i]->codegen(type->isScalar() ? type : type->getBaseType());
+                if (i != 0)
+                    codeStr += ", ";
+                codeStr += value->getRawName();
+            }
+
+            return new irb::Value(context, type, codeStr + ")");
+        }
+    }
+
+    virtual bool isConstant() override {
+        for (auto* expression : expressions) {
+            if (!expression->isConstant())
+                return false;
+        }
+
+        return true;
     }
 };
 
@@ -2358,6 +2454,27 @@ RegisterExpressionAST* parseRegisterExpression() {
 }
 */
 
+InitializerListExpressionAST* parseTypeExpression() {
+    irb::Type* type = _parseTypeExpression(); //TODO: parse with attributes as well?
+    if (crntToken != '(') {
+        logError("expected '(' after type");
+        return nullptr;
+    }
+    std::vector<ExpressionAST*> expressions;
+    do {
+        getNextToken(); // '(' or ','
+        expressions.push_back(parseExpression());
+    } while (crntToken == ',');
+    if (crntToken != ')') {
+        logError("expected ')' after initializer list to match the '('");
+        return nullptr;
+    }
+    getNextToken(); // ')'
+    InitializerListExpressionAST* expression = new InitializerListExpressionAST(type, expressions);
+
+    return expression;
+}
+
 //Main parse
 ExpressionAST* parseMain() {
     switch (crntToken) {
@@ -2391,6 +2508,8 @@ ExpressionAST* parseMain() {
         return parseBracesExpression();
     case '[':
         return parseSquareBracketsExpression();
+    case TOKEN_TYPE_ENUM_MIN ... TOKEN_TYPE_ENUM_MAX:
+        return parseTypeExpression();
     default:
         logError("expected expression");
         return nullptr;
@@ -2448,8 +2567,8 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, FunctionRol
         return nullptr;
     }
     std::string functionName = identifierStr;
+    getNextToken(); //function name
 
-    getNextToken(); // '('
     if (crntToken != '(') {
         logError("expected '(' after function name");
 

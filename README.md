@@ -297,7 +297,8 @@ vertex VertexOut vertexMain(constant BufferContents* myBuffer [[buffer(0)]], tex
     - [x] Operators
     - [x] Swizzling
     - [ ] Assigning to individual components
-    - [ ] Initialization
+    - [x] Initialization
+- [ ] Better error handling
 - [ ] Matrices
 - [ ] Directly compiling to IR backneds (currently, the compiler emits an assembly, not bytecode, e.g. SPIRV assembly instead of SPIRV and LLVM IR instead of AIR)
 - [ ] Other frontends
