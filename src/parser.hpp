@@ -268,8 +268,6 @@ irb::Attribute getAttributeFromToken(int attrib) {
         return {irb::Attribute::Enum::Position};
     case TOKEN_ATTRIB_INPUT:
         return {irb::Attribute::Enum::Input};
-    case TOKEN_ATTRIB_OUTPUT:
-        return {irb::Attribute::Enum::Output};
     case TOKEN_ATTRIB_LOCATION:
         return {irb::Attribute::Enum::Location};
     default:
@@ -658,7 +656,8 @@ public:
             builder->opDecorate(type->getValue(builder), irb::Decoration::Block);
             context.pushRegisterName(_name + "_output");
             returnVariable = builder->opVariable(new irb::PointerType(context, type, irb::StorageClass::Output));
-            builder->opDecorate(returnVariable, irb::Decoration::Location, {"0"});
+            if (functionRole == FunctionRole::Vertex)
+                builder->opDecorate(returnVariable, irb::Decoration::Location, {"0"});
         }
 
         for (uint32_t i = 0; i < _arguments.size(); i++) {
@@ -940,8 +939,38 @@ public:
                     else if (attr.isInput)
                         storageClass = irb::StorageClass::Input;
                     irb::Value* value = builder->opVariable(new irb::PointerType(context, type, storageClass));
-                    builder->opDecorate(value, irb::Decoration::DescriptorSet, {std::to_string(attr.set)});
-                    builder->opDecorate(value, irb::Decoration::Binding, {std::to_string(attr.binding)});
+                    //TODO: check if these decorations are correct
+                    //TODO: support other storage classes as well
+                    irb::Structure* structure;
+                    switch (storageClass) {
+                    case irb::StorageClass::Uniform:
+                    case irb::StorageClass::UniformConstant:
+                        builder->opDecorate(value, irb::Decoration::DescriptorSet, {std::to_string(attr.set)});
+                        builder->opDecorate(value, irb::Decoration::Binding, {std::to_string(attr.binding)});
+                        break;
+                    case irb::StorageClass::Input:
+                        switch (declaration->getFunctionRole()) {
+                        case FunctionRole::Vertex:
+                            //TODO: do this error check for every backend?
+                            if (!type->isStructure()) {
+                                logError("Entry point argument declared with the 'input' attribute must have a structure type");
+                                return nullptr;
+                            }
+                            structure = static_cast<irb::StructureType*>(type)->getStructure();
+                            for (uint32_t i = 0; i < structure->members.size(); i++)
+                                builder->opMemberDecorate(type->getValue(builder), i, irb::Decoration::Location, {std::to_string(structure->members[i].attributes.locationIndex)});
+                            break;
+                        case FunctionRole::Fragment:
+                            builder->opDecorate(value, irb::Decoration::Location, {"0"});
+                            break;
+                        default:
+                            logError("kernel functions cannot have 'input' attribute");
+                            return nullptr;
+                        }
+                        break;
+                    default:
+                        break;
+                    }
                     if (irb::target == irb::Target::SPIRV && attr.isBuffer)
                         builder->opDecorate(type->getValue(builder, true), irb::Decoration::Block);
                     static_cast<irb::SPIRVBuilder*>(builder)->addInterfaceVariable(value);
@@ -1123,7 +1152,24 @@ public:
             }
         } else {
             if (irb::target == irb::Target::SPIRV && crntFunction->getFunctionRole() != FunctionRole::Normal) {
-                builder->opStore(crntFunction->getReturnVariable(), returnV);
+                switch (crntFunction->getFunctionRole()) {
+                case FunctionRole::Vertex:
+                    builder->opStore(crntFunction->getReturnVariable(), returnV);
+                    break;
+                case FunctionRole::Fragment:
+                    //TODO: do this error check for every backend?
+                    if (!crntFunction->getType()->isStructure()) {
+                        logError("Entry point argument declared with the 'output' attribute must have a structure type");
+                        return nullptr;
+                    }
+                    for (uint32_t i = 0; i < static_cast<irb::StructureType*>(crntFunction->getType())->getStructure()->members.size(); i++)
+                        builder->opMemberDecorate(crntFunction->getType()->getValue(builder), i, irb::Decoration::Location, {"0"}); //TODO: use the color index
+                    break;
+                default:
+                    //TODO: do this check somewhere else?
+                    logError("kernel functions cannot return a value");
+                    return nullptr;
+                }
                 builder->opReturn();
             } else {
                 returnV = builder->opCast(returnV, funcReturnType);
@@ -1951,9 +1997,6 @@ irb::Type* _parseTypeWithAttributesExpression(irb::Attributes* attributes = null
             break;
         case irb::Attribute::Enum::Input:
             attributes->isInput = true;
-            break;
-        case irb::Attribute::Enum::Output:
-            attributes->isOutput = true;
             break;
         case irb::Attribute::Enum::Location:
             attributes->locationIndex = attrib.values[0];

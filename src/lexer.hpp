@@ -414,8 +414,6 @@ int _getNextToken() {
             return TOKEN_ATTRIB_POSITION;
         if (identifierStr == "input")
             return TOKEN_ATTRIB_INPUT;
-        if (identifierStr == "output")
-            return TOKEN_ATTRIB_OUTPUT;
         if (identifierStr == "location")
             return TOKEN_ATTRIB_LOCATION;
         

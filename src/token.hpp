@@ -89,8 +89,7 @@ enum Token {
     TOKEN_ATTRIB_DESCRIPTOR_SET = -110,
     TOKEN_ATTRIB_POSITION = -111,
     TOKEN_ATTRIB_INPUT = -112,
-    TOKEN_ATTRIB_OUTPUT = -113,
-    TOKEN_ATTRIB_LOCATION = -114,
+    TOKEN_ATTRIB_LOCATION = -113,
 
     //-------- Operators --------
 

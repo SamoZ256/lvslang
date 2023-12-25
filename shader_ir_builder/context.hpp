@@ -18,7 +18,6 @@ struct Attribute {
         DescriptorSet,
         Position,
         Input,
-        Output,
         Location,
 
         //NoAlias,

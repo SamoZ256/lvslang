@@ -287,10 +287,10 @@ vertex VertexOut vertexMain(constant BufferContents* myBuffer [[buffer(0)]], tex
     - [ ] function call attributes
 - [x] Shader output for SPIRV and GLSL backends
 - [ ] Support non-structure types as input and output for SPIRV and GLSL backends
-- [ ] Fragment shaders
+- [x] Fragment shaders
     - [x] Basic support
     - [x] Specific input and output in GLSL
-    - [ ] Specific input and output in SPIRV
+    - [x] Specific input and output in SPIRV
     - [x] Multiple entry points in SPIRV backend
 - [x] Shader input
 - [ ] Vectors
