@@ -899,7 +899,7 @@ public:
                 default:
                     break;
                 }
-                builder->opEntryPoint(value, "Vertex", declaration->name());
+                builder->opEntryPoint(value, stageName, declaration->name());
                 if (irb::target == irb::Target::SPIRV)
                     dynamic_cast<irb::SPIRVBuilder*>(builder)->addInterfaceVariable(declaration->getReturnVariable()); //TODO: change this to static cast?
                 if (declaration->getFunctionRole() == FunctionRole::Fragment)

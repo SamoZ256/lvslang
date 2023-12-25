@@ -60,10 +60,10 @@ public:
 "; Bound:     63\n" \
 "; Schema:    0\n" \
 "\n");
-        blockHeader->addCode("OpCapability Shader");
-        blockHeader->addCode("OpCapability Float16");
-        blockHeader->addCode("OpCapability Int8");
-        blockHeader->addCode("OpCapability Int16");
+        blockHeader->addCodeToBeginning("OpCapability Shader");
+        blockHeader->addCodeToBeginning("OpCapability Float16");
+        blockHeader->addCodeToBeginning("OpCapability Int8");
+        blockHeader->addCodeToBeginning("OpCapability Int16");
 
         blockDebug->addCodeRawToBeginning("; Debug information\n");
         blockAnnotations->addCodeRawToBeginning("; Annotations (non-debug)\n");
@@ -72,16 +72,16 @@ public:
     }
 
     void opExtension(const std::string& extensionName) override {
-        blockHeader->addCode("OpExtension \"" + extensionName + "\"");
+        blockHeader->addCodeToBeginning("OpExtension \"" + extensionName + "\"");
     }
 
     void opImportSTD_EXT(const std::string& stdName) override {
         importV = new Value(context, nullptr, "import");
-        blockHeader->addCode("OpExtInstImport \"" + stdName + "\"", importV->getName());
+        blockHeader->addCodeToBeginning("OpExtInstImport \"" + stdName + "\"", importV->getName());
     }
 
     void opMemoryModel() override {
-        blockHeader->addCode("OpMemoryModel Logical GLSL450");
+        blockHeader->addCodeToBeginning("OpMemoryModel Logical GLSL450");
     }
 
     void opEntryPoint(Value* entryPoint, const std::string& executionModel, const std::string& name = "main") override {
@@ -413,7 +413,7 @@ public:
     //Getters
     std::string getCode() override {
         for (const auto& entryPoint : entryPoints)
-            blockHeader->addCode(entryPoint.entryPointCode + entryPoint.interfaceCode);
+            blockHeader->addCodeToBeginning(entryPoint.entryPointCode + entryPoint.interfaceCode);
 
         return blockHeader->getCode() + blockDebug->getCode() + blockAnnotations->getCode() + blockTypesVariablesConstants->getCode() + blockMain->getCode();
     }
