@@ -84,7 +84,7 @@ public:
         blockHeader->addCodeToBeginning("OpMemoryModel Logical GLSL450");
     }
 
-    void opEntryPoint(Value* entryPoint, const std::string& executionModel, const std::string& name = "main") override {
+    void opEntryPoint(Value* entryPoint, const std::string& executionModel, const std::string& name) override {
         entryPoints.push_back({"OpEntryPoint " + executionModel + " " + entryPoint->getName() + " \"" + name + "\""});
     }
 
@@ -96,12 +96,12 @@ public:
         blockDebug->addCode("OpName " + value->getName() + " \"" + name + "\"");
     }
 
-    void opDecorate(Value* val, Decoration decoration, const std::vector<std::string>& values = {}) override {
-        _opDecorate("OpDecorate " + val->getName(), decoration, values);
+    void opDecorate(Value* value, Decoration decoration, const std::vector<std::string>& values = {}) override {
+        _opDecorate("OpDecorate " + value->getName(), decoration, values);
     }
 
-    void opMemberDecorate(Value* val, uint32_t memberIndex, Decoration decoration, const std::vector<std::string>& values = {}) override {
-        _opDecorate("OpMemberDecorate " + val->getName() + " " + std::to_string(memberIndex), decoration, values);
+    void opMemberDecorate(Value* value, uint32_t memberIndex, Decoration decoration, const std::vector<std::string>& values = {}) override {
+        _opDecorate("OpMemberDecorate " + value->getName() + " " + std::to_string(memberIndex), decoration, values);
     }
 
     Value* opConstant(ConstantValue* val) override {

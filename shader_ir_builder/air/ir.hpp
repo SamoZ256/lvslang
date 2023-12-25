@@ -21,7 +21,7 @@ public:
     void opMemoryModel() override {
     }
 
-    void opEntryPoint(Value* entryPoint, const std::string& executionModel, const std::string& name = "main") override {
+    void opEntryPoint(Value* entryPoint, const std::string& executionModel, const std::string& name) override {
     }
 
     void opExecutionMode(Value* entryPoint, const std::string& origin = "OriginLowerLeft") override {
@@ -31,10 +31,10 @@ public:
         //TODO: put something here?
     }
 
-    void opDecorate(Value* val, Decoration decoration, const std::vector<std::string>& values = {}) override {
+    void opDecorate(Value* value, Decoration decoration, const std::vector<std::string>& values = {}) override {
     }
 
-    void opMemberDecorate(Value* val, uint32_t memberIndex, Decoration decoration, const std::vector<std::string>& values = {}) override {
+    void opMemberDecorate(Value* value, uint32_t memberIndex, Decoration decoration, const std::vector<std::string>& values = {}) override {
     }
 
     Value* opConstant(ConstantValue* val) override {

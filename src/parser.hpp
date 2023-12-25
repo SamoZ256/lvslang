@@ -894,7 +894,9 @@ public:
                 case FunctionRole::Fragment:
                     stageName = "Fragment";
                     break;
-                //TODO: support kernel stage
+                case FunctionRole::Kernel:
+                    stageName = "Kernel";
+                    break;
                 default:
                     break;
                 }
