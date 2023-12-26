@@ -54,13 +54,15 @@ public:
         blockMain = new SPIRVBlock(context);
 
         blockHeader->addCodeRawToBeginning(
-"; Magic:     0x07230203 (SPIR-V)\n" \
-"; Version:   0x00010000 (Version: 1.0.0)\n" \
-"; Generator: 0x00080001 (Lvslang Front End; 1)\n" \
-"; Bound:     63\n" \
+"; SPIR-V\n" \
+"; Version:   1.0\n" \
+"; Generator: Google Shaderc over Glslang; 11\n" \
+"; Bound:     385\n" \
 "; Schema:    0\n" \
 "\n");
+
         blockHeader->addCodeToBeginning("OpCapability Shader");
+        //TODO: make these optional
         blockHeader->addCodeToBeginning("OpCapability Float16");
         blockHeader->addCodeToBeginning("OpCapability Int8");
         blockHeader->addCodeToBeginning("OpCapability Int16");
@@ -90,6 +92,9 @@ public:
 
     void opExecutionMode(Value* entryPoint, const std::string& origin = "OriginLowerLeft") override {
         blockHeader->addCode("OpExecutionMode " + entryPoint->getName() + " " + origin);
+        //blockHeader->addCode("OpSource GLSL 450");
+        //blockHeader->addCode("OpSourceExtension \"GL_GOOGLE_cpp_style_line_directive\"");
+        //blockHeader->addCode("OpSourceExtension \"GL_GOOGLE_include_directive\"");
     }
 
     void opName(Value* value, const std::string& name) override {

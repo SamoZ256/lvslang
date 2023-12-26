@@ -9,8 +9,7 @@ namespace irb {
 
 class SPIRVFunction : public Function {
 private:
-    //TODO: remove this hardcoding
-    std::string property = "DontInline";
+    std::string property = "None"; //TODO: support other as well (for instance "DontInline")
 
     std::string code;
 

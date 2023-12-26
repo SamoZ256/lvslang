@@ -109,6 +109,8 @@ enum class Decoration {
     Offset,
     Alignment,
 
+    Position,
+
     MaxEnum
 };
 
@@ -132,7 +134,9 @@ const std::string decorationLUT[] = {
     "DescriptorSet",
     "Binding",
     "Offset",
-    "Alignment"
+    "Alignment",
+
+    "BuiltIn Position"
 };
 
 #define GET_DECORATION_NAME(decoration) \

@@ -47,9 +47,9 @@ Value* StructureType::getValue(IRBuilder* builder, bool decorate) {
             builder->opMemberDecorate(value, i, Decoration::Offset, {std::to_string(offset)});
             offset += memberValues[i]->getType()->getBitCount(true) / 8; //To bytes
             //Location
-            int8_t locationIndex = structure->members[i].attributes.locationIndex;
-            if (locationIndex != -1)
-                builder->opMemberDecorate(value, i, Decoration::Location, {std::to_string(locationIndex)});
+            const auto& attributes = structure->members[i].attributes;
+            if (attributes.locationIndex != -1)
+                builder->opMemberDecorate(value, i, Decoration::Location, {std::to_string(attributes.locationIndex)});
         }
     }
     

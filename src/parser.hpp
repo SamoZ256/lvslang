@@ -667,7 +667,8 @@ private:
     irb::FunctionType* functionType;
 
     //Output for SPIRV
-    irb::Value* returnVariable;
+    irb::Value* returnVariable = nullptr;
+    irb::Value* positionVariable = nullptr;
 
 public:
     FunctionPrototypeAST(const std::string& aName, irb::Type* aType, std::vector<Argument> aArguments/*, const std::vector<int>& aAttributes*/, bool aIsDefined, FunctionRole aFunctionRole, bool aIsSTDFunction = false) : _name(aName), type(aType), _arguments(aArguments)/*, attributes(aAttributes)*/, isDefined(aIsDefined), functionRole(aFunctionRole), isSTDFunction(aIsSTDFunction) {
@@ -688,13 +689,17 @@ public:
 
         functionDeclarations[_name] = this;
 
-        if (irb::target == irb::Target::SPIRV && functionRole != FunctionRole::Normal) {
-            //TODO: check if it should be decorated
-            builder->opDecorate(type->getValue(builder), irb::Decoration::Block);
+        if (irb::target == irb::Target::SPIRV && functionRole != FunctionRole::Normal && type->getTypeID() != irb::TypeID::Void) {
+            builder->opDecorate(type->getValue(builder, true), irb::Decoration::Block);
             context.pushRegisterName(_name + "_output");
             returnVariable = builder->opVariable(new irb::PointerType(context, type, irb::StorageClass::Output));
-            if (functionRole == FunctionRole::Vertex)
+            if (functionRole == FunctionRole::Vertex) {
                 builder->opDecorate(returnVariable, irb::Decoration::Location, {"0"});
+            
+                context.pushRegisterName("position");
+                positionVariable = builder->opVariable(new irb::PointerType(context, new irb::VectorType(context, new irb::ScalarType(context, irb::TypeID::Float, 32, true), 4), irb::StorageClass::Output));
+                builder->opDecorate(positionVariable, irb::Decoration::Position);
+            }
         }
 
         for (uint32_t i = 0; i < _arguments.size(); i++) {
@@ -855,40 +860,44 @@ public:
     }
 
     //Getters
-    const std::string& name() {
+    inline const std::string& name() const {
         return _name;
     }
 
-    const std::vector<Argument>& arguments() {
+    inline const std::vector<Argument>& arguments() const {
         return _arguments;
     }
 
-    irb::Attributes& getArgumentAttributes(uint32_t index) {
+    inline irb::Attributes& getArgumentAttributes(uint32_t index) {
         return _arguments[index].attributes;
     }
 
-    irb::Type* getType() {
+    inline irb::Type* getType() const {
         return type;
     }
 
-    FunctionRole getFunctionRole() {
+    inline FunctionRole getFunctionRole() const {
         return functionRole;
     }
 
-    bool getIsSTDFunction() {
+    inline bool getIsSTDFunction() const {
         return isSTDFunction;
     }
 
-    irb::Value* getValue() {
+    inline irb::Value* getValue() const {
         return value;
     }
 
-    irb::FunctionType* getFunctionType() {
+    inline irb::FunctionType* getFunctionType() const {
         return functionType;
     }
 
-    irb::Value* getReturnVariable() {
+    inline irb::Value* getReturnVariable() const {
         return returnVariable;
+    }
+
+    inline irb::Value* getPositionVariable() const {
+        return positionVariable;
     }
 };
 
@@ -938,8 +947,11 @@ public:
                     break;
                 }
                 builder->opEntryPoint(value, stageName, declaration->name());
-                if (irb::target == irb::Target::SPIRV)
+                if (irb::target == irb::Target::SPIRV && declaration->getType()->getTypeID() != irb::TypeID::Void) {
                     dynamic_cast<irb::SPIRVBuilder*>(builder)->addInterfaceVariable(declaration->getReturnVariable()); //TODO: change this to static cast?
+                    if (declaration->getFunctionRole() == FunctionRole::Vertex)
+                        dynamic_cast<irb::SPIRVBuilder*>(builder)->addInterfaceVariable(declaration->getPositionVariable());
+                }
                 if (declaration->getFunctionRole() == FunctionRole::Fragment)
                     builder->opExecutionMode(value);
             }
@@ -1010,7 +1022,7 @@ public:
                     default:
                         break;
                     }
-                    if (irb::target == irb::Target::SPIRV && attr.isBuffer)
+                    if (irb::target == irb::Target::SPIRV && attr.isBuffer || (declaration->getFunctionRole() == FunctionRole::Vertex && attr.isInput))
                         builder->opDecorate(type->getValue(builder, true), irb::Decoration::Block);
                     static_cast<irb::SPIRVBuilder*>(builder)->addInterfaceVariable(value);
 
@@ -1147,7 +1159,15 @@ public:
         setDebugInfo();
 
         irb::Type* funcReturnType = crntFunction->getFunctionType()->getReturnType();
-        irb::Value* returnV = expression->codegen(funcReturnType->getTypeID() == irb::TypeID::Void ? nullptr : funcReturnType);
+        //HACK: only load it later
+        if (TARGET_IS_IR(irb::target))
+            expression->setLoadOnCodegen(false);
+        irb::Value* unloadedReturnV = expression->codegen(funcReturnType->getTypeID() == irb::TypeID::Void ? nullptr : funcReturnType);
+        irb::Value* returnV;
+        if (TARGET_IS_IR(irb::target))
+            returnV = builder->opLoad(unloadedReturnV);
+        else
+            returnV = unloadedReturnV;
         if (!returnV)
             return nullptr;
 
@@ -1191,24 +1211,35 @@ public:
             }
         } else {
             if (irb::target == irb::Target::SPIRV && crntFunction->getFunctionRole() != FunctionRole::Normal) {
-                switch (crntFunction->getFunctionRole()) {
-                case FunctionRole::Vertex:
-                    builder->opStore(crntFunction->getReturnVariable(), returnV);
-                    break;
-                case FunctionRole::Fragment:
+                if (crntFunction->getFunctionRole() == FunctionRole::Vertex) {
                     //TODO: do this error check for every backend?
                     if (!crntFunction->getType()->isStructure()) {
                         logError("Entry point argument declared with the 'output' attribute must have a structure type");
                         return nullptr;
                     }
-                    for (uint32_t i = 0; i < static_cast<irb::StructureType*>(crntFunction->getType())->getStructure()->members.size(); i++)
+                    irb::Structure* structure = static_cast<irb::StructureType*>(crntFunction->getType())->getStructure();
+                    irb::Value* positionV = nullptr;
+                    for (uint32_t i = 0; i < structure->members.size(); i++) {
+                        if (structure->members[i].attributes.isPosition) {
+                            irb::Value* indexV = builder->opConstant(new irb::ConstantInt(context, i, 32, true));
+                            positionV = builder->opGetElementPtr(new irb::PointerType(context, structure->members[i].type, irb::StorageClass::Function), unloadedReturnV, {indexV});
+                            positionV = builder->opLoad(positionV);
+                            break;
+                        }
+                    }
+                    if (positionV)
+                        builder->opStore(crntFunction->getPositionVariable(), positionV);
+                } else if (crntFunction->getFunctionRole() == FunctionRole::Fragment) {
+                    //TODO: do this error check for every backend?
+                    if (!crntFunction->getType()->isStructure()) {
+                        logError("Entry point argument declared with the 'output' attribute must have a structure type");
+                        return nullptr;
+                    }
+                    irb::Structure* structure = static_cast<irb::StructureType*>(crntFunction->getType())->getStructure();
+                    for (uint32_t i = 0; i < structure->members.size(); i++)
                         builder->opMemberDecorate(crntFunction->getType()->getValue(builder), i, irb::Decoration::Location, {"0"}); //TODO: use the color index
-                    break;
-                default:
-                    //TODO: do this check somewhere else?
-                    logError("kernel functions cannot return a value");
-                    return nullptr;
                 }
+                builder->opStore(crntFunction->getReturnVariable(), returnV);
                 builder->opReturn();
             } else {
                 returnV = builder->opCast(returnV, funcReturnType);
@@ -1631,7 +1662,11 @@ public:
                 return elementV;
             }
         } else if (elementExprType->isVector()) {
-            irb::VectorType* type = new irb::VectorType(context, elementExprType->getBaseType(), memberName.size());
+            irb::Type* type;
+            if (memberName.size() == 1)
+                type = elementExprType->getBaseType();
+            else
+                type = new irb::VectorType(context, elementExprType->getBaseType(), memberName.size());
             if (TARGET_IS_CODE(irb::target)) {
                 irb::Type* trueType = type;
                 //HACK: get the pointer type
@@ -1677,10 +1712,13 @@ public:
                         indices.push_back(index);
                 }
                 
-                if (loadOnCodegen)
-                    return builder->opVectorConstruct(type, components);
-                else
+                if (loadOnCodegen) {
+                    if (components.size() == 1)
+                        return components[0];
+                    return builder->opVectorConstruct(static_cast<irb::VectorType*>(type), components);
+                } else {
                     return new UnloadedSwizzledVectorValue(context, exprV, indices);
+                }
             }
         } else {
             logError("the '.' operator only operates on structures and vectors");
