@@ -316,7 +316,7 @@ public:
 
     Value* opVectorInsert(Value* vec, Value* val, ConstantInt* index) override {
         Value* value = new Value(context, vec->getType(), context.popRegisterName());
-        //TODO: implement this
+        getSPIRVInsertBlock()->addCode("OpCompositeInsert " + vec->getType()->getValue(this)->getName() + " " + val->getName() + " " + vec->getName() + " " + index->getName(), value->getName());
 
         return value;
     }

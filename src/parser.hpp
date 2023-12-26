@@ -72,6 +72,26 @@ public:
     }
 };
 
+//For swizzled vectors that weren't loaded on codegen
+//TODO: enable the @ref checkIfNameAlreadyUsed argument?
+class UnloadedSwizzledVectorValue : public irb::Value {
+private:
+    irb::Value* unloadedVector;
+    std::vector<uint8_t> indices;
+
+public:
+    UnloadedSwizzledVectorValue(irb::Context& aContext, irb::Value* aUnloadedVector, const std::vector<uint8_t>& aIndices, const std::string& aName = "") : irb::Value(aContext, aUnloadedVector->getType(), aName), unloadedVector(aUnloadedVector), indices(aIndices) {}
+
+    //Getters
+    inline irb::Value* getUnloadedVector() const {
+        return unloadedVector;
+    }
+
+    inline const std::vector<uint8_t>& getIndices() const {
+        return indices;
+    }
+};
+
 struct Variable {
     irb::Value* value;
     bool shouldBeLoaded;
@@ -489,8 +509,25 @@ public:
             return nullptr;
 
         if (op == "=") {
-            if (TARGET_IS_IR(irb::target))
-                builder->opStore(l, r);
+            if (TARGET_IS_IR(irb::target)) {
+                if (auto* unloadedVector = dynamic_cast<UnloadedSwizzledVectorValue*>(l)) {
+                    irb::Value* loadedVector = builder->opLoad(unloadedVector->getUnloadedVector());
+                    if (r->getType()->isScalar()) {
+                        for (auto index : unloadedVector->getIndices())
+                            builder->opVectorInsert(loadedVector, r, new irb::ConstantInt(context, index, 32, true)); //TODO: should it be signed?
+                    } else if (r->getType()->isVector()) {
+                        //TODO: check if component count matches and if we are not accessing out of bounds
+                        for (uint8_t i = 0; i < unloadedVector->getIndices().size(); i++)
+                            loadedVector = builder->opVectorInsert(loadedVector, builder->opVectorExtract(r, new irb::ConstantInt(context, i, 32, true)), new irb::ConstantInt(context, unloadedVector->getIndices()[i], 32, true));
+                    } else {
+                        logError("cannot assign to vector from type other than scalar and vector");
+                        return nullptr;
+                    }
+                    builder->opStore(unloadedVector->getUnloadedVector(), loadedVector);
+                } else {
+                    builder->opStore(l, r);
+                }
+            }
 
             return new irb::Value(context, r->getType(), l->getRawName() + " = " + r->getRawName());
         }
@@ -1543,6 +1580,7 @@ public:
     }
 };
 
+//TODO: support chained unloaded vector swizzle
 class MemberAccessExpressionAST : public ExpressionAST {
 private:
     ExpressionAST* expression;
@@ -1595,38 +1633,54 @@ public:
         } else if (elementExprType->isVector()) {
             irb::VectorType* type = new irb::VectorType(context, elementExprType->getBaseType(), memberName.size());
             if (TARGET_IS_CODE(irb::target)) {
-                return new irb::Value(context, type, exprV->getRawName() + "." + memberName);
+                irb::Type* trueType = type;
+                //HACK: get the pointer type
+                if (!loadOnCodegen)
+                    trueType = new irb::PointerType(context, type, irb::StorageClass::Function);
+                return new irb::Value(context, trueType, exprV->getRawName() + "." + memberName);
             } else {
-                irb::Value* loadedVector = builder->opLoad(exprV);
-                std::vector<irb::Value*> components(memberName.size());
+                irb::Value* loadedVector;
+                std::vector<irb::Value*> components;
+                std::vector<uint8_t> indices;
+                if (loadOnCodegen) {
+                    loadedVector = builder->opLoad(exprV);
+                    components.reserve(memberName.size());
+                } else {
+                    indices.reserve(memberName.size());
+                }
                 for (uint8_t i = 0; i < memberName.size(); i++) {
-                    int8_t memberIndex;
+                    int8_t index;
                     switch (memberName[i]) {
                     case 'x':
                     case 'r':
-                        memberIndex = 0;
+                        index = 0;
                         break;
                     case 'y':
                     case 'g':
-                        memberIndex = 1;
+                        index = 1;
                         break;
                     case 'z':
                     case 'b':
-                        memberIndex = 2;
+                        index = 2;
                         break;
                     case 'w':
                     case 'a':
-                        memberIndex = 3;
+                        index = 3;
                         break;
                     default:
-                        memberIndex = -1;
+                        index = -1;
                         break;
                     }
-                    //TODO: use @ref opVectorInsert when @ref loadOnCodegen is false, though this will require a bit of work
-                    components[i] = builder->opVectorExtract(loadedVector, new irb::ConstantInt(context, memberIndex, 32, false));
+                    if (loadOnCodegen)
+                        components.push_back(builder->opVectorExtract(loadedVector, new irb::ConstantInt(context, index, 32, false)));
+                    else
+                        indices.push_back(index);
                 }
                 
-                return builder->opVectorConstruct(type, components);
+                if (loadOnCodegen)
+                    return builder->opVectorConstruct(type, components);
+                else
+                    return new UnloadedSwizzledVectorValue(context, exprV, indices);
             }
         } else {
             logError("the '.' operator only operates on structures and vectors");

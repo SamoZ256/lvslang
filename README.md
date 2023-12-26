@@ -293,10 +293,10 @@ vertex VertexOut vertexMain(constant BufferContents* myBuffer [[buffer(0)]], tex
     - [x] Specific input and output in SPIRV
     - [x] Multiple entry points in SPIRV backend
 - [x] Shader input
-- [ ] Vectors
+- [x] Vectors
     - [x] Operators
     - [x] Swizzling
-    - [ ] Assigning to individual components
+    - [x] Assigning to individual components
     - [x] Initialization
 - [ ] Better error handling
 - [ ] Matrices
