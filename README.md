@@ -437,9 +437,10 @@ fragment FragmentOut fragmentMain(VertexOut fragmentIn [[stage_in]], texture2d<f
 ## Roadmap
 
 - [ ] Attributes for AIR backend
-    - [x] address space attribute
-    - [x] function declaration attributes
-    - [ ] function call attributes
+    - [x] Address space attribute
+    - [x] Function declaration attributes
+    - [ ] Function call attributes
+    - [ ] Buffer attributes
 - [x] Shader output for SPIRV and GLSL backends
 - [ ] Support non-structure types as input and output for SPIRV and GLSL backends
 - [x] Fragment shaders
@@ -453,6 +454,7 @@ fragment FragmentOut fragmentMain(VertexOut fragmentIn [[stage_in]], texture2d<f
     - [x] Swizzling
     - [x] Assigning to individual components
     - [x] Initialization
+- [ ] Proper alignment in AIR backend
 - [ ] Make buffer it's own type
 - [ ] Better error handling
 - [ ] Reflection
