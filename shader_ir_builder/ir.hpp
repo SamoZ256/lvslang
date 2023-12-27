@@ -45,12 +45,12 @@ public:
     /**
      * Defines an entry point.
      * 
-     * USELESS FOR AIR
-     * 
      * @param[in] entryPoint the id of the entry point function
      * @param[in] executionModel the shader stage of the entry point. Can be either "Vertex", "Fragment" or "Kernel"
      * @param[in] name the name of the entry point in the original code, only for debugging purposes
      */
+    //TODO: accpet the execution model as enum
+    //TODO: rename the execution model parameter
     virtual void opEntryPoint(Value* entryPoint, const std::string& executionModel, const std::string& name) = 0;
 
     /**
@@ -77,8 +77,6 @@ public:
     //Annotations
     /**
      * Decorate an id.
-     * 
-     * USELESS FOR AIR
      * 
      * @param[in] value the id to decorate
      * @param[in] decoration the decoration

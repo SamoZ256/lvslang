@@ -454,6 +454,13 @@ fragment FragmentOut fragmentMain(VertexOut fragmentIn [[stage_in]], texture2d<f
     - [x] Swizzling
     - [x] Assigning to individual components
     - [x] Initialization
+- [ ] Reset the automatic register counter at the end of every function in AIR backend
+- [ ] Add metadata to AIR backend
+    - [x] Module flags
+    - [ ] Per entry point information
+        - [x] Basic information
+        - [ ] Inputs and outputs
+    - [x] Additional information
 - [ ] Proper alignment in AIR backend
 - [ ] Make buffer it's own type
 - [ ] Better error handling

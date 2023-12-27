@@ -7,7 +7,16 @@
 
 namespace irb {
 
+struct AIREntryPoint {
+    Value* value;
+    //TODO: include the execution model
+    //TODO: include inputs and outputs
+};
+
 class AIRBuilder : public IRBuilder {
+private:
+    std::vector<AIREntryPoint> entryPoints;
+
 public:
     AIRBuilder(Context& aContext, bool aIncludeDebugInformation = false) : IRBuilder(aContext, aIncludeDebugInformation) {
     }
@@ -22,6 +31,7 @@ public:
     }
 
     void opEntryPoint(Value* entryPoint, const std::string& executionModel, const std::string& name) override {
+        entryPoints.push_back({entryPoint});
     }
 
     void opExecutionMode(Value* entryPoint, const std::string& origin = "OriginLowerLeft") override {
@@ -32,6 +42,7 @@ public:
     }
 
     void opDecorate(Value* value, Decoration decoration, const std::vector<std::string>& values = {}) override {
+        //TODO: add it to current entry point (but should it really be current entry point? Probably not, it should be matched using the @ref addInterfaceVariable function)
     }
 
     void opMemberDecorate(Value* value, uint32_t memberIndex, Decoration decoration, const std::vector<std::string>& values = {}) override {
@@ -379,6 +390,8 @@ public:
         return value;
     }
 
+    void createMetadata();
+
     //Getters
     std::string getCode() override {
         return code;
@@ -404,6 +417,120 @@ private:
         return static_cast<AIRBlock*>(getFirstFunctionBlock());
     }
 };
+
+class MetadataValue : public Value {
+public:
+    MetadataValue(Context& aContext, const std::string& aName = "") : Value(aContext, new ScalarType(aContext, TypeID::Void, 0, true), aName, "!") {}
+};
+
+class MetadataBlock : public AIRBlock {
+private:
+    std::string _addCode(const std::string& instruction, std::string registerToAssign, const std::string& comment) {
+        std::string inst = "\n" + registerToAssign + " = " + instruction;
+
+        if (comment.size() != 0)
+            inst += " ; " + comment;
+
+        return inst;
+    }
+
+public:
+    using AIRBlock::AIRBlock;
+};
+
+//TODO: check if it really called "kernel"
+const std::string functionNames[3] = {"vertex", "fragment", "kernel"};
+
+//TODO: support other values whenever there is a 'TODO: here' comment
+void AIRBuilder::createMetadata() {
+    MetadataBlock* block = new MetadataBlock(context);
+
+    MetadataValue* sdkVersion = new MetadataValue(context);
+    MetadataValue* wcharSize = new MetadataValue(context);
+    MetadataValue* framePointer = new MetadataValue(context);
+    MetadataValue* maxDeviceBuffers = new MetadataValue(context);
+    MetadataValue* maxConstantBuffers = new MetadataValue(context);
+    MetadataValue* maxThreadgroupBuffers = new MetadataValue(context);
+    MetadataValue* maxTextures = new MetadataValue(context);
+    MetadataValue* maxReadWriteTextures = new MetadataValue(context);
+    MetadataValue* maxSamplers = new MetadataValue(context);
+
+    block->addCode("!{i32 2, !\"SDK Version\", [2 x i32] [i32 14, i32 0]}", sdkVersion->getName()); //TODO: here
+    block->addCode("!{i32 1, !\"wchar_size\", i32 4}", wcharSize->getName()); //TODO: here
+    block->addCode("!{i32 7, !\"frame-pointer\", i32 2}", framePointer->getName()); //TODO: here
+    block->addCode("!{i32 7, !\"air.max_device_buffers\", i32 31}", maxDeviceBuffers->getName()); //TODO: here
+    block->addCode("!{i32 7, !\"air.max_constant_buffers\", i32 31}", maxConstantBuffers->getName()); //TODO: here
+    block->addCode("!{i32 7, !\"air.max_threadgroup_buffers\", i32 31}", maxThreadgroupBuffers->getName()); //TODO: here
+    block->addCode("!{i32 7, !\"air.max_textures\", i32 128}", maxTextures->getName()); //TODO: here
+    block->addCode("!{i32 7, !\"air.max_read_write_textures\", i32 8}", maxReadWriteTextures->getName()); //TODO: here
+    block->addCode("!{i32 7, !\"air.max_samplers\", i32 16}", maxSamplers->getName()); //TODO: here
+
+    std::vector<MetadataValue*> entryPointFunctionInfos[3];
+
+    for (const auto& entryPoint : entryPoints) {
+        MetadataValue* entryPointInfo = new MetadataValue(context);
+        MetadataValue* entryPointOutputs = new MetadataValue(context);
+        MetadataValue* entryPointInputs = new MetadataValue(context);
+
+        block->addCode("!{" + entryPoint.value->getNameWithType() + ", " + entryPointOutputs->getName() + ", " + entryPointInputs->getName() + "}", entryPointInfo->getName());
+        block->addCode("!{}", entryPointOutputs->getName()); //TODO: here
+        //TODO: add output information
+        block->addCode("!{}", entryPointInputs->getName()); //TODO: here
+        //TODO: add input information
+
+        //TODO: add it to the correct list
+        entryPointFunctionInfos[0].push_back(entryPointInfo);
+    }
+
+    MetadataValue* denorms = new MetadataValue(context);
+    MetadataValue* fastMath = new MetadataValue(context);
+    MetadataValue* framebufferFetch = new MetadataValue(context);
+    MetadataValue* identification = new MetadataValue(context);
+    MetadataValue* version = new MetadataValue(context);
+    MetadataValue* languageVersion = new MetadataValue(context);
+    MetadataValue* sourceFilename = new MetadataValue(context);
+
+    block->addCode("!{!\"air.compile.denorms_disable\"}", denorms->getName()); //TODO: here
+    block->addCode("!{!\"air.compile.fast_math_disable\"}", fastMath->getName()); //TODO: here
+    block->addCode("!{!\"air.compile.framebuffer_fetch_enable\"}", framebufferFetch->getName()); //TODO: here
+    block->addCode("!{!\"Apple metal version 32023.35 (metalfe-32023.35)\"}", identification->getName()); //TODO: here
+    block->addCode("!{i32 2, i32 6, i32 0}", version->getName()); //TODO: here
+    block->addCode("!{!\"LVSL\", i32 3, i32 1, i32 0}", languageVersion->getName()); //TODO: here
+    block->addCode("!{!\"/Users/samuliak/Desktop/lvslang/test.lvsl\"}", sourceFilename->getName()); //TODO: here
+
+    MetadataValue* llvmModuleFlags = new MetadataValue(context, "llvm.module.flags");
+    MetadataValue* airFunctions[3] = {nullptr};
+    for (uint8_t i = 0; i < 3; i++) {
+        if (entryPointFunctionInfos[i].size() != 0)
+            airFunctions[i] = new MetadataValue(context, "air." + functionNames[i]);
+    }
+    MetadataValue* airCompileOptions = new MetadataValue(context, "air.compile_options");
+    MetadataValue* llvmIdent = new MetadataValue(context, "llvm.ident");
+    MetadataValue* airVersion = new MetadataValue(context, "air.version");
+    MetadataValue* airLanguageVersion = new MetadataValue(context, "air.language_version");
+    MetadataValue* airSourceFilename = new MetadataValue(context, "air.source_file_name");
+
+    block->addCodeToBeginning("!{" + sdkVersion->getName() + ", " + wcharSize->getName() + ", " + framePointer->getName() + ", " + maxDeviceBuffers->getName() + ", " + maxConstantBuffers->getName() + ", " + maxThreadgroupBuffers->getName() + ", " + maxTextures->getName() + ", " + maxReadWriteTextures->getName() + ", " + maxSamplers->getName() + "}", llvmModuleFlags->getName());
+    for (uint8_t i = 0; i < 3; i++) {
+        if (airFunctions[i]) {
+            std::string code = "!{";
+            for (uint32_t j = 0; j < entryPointFunctionInfos[i].size(); j++) {
+                if (j != 0)
+                    code += ", ";
+                code += entryPointFunctionInfos[i][j]->getName();
+            }
+            code += "}";
+            block->addCodeToBeginning(code, airFunctions[i]->getName());
+        }
+    }
+    block->addCodeToBeginning("!{" + denorms->getName() + ", " + fastMath->getName() + ", " + framebufferFetch->getName() + "}", airCompileOptions->getName());
+    block->addCodeToBeginning("!{" + identification->getName() + "}", llvmIdent->getName());
+    block->addCodeToBeginning("!{" + version->getName() + "}", airVersion->getName());
+    block->addCodeToBeginning("!{" + languageVersion->getName() + "}", airLanguageVersion->getName());
+    block->addCodeToBeginning("!{" + sourceFilename->getName() + "}", airSourceFilename->getName());
+
+    code += block->getCode();
+}
 
 } //namespace irb
 

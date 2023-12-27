@@ -7,14 +7,14 @@
 
 namespace irb {
 
-struct EntryPoint {
+struct SPIRVEntryPoint {
     std::string entryPointCode;
     std::string interfaceCode;
 };
 
 class SPIRVBuilder : public IRBuilder {
 private:
-    std::vector<EntryPoint> entryPoints;
+    std::vector<SPIRVEntryPoint> entryPoints;
 
     std::map<std::string, Value*> typesVariablesConstantsDefinitions;
 

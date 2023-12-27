@@ -807,6 +807,7 @@ public:
                         break;
                     }
                 } else if (irb::target == irb::Target::GLSL) {
+                    //TODO: make this optional?
                     _name = "main";
 
                     /*
@@ -2993,39 +2994,9 @@ void compile(const std::string& sourceName) {
 }
 
 std::string getCompiledCode() {
+    if (irb::target == irb::Target::AIR)
+        static_cast<irb::AIRBuilder*>(builder)->createMetadata();
     std::string code = context.codeHeader + "\n\n" + (TARGET_IS_IR(irb::target) ? builder->getCode() : context.codeMain);
-    if (irb::target == irb::Target::AIR) {
-        //TODO: remove all the hardcoding
-        code += \
-        "!llvm.module.flags = !{!0, !1, !2, !3, !4, !5, !6, !7, !8}\n" \
-        "!air.vertex = !{!9}\n" \
-        "!air.compile_options = !{!11, !12, !13}\n" \
-        "!llvm.ident = !{!14}\n" \
-        "!air.version = !{!15}\n" \
-        "!air.language_version = !{!16}\n" \
-        "!air.source_file_name = !{!17}\n" \
-        "\n" \
-        "!0 = !{i32 2, !\"SDK Version\", [2 x i32] [i32 14, i32 0]}\n" \
-        "!1 = !{i32 1, !\"wchar_size\", i32 4}\n" \
-        "!2 = !{i32 7, !\"frame-pointer\", i32 2}\n" \
-        "!3 = !{i32 7, !\"air.max_device_buffers\", i32 31}\n" \
-        "!4 = !{i32 7, !\"air.max_constant_buffers\", i32 31}\n" \
-        "!5 = !{i32 7, !\"air.max_threadgroup_buffers\", i32 31}\n" \
-        "!6 = !{i32 7, !\"air.max_textures\", i32 128}\n" \
-        "!7 = !{i32 7, !\"air.max_read_write_textures\", i32 8}\n" \
-        "!8 = !{i32 7, !\"air.max_samplers\", i32 16}\n" \
-        "!9 = !{ptr @vertexMain, !10, !10}\n" \
-        "!10 = !{}\n" \
-        "!11 = !{!\"air.compile.denorms_disable\"}\n" \
-        "!12 = !{!\"air.compile.fast_math_enable\"}\n" \
-        "!13 = !{!\"air.compile.framebuffer_fetch_enable\"}\n" \
-        "!14 = !{!\"Apple metal version 32023.35 (metalfe-32023.35)\"}\n" \
-        "!15 = !{i32 2, i32 6, i32 0}\n" \
-        "!16 = !{!\"Metal\", i32 3, i32 1, i32 0}\n" \
-        "!17 = !{!\"/Users/samuliak/Desktop/lvslang/test.metal\"}\n" \
-        "!18 = distinct !{!18, !19}\n" \
-        "!19 = !{!\"llvm.loop.mustprogress\"}";
-    }
 
     return code;
 }

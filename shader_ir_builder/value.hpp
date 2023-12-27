@@ -707,8 +707,8 @@ private:
 
 public:
     FunctionType(Context& aContext, Type* aReturnType, const std::vector<Type*>& aArguments) : Type(aContext, TypeID::Function), returnType(aReturnType), arguments(aArguments) {
-        //TODO: set the name
-        //nameBegin = ;
+        //TODO: set different name for code backends?
+        nameBegin = "ptr";
     }
 
     ~FunctionType() = default;

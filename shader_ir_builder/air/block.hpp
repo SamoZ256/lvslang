@@ -6,12 +6,11 @@
 namespace irb {
 
 class AIRBlock : public Block {
-private:
+protected:
     std::string codeBegin;
     std::string code;
 
-    //TODO: support comments
-    std::string _addCode(const std::string& instruction, std::string registerToAssign, const std::string& comment) {
+    virtual std::string _addCode(const std::string& instruction, std::string registerToAssign, const std::string& comment) {
         if (registerToAssign.size() != 0)
             registerToAssign += " = ";
 
@@ -44,7 +43,7 @@ public:
 
     //Getters
     std::string getCode() {
-        return codeBegin + code + "\n";
+        return codeBegin + (codeBegin.size() == 0 ? "" : "\n") + code + "\n";
     }
 
     void setReturned() {
