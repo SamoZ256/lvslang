@@ -757,7 +757,10 @@ public:
                             } else {
                                 typeName = "uniform " + arg.type->getName();
                             }
-                            codeStr += "layout (set = " + std::to_string(attr.set) + ", binding = " + std::to_string(attr.binding) + ") " + typeName + " " + arg.name + ";\n\n";
+                            codeStr += "layout (set = " + std::to_string(attr.set) + ", binding = " + std::to_string(attr.binding) + ") " + typeName;
+                            if (!attr.isBuffer)
+                                codeStr += " " + arg.name;
+                            codeStr += ";\n\n";
                         }
                     } else {
                         if (i != 0)
@@ -1616,17 +1619,26 @@ class MemberAccessExpressionAST : public ExpressionAST {
 private:
     ExpressionAST* expression;
     std::string memberName;
+    bool exprShouldBeLoadedBeforeAccessingMember;
 
     irb::Type* type = nullptr;
 
 public:
-    MemberAccessExpressionAST(ExpressionAST* aExpression, const std::string& aMemberName) : expression(aExpression), memberName(aMemberName) {}
+    MemberAccessExpressionAST(ExpressionAST* aExpression, const std::string& aMemberName, bool aExprShouldBeLoadedBeforeAccessingMember) : expression(aExpression), memberName(aMemberName), exprShouldBeLoadedBeforeAccessingMember(aExprShouldBeLoadedBeforeAccessingMember) {}
 
     irb::Value* codegen(irb::Type* requiredType = nullptr) override {
         setDebugInfo();
 
         expression->setLoadOnCodegen(false);
         irb::Value* exprV = expression->codegen();
+        if (exprShouldBeLoadedBeforeAccessingMember) {
+            if (irb::target == irb::Target::AIR)
+                exprV = builder->opLoad(exprV);
+            else if (irb::target == irb::Target::Metal)
+                exprV = new irb::Value(context, exprV->getType()->getElementType(), "(*" + exprV->getRawName() + ")");
+            else if (irb::target == irb::Target::GLSL)
+                exprV = new irb::Value(context, exprV->getType()->getElementType(), exprV->getRawName());
+        }
         if (!exprV)
             return nullptr;
         irb::PointerType* exprType = dynamic_cast<irb::PointerType*>(exprV->getType());
@@ -2621,6 +2633,11 @@ ExpressionAST* parseBinOpRHS(int expressionPrecedence, ExpressionAST* lhs) {
 
         ExpressionAST* rhs;
         std::string memberName;
+        bool exprShouldBeLoadedBeforeAccessingMember = false;
+        if (binOp == "->") {
+            binOp = ".";
+            exprShouldBeLoadedBeforeAccessingMember = true;
+        }
         if (binOp == ".") {
             if (crntToken != TOKEN_IDENTIFIER) {
                 logError("expected member name after the '.' operator");
@@ -2645,7 +2662,7 @@ ExpressionAST* parseBinOpRHS(int expressionPrecedence, ExpressionAST* lhs) {
         }
 
         if (binOp == ".")
-            lhs = new MemberAccessExpressionAST(lhs, memberName);
+            lhs = new MemberAccessExpressionAST(lhs, memberName, exprShouldBeLoadedBeforeAccessingMember);
         else
             lhs = new BinaryExpressionAST(binOp, lhs, rhs);
     }
@@ -2938,7 +2955,7 @@ void compile(const std::string& sourceName) {
         context.codeHeader = "#include <metal_stdlib>\nusing namespace metal;";
         break;
     case irb::Target::GLSL:
-        context.codeHeader = "#version " + getGLSLVersionString() + " core";
+        context.codeHeader = "#version " + getGLSLVersionString()/* + " core"*/;
         break;
     case irb::Target::HLSL:
         LVSLANG_ERROR_UNSUPPORTED_TARGET("HLSL");

@@ -56,7 +56,7 @@ public:
         blockHeader->addCodeRawToBeginning(
 "; SPIR-V\n" \
 "; Version:   1.0\n" \
-"; Generator: Google Shaderc over Glslang; 11\n" \
+"; Generator: Lvslang; 11\n" \
 "; Bound:     385\n" \
 "; Schema:    0\n" \
 "\n");

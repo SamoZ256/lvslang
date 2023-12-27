@@ -1,22 +1,36 @@
-struct BufferContents {
-    member cameraPos: float3
-    member color: half4
+struct Model {
+    member pos: float2
+    member scale: float2
+}
+
+struct VertexIn {
+    member pos: float2 [[location(0)]]
+    member texCoord: float2 [[location(1)]]
 }
 
 struct VertexOut {
     member pos: float4 [[position]]
-    member color: float3
+    member texCoord: float2
 }
 
-vertex vertexMain(myBuffer: constant buffer struct BufferContents* [[descriptor_set(0, 0)]],
-                  myTexture: texture2D<float> [[descriptor_set(0, 1)]],
-                  mySampler: sampler [[descriptor_set(1, 0)]]) -> struct VertexOut {
-    var coords: float2
-    var sampled = sample(myTexture, mySampler, coords)
-    
+vertex vertexMain(vertexIn: struct VertexIn [[input]],
+                  model: constant buffer struct Model* [[descriptor_set(0, 0)]]) -> struct VertexOut {
     var vertexOut: struct VertexOut
-    vertexOut.pos = sampled
-    vertexOut.color = sampled.xxw
+    vertexOut.pos = float4(model->pos.x + vertexIn.pos.x * model->scale.x, model->pos.y + vertexIn.pos.y * model->scale.y, 0.0, 1.0)
+    vertexOut.texCoord = vertexIn.texCoord
 
     return vertexOut
+}
+
+struct FragmentOut {
+    member color: float4
+};
+
+fragment fragmentMain(fragmentIn: struct VertexOut [[input]],
+                      colorTexture: texture2D<float> [[descriptor_set(0, 1)]],
+                      colorSampler: sampler [[descriptor_set(1, 0)]]) -> struct FragmentOut {
+    var fragmentOut: struct FragmentOut
+    fragmentOut.color = sample(colorTexture, colorSampler, fragmentIn.texCoord)
+
+    return fragmentOut
 }

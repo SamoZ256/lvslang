@@ -166,7 +166,7 @@ int main(int argc, char* argv[]) {
     binopPrecedence[TOKEN_OPERATOR_REFERENCE                        ] = 200;
     binopPrecedence[TOKEN_OPERATOR_DEREFERENCE                      ] = 200;
     binopPrecedence[TOKEN_OPERATOR_DOT                              ] = 400;
-    //binopPrecedence[TOKEN_OPERATOR_FUNCTION_RETURN_TYPE             ] = 0;
+    binopPrecedence[TOKEN_OPERATOR_FUNCTION_RETURN_TYPE             ] = 400;
 
     //HACK: hard-coded enum definition
     /*
