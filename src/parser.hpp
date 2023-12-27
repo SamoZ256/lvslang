@@ -1162,15 +1162,7 @@ public:
         setDebugInfo();
 
         irb::Type* funcReturnType = crntFunction->getFunctionType()->getReturnType();
-        //HACK: only load it later
-        if (TARGET_IS_IR(irb::target))
-            expression->setLoadOnCodegen(false);
-        irb::Value* unloadedReturnV = expression->codegen(funcReturnType->getTypeID() == irb::TypeID::Void ? nullptr : funcReturnType);
-        irb::Value* returnV;
-        if (TARGET_IS_IR(irb::target))
-            returnV = builder->opLoad(unloadedReturnV);
-        else
-            returnV = unloadedReturnV;
+        irb::Value* returnV = expression->codegen(funcReturnType->getTypeID() == irb::TypeID::Void ? nullptr : funcReturnType);
         if (!returnV)
             return nullptr;
 
@@ -1225,7 +1217,11 @@ public:
                     for (uint32_t i = 0; i < structure->members.size(); i++) {
                         if (structure->members[i].attributes.isPosition) {
                             irb::Value* indexV = builder->opConstant(new irb::ConstantInt(context, i, 32, true));
-                            positionV = builder->opGetElementPtr(new irb::PointerType(context, structure->members[i].type, irb::StorageClass::Function), unloadedReturnV, {indexV});
+
+                            //HACK: get a pointer to the structure to be able to access its members
+                            irb::Value* returnVPtr = builder->opVariable(new irb::PointerType(context, crntFunction->getType(), irb::StorageClass::Function), returnV);
+
+                            positionV = builder->opGetElementPtr(new irb::PointerType(context, structure->members[i].type, irb::StorageClass::Function), returnVPtr, {indexV});
                             positionV = builder->opLoad(positionV);
                             break;
                         }

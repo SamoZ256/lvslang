@@ -195,6 +195,7 @@ public:
 
     Value* opLoad(Value* v) override {
         if (!v->getType()->isPointer()) {
+            std::cout << v->getType()->getNameForRegister() << " : " << v->getName() << std::endl;
             IRB_INVALID_ARGUMENT_WITH_REASON("v", "type of 'v' is not a pointer");
             return nullptr;
         }
@@ -394,8 +395,12 @@ public:
         StorageClass storageClass = type->getStorageClass();
         GET_STORAGE_CLASS_NAME(storageClass);
         std::string code = "OpVariable " + typeV->getName() + " " + storageClassStr;
-        if (initializer)
-            code += " " + initializer->getName();
+        if (initializer) {
+            if (initializer->isConstant())
+                code += " " + initializer->getName();
+            else
+                opStore(value, initializer);
+        }
         if (storageClass == StorageClass::Function)
             getSPIRVFirstFunctionBlock()->addCodeToBeginning(code, value->getName());
         else
