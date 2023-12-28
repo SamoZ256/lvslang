@@ -261,6 +261,85 @@ irb::Type* _parseTypeExpression() {
     return type;
 }
 
+void _setAttributesFromList(const std::vector<irb::Attribute>& attribs, irb::Attributes* attributes) {
+    for (const auto& attrib : attribs) {
+        switch (attrib.attrib) {
+        case irb::Attribute::Enum::AddressSpace:
+            attributes->addressSpace = attrib.values[0];
+            break;
+        case irb::Attribute::Enum::Buffer:
+            attributes->isBuffer = true;
+            break;
+        case irb::Attribute::Enum::DescriptorSet:
+            attributes->set = attrib.values[0];
+            attributes->binding = attrib.values[1];
+            break;
+        case irb::Attribute::Enum::Position:
+            attributes->isPosition = true;
+            break;
+        case irb::Attribute::Enum::Input:
+            attributes->isInput = true;
+            break;
+        case irb::Attribute::Enum::Location:
+            attributes->locationIndex = attrib.values[0];
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+void _parseAttributes(irb::Attributes* attributes) {
+    std::vector<irb::Attribute> attribs;
+    while (crntToken == '[') {
+        getNextToken(); // '['
+        if (!attributes) {
+            logError("cannot use attribute on this expression");
+            return;
+        }
+        /*
+        if (getNextToken() != '[') {
+            logError("expected double '[' in an attribute");
+            return nullptr;
+        }
+        */
+        getNextToken(); // '['
+        if (!tokenIsAttrib(crntToken)) {
+            logError("unknown attribute '" + std::to_string(crntToken) + "'");
+            return;
+        }
+        irb::Attribute attrib{getAttributeFromToken(crntToken)};
+        if (getNextToken() == '(') {
+            do {
+                if (getNextToken() != TOKEN_NUMBER) {
+                    logError("");
+                    return;
+                }
+                attrib.values.push_back(numValueU);
+            } while (getNextToken() == ',');
+            if (crntToken != ')') {
+                logError("expected ')' to match the '('");
+                return;
+            }
+            getNextToken(); // ')'
+        }
+
+        for (uint8_t i = 0; i < 2; i++) {
+            if (crntToken != ']') {
+                logError("expected ']' to match the '[' in attribute");
+                return;
+            }
+            getNextToken(); // ']'
+        }
+        attribs.push_back(attrib);
+
+        if (crntToken != '[')
+            break;
+    }
+
+    _setAttributesFromList(attribs, attributes);
+}
+
 irb::Type* _parseTypeWithAttributesExpression(irb::Attributes* attributes = nullptr) {
     std::vector<irb::Attribute> attribs;
     while (/*crntToken == '['*/tokenIsAttrib(crntToken)) {
@@ -308,77 +387,7 @@ irb::Type* _parseTypeWithAttributesExpression(irb::Attributes* attributes = null
 
     irb::Type* type = _parseTypeExpression();
 
-    while (crntToken == '[') {
-        if (!attributes) {
-            logError("cannot use attribute on this expression");
-            return nullptr;
-        }
-        /*
-        if (getNextToken() != '[') {
-            logError("expected double '[' in an attribute");
-            return nullptr;
-        }
-        */
-        getNextToken(); // '['
-        if (!tokenIsAttrib(crntToken)) {
-            logError("unknown attribute '" + std::to_string(crntToken) + "'");
-            return nullptr;
-        }
-        irb::Attribute attrib{getAttributeFromToken(crntToken)};
-        if (getNextToken() == '(') {
-            do {
-                if (getNextToken() != TOKEN_NUMBER) {
-                    logError("");
-                    return nullptr;
-                }
-                attrib.values.push_back(numValueU);
-            } while (getNextToken() == ',');
-            if (crntToken != ')') {
-                logError("expected ')' to match the '('");
-                return nullptr;
-            }
-            getNextToken(); // ')'
-        }
-
-        for (uint8_t i = 0; i < 2; i++) {
-            if (crntToken != ']') {
-                logError("expected ']' to match the '[' in attribute");
-                return nullptr;
-            }
-            getNextToken(); // ']'
-        }
-        attribs.push_back(attrib);
-
-        if (crntToken != '[')
-            break;
-        getNextToken(); // '['
-    }
-
-    for (const auto& attrib : attribs) {
-        switch (attrib.attrib) {
-        case irb::Attribute::Enum::AddressSpace:
-            attributes->addressSpace = attrib.values[0];
-            break;
-        case irb::Attribute::Enum::Buffer:
-            attributes->isBuffer = true;
-            break;
-        case irb::Attribute::Enum::DescriptorSet:
-            attributes->set = attrib.values[0];
-            attributes->binding = attrib.values[1];
-            break;
-        case irb::Attribute::Enum::Position:
-            attributes->isPosition = true;
-            break;
-        case irb::Attribute::Enum::Input:
-            attributes->isInput = true;
-            break;
-        case irb::Attribute::Enum::Location:
-            attributes->locationIndex = attrib.values[0];
-            break;
-        default:
-            break;
-        }
-    }
+    _setAttributesFromList(attribs, attributes);
 
     return type;
 }
@@ -839,6 +848,7 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, FunctionRol
             return nullptr;
         std::string name = identifierStr;
         getNextToken(); // argument name
+        _parseAttributes(&argAttributes);
         arguments.push_back(Argument{name, type, argAttributes});
     } while (crntToken == ',');
     if (crntToken != ')') {
@@ -897,6 +907,8 @@ StructureDefinitionAST* parseStructureDeclaration() {
         }
         std::string memberName = identifierStr;
         getNextToken(); // member name
+
+        _parseAttributes(&attributes);
 
         members.push_back({memberName, memberType, attributes});
 
