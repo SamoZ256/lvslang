@@ -1,9 +1,8 @@
 #ifndef LVSLANG_LEXER_H
 #define LVSLANG_LEXER_H
 
-//TODO: make common.hpp for lvslang
-#include "common.hpp"
-#include "../shader_ir_builder/value.hpp"
+#include "../../common.hpp"
+#include "../../../shader_ir_builder/value.hpp"
 
 #include "token.hpp"
 

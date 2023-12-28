@@ -4,7 +4,7 @@
 #include <sstream>
 #include <fstream>
 
-#include "parser.hpp"
+#include "frontends/lvsl/parser.hpp"
 
 #define INVALID_COMMAND_LINE_ARGUMENT(arg) std::cout << "Invalid command line argument '" arg "'" << std::endl;
 
