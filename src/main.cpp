@@ -5,7 +5,7 @@
 #include <fstream>
 
 #include "frontends/lvsl/parser.hpp"
-//#include "frontends/metal/parser.hpp"
+#include "frontends/metal/parser.hpp"
 
 #define INVALID_COMMAND_LINE_ARGUMENT(arg) std::cout << "Invalid command line argument '" arg "'" << std::endl;
 
@@ -134,8 +134,8 @@ int main(int argc, char* argv[]) {
     std::string code;
     if (extension == ".lvsl")
         code = lvsl::compile(options.inputName);
-    //else if (extension == ".metal")
-    //    metal::compile(options.inputName);
+    else if (extension == ".metal")
+        code = metal::compile(options.inputName);
     else
         throw std::runtime_error("unsupported output file extension '" + extension + "'");
 

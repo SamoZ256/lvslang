@@ -24,7 +24,7 @@ vertex vertexMain(vertexIn: struct VertexIn [[input]],
 
 struct FragmentOut {
     member color: float4
-};
+}
 
 fragment fragmentMain(fragmentIn: struct VertexOut [[input]],
                       colorTexture: texture2D<float> [[descriptor_set(0, 1)]],
