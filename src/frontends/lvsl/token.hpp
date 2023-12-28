@@ -1,5 +1,7 @@
-#ifndef LVSLANG_TOKEN_H
-#define LVSLANG_TOKEN_H
+#ifndef LVSLANG_LVSL_TOKEN_H
+#define LVSLANG_LVSL_TOKEN_H
+
+namespace lvsl {
 
 #define TOKEN_TYPE_ENUM_MIN TOKEN_TYPE_SAMPLER
 #define TOKEN_TYPE_ENUM_MAX TOKEN_TYPE_VOID
@@ -155,5 +157,7 @@ inline bool tokenIsTextureType(int token) {
 inline bool tokenIsAttrib(int token) {
     return (token >= TOKEN_ATTRIB_ENUM_MIN && token <= TOKEN_ATTRIB_ENUM_MAX);
 }
+
+} //namespace lvsl
 
 #endif

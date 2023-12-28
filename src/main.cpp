@@ -5,6 +5,7 @@
 #include <fstream>
 
 #include "frontends/lvsl/parser.hpp"
+//#include "frontends/metal/parser.hpp"
 
 #define INVALID_COMMAND_LINE_ARGUMENT(arg) std::cout << "Invalid command line argument '" arg "'" << std::endl;
 
@@ -112,7 +113,7 @@ int main(int argc, char* argv[]) {
     irb::target = options.target;
 
     if (!options.inputSpecified)
-        throw std::runtime_error("No input sources specified");
+        throw std::runtime_error("no input sources specified");
     
     if (options.versionSpecified) {
         bool found = false;
@@ -127,65 +128,21 @@ int main(int argc, char* argv[]) {
             INVALID_COMMAND_LINE_ARGUMENT("version");
     }
 
-    binopPrecedence[TOKEN_OPERATOR_LOGICAL_AND                      ] = 8;
-    binopPrecedence[TOKEN_OPERATOR_LOGICAL_OR                       ] = 8;
-    //binopPrecedence[TOKEN_OPERATOR_NOT                              ] = 0;
-
-    binopPrecedence[TOKEN_OPERATOR_RELATIONAL_IS_EQUAL              ] = 10;
-    binopPrecedence[TOKEN_OPERATOR_RELATIONAL_IS_NOT_EQUAL          ] = 10;
-    binopPrecedence[TOKEN_OPERATOR_RELATIONAL_LESS_THAN             ] = 10;
-    binopPrecedence[TOKEN_OPERATOR_RELATIONAL_GREATER_THAN          ] = 10;
-    binopPrecedence[TOKEN_OPERATOR_RELATIONAL_LESS_THAN_OR_EQUAL    ] = 10;
-    binopPrecedence[TOKEN_OPERATOR_RELATIONAL_GREATER_THAN_OR_EQUAL ] = 10;
-
-    binopPrecedence[TOKEN_OPERATOR_BITWISE_AND                      ] = 100;
-    binopPrecedence[TOKEN_OPERATOR_BITWISE_OR                       ] = 100;
-    binopPrecedence[TOKEN_OPERATOR_BITWISE_LEFT_SHIFT               ] = 100;
-    binopPrecedence[TOKEN_OPERATOR_BITWISE_RIGHT_SHIFT              ] = 100;
-    binopPrecedence[TOKEN_OPERATOR_BITWISE_NOT                      ] = 100;
-    binopPrecedence[TOKEN_OPERATOR_BITWISE_POW                      ] = 100;
-
-    binopPrecedence[TOKEN_OPERATOR_ARITHMETIC_PLUS                  ] = 20;
-    binopPrecedence[TOKEN_OPERATOR_ARITHMETIC_MINUS                 ] = 20;
-    binopPrecedence[TOKEN_OPERATOR_ARITHMETIC_MULTIPLY              ] = 40;
-    binopPrecedence[TOKEN_OPERATOR_ARITHMETIC_DIVIDE                ] = 40;
-    binopPrecedence[TOKEN_OPERATOR_ARITHMETIC_MODULO                ] = 80;
-
-    binopPrecedence[TOKEN_OPERATOR_ASSIGNMENT_ASSIGN                ] = 4;
-    binopPrecedence[TOKEN_OPERATOR_ASSIGNMENT_ADD_AND_ASSIGN        ] = 4;
-    binopPrecedence[TOKEN_OPERATOR_ASSIGNMENT_SUBTRACT_AND_ASSIGN   ] = 4;
-    binopPrecedence[TOKEN_OPERATOR_ASSIGNMENT_MULTIPLY_AND_ASSIGN   ] = 4;
-    binopPrecedence[TOKEN_OPERATOR_ASSIGNMENT_DIVIDE_AND_ASSIGN     ] = 4;
-    binopPrecedence[TOKEN_OPERATOR_ASSIGNMENT_MODULO_AND_ASSIGN     ] = 4;
-    binopPrecedence[TOKEN_OPERATOR_ASSIGNMENT_AND_AND_ASSIGN        ] = 4;
-    binopPrecedence[TOKEN_OPERATOR_ASSIGNMENT_OR_AND_ASSIGN         ] = 4;
-    binopPrecedence[TOKEN_OPERATOR_ASSIGNMENT_LEFT_SHIFT_AND_ASSIGN ] = 4;
-    binopPrecedence[TOKEN_OPERATOR_ASSIGNMENT_RIGHT_SHIFT_AND_ASSIGN] = 4;
-    binopPrecedence[TOKEN_OPERATOR_ASSIGNMENT_POW_AND_ASSIGN        ] = 4;
-
-    binopPrecedence[TOKEN_OPERATOR_REFERENCE                        ] = 200;
-    binopPrecedence[TOKEN_OPERATOR_DEREFERENCE                      ] = 200;
-    binopPrecedence[TOKEN_OPERATOR_DOT                              ] = 400;
-    binopPrecedence[TOKEN_OPERATOR_FUNCTION_RETURN_TYPE             ] = 400;
-
-    //HACK: hard-coded enum definition
-    /*
-    std::vector<EnumValue> enumValues = {
-        {"First", -14},
-        {"Second", 31}
-    };
-    Enumeration* enumeration = new Enumeration(enumValues);
-    enumerations["MyEnum"] = enumeration;
-    */
-
     setSource(readFile(options.inputName));
 
-    compile(options.inputName);
+    std::string extension = options.inputName.substr(options.inputName.find_last_of('.'));
+    std::string code;
+    if (extension == ".lvsl")
+        code = lvsl::compile(options.inputName);
+    //else if (extension == ".metal")
+    //    metal::compile(options.inputName);
+    else
+        throw std::runtime_error("unsupported output file extension '" + extension + "'");
 
     if (options.outputSpecified) {
-        writeToFile(options.outputName, getCompiledCode());
+        writeToFile(options.outputName, code);
     } else {
-        std::cout << getCompiledCode();
+        std::cout << code;
     }
 
     return 0;

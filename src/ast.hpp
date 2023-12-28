@@ -200,100 +200,6 @@ inline void enableExtension(irb::Extension extension) {
     }
 }
 
-int getIntTypeFromNumStr(char numTypeStr) {
-    switch (numTypeStr) {
-    //case 'd':
-    //    return TOKEN_TYPE_FLOAT64;
-    case 'f':
-        return TOKEN_TYPE_FLOAT;
-    case 'h':
-        return TOKEN_TYPE_HALF;
-    case 'i':
-        return TOKEN_TYPE_INT;
-    case 'u':
-        return TOKEN_TYPE_UINT;
-    default:
-        return 0;
-    }
-}
-
-irb::ScalarType* createScalarType(int intType) {
-    if (!intType)
-        intType = TOKEN_TYPE_FLOAT;
-    
-    irb::TypeID typeID;
-    uint32_t bitCount = 0;
-    bool isSigned = true;
-    switch(intType) {
-    case TOKEN_TYPE_VOID:
-        typeID = irb::TypeID::Void;
-        break;
-    case TOKEN_TYPE_BOOL:
-        typeID = irb::TypeID::Bool;
-        bitCount = 8;
-        isSigned = false;
-        break;
-    case TOKEN_TYPE_CHAR:
-        typeID = irb::TypeID::Integer;
-        bitCount = 8;
-        break;
-    case TOKEN_TYPE_SHORT:
-        typeID = irb::TypeID::Integer;
-        bitCount = 16;
-        break;
-    case TOKEN_TYPE_INT:
-        typeID = irb::TypeID::Integer;
-        bitCount = 32;
-        break;
-    case TOKEN_TYPE_UCHAR:
-        typeID = irb::TypeID::Integer;
-        bitCount = 8;
-        isSigned = false;
-        break;
-    case TOKEN_TYPE_USHORT:
-        typeID = irb::TypeID::Integer;
-        bitCount = 16;
-        isSigned = false;
-        break;
-    case TOKEN_TYPE_UINT:
-        typeID = irb::TypeID::Integer;
-        bitCount = 32;
-        isSigned = false;
-        break;
-    case TOKEN_TYPE_HALF:
-        typeID = irb::TypeID::Float;
-        bitCount = 16;
-        break;
-    case TOKEN_TYPE_FLOAT:
-        typeID = irb::TypeID::Float;
-        bitCount = 32;
-        break;
-    }
-
-    return new irb::ScalarType(context, typeID, bitCount, isSigned);
-}
-
-irb::Attribute getAttributeFromToken(int attrib) {
-    switch (attrib) {
-    case TOKEN_ATTRIB_CONSTANT:
-        return {irb::Attribute::Enum::AddressSpace, {2}};
-    case TOKEN_ATTRIB_DEVICE:
-        return {irb::Attribute::Enum::AddressSpace, {1}};
-    case TOKEN_ATTRIB_BUFFER:
-        return {irb::Attribute::Enum::Buffer};
-    case TOKEN_ATTRIB_DESCRIPTOR_SET:
-        return {irb::Attribute::Enum::DescriptorSet};
-    case TOKEN_ATTRIB_POSITION:
-        return {irb::Attribute::Enum::Position};
-    case TOKEN_ATTRIB_INPUT:
-        return {irb::Attribute::Enum::Input};
-    case TOKEN_ATTRIB_LOCATION:
-        return {irb::Attribute::Enum::Location};
-    default:
-        return {irb::Attribute::Enum::MaxEnum};
-    }
-}
-
 bool typeIsPromoted(irb::TypeID a, irb::TypeID b) {
     static irb::TypeID typesSortedByPromotion[] = {
         irb::TypeID::Vector,
@@ -565,22 +471,22 @@ public:
             operation = irb::Operation::LogicalNotEqual;
         } else if (op == "&&") {
             operation = irb::Operation::LogicalAnd;
-            type = createScalarType(TOKEN_TYPE_BOOL);
+            type = new irb::ScalarType(context, irb::TypeID::Bool, 8, false);
         } else if (op == "||") {
             operation = irb::Operation::LogicalOr;
-            type = createScalarType(TOKEN_TYPE_BOOL);
+            type = new irb::ScalarType(context, irb::TypeID::Bool, 8, false);
         } else if (op == ">") {
             operation = irb::Operation::GreaterThan;
-            type = createScalarType(TOKEN_TYPE_BOOL);
+            type = new irb::ScalarType(context, irb::TypeID::Bool, 8, false);
         } else if (op == "<") {
             operation = irb::Operation::LessThan;
-            type = createScalarType(TOKEN_TYPE_BOOL);
+            type = new irb::ScalarType(context, irb::TypeID::Bool, 8, false);
         } else if (op == ">=") {
             operation = irb::Operation::GreaterThanEqual;
-            type = createScalarType(TOKEN_TYPE_BOOL);
+            type = new irb::ScalarType(context, irb::TypeID::Bool, 8, false);
         } else if (op == "<=") {
             operation = irb::Operation::LessThanEqual;
-            type = createScalarType(TOKEN_TYPE_BOOL);
+            type = new irb::ScalarType(context, irb::TypeID::Bool, 8, false);
         }
 
         if (TARGET_IS_CODE(irb::target)) {
@@ -1544,7 +1450,7 @@ public:
     irb::Value* codegen(irb::Type* requiredType = nullptr) override {
         setDebugInfo();
 
-        type = new irb::ArrayType(context, createScalarType(TOKEN_TYPE_CHAR), values.size());
+        type = new irb::ArrayType(context, new irb::ScalarType(context, irb::TypeID::Integer, 8, true), values.size());
 
         std::string codeStr = "{";
         for (uint32_t i = 0; i < values.size(); i++) {
