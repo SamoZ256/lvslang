@@ -549,7 +549,7 @@ IfThenBlock* _parseIfThenBlock() {
     if (!ifThenBlock->condition)
         return nullptr;
     
-    ifThenBlock->block = static_cast<BlockExpressionAST*>(parseExpression());
+    ifThenBlock->block = parseExpression();
     if (!ifThenBlock->block)
         return nullptr;
 
@@ -567,7 +567,7 @@ ExpressionAST* parseIfExpression() {
         return nullptr;
     ifThenBlocks.push_back(ifThenBlock);
     
-    BlockExpressionAST* elseBlock = nullptr;
+    ExpressionAST* elseBlock = nullptr;
     while (crntToken == TOKEN_ELSE) {
         getNextToken(); // 'else'
         if (crntToken == TOKEN_IF) { //If else
@@ -578,7 +578,7 @@ ExpressionAST* parseIfExpression() {
             
             ifThenBlocks.push_back(ifThenBlock);
         } else { //Else
-            elseBlock = static_cast<BlockExpressionAST*>(parseExpression());
+            elseBlock = parseExpression();
             if (!elseBlock)
                 return nullptr;
             
@@ -598,7 +598,7 @@ ExpressionAST* parseWhileExpression() {
     if (!condition)
         return nullptr;
     
-    BlockExpressionAST* block = static_cast<BlockExpressionAST*>(parseExpression());
+    ExpressionAST* block = parseExpression();
     if (!block)
         return nullptr;
 
@@ -867,8 +867,8 @@ FunctionDefinitionAST* parseFunctionDefinition(FunctionRole functionRole = Funct
     if (!declaration)
         return nullptr;
     
-    if (ExpressionAST* expr = parseExpression())
-        return new FunctionDefinitionAST(declaration, static_cast<BlockExpressionAST*>(expr));
+    if (BlockExpressionAST* expr = dynamic_cast<BlockExpressionAST*>(parseExpression()))
+        return new FunctionDefinitionAST(declaration, expr);
     
     return nullptr;
 }
@@ -1000,10 +1000,6 @@ EnumDefinitionAST* parseEnumDeclaration() {
 }
 
 ExpressionAST* parseExpression(int expressionPrecedence) {
-    while (crntToken == TOKEN_SKIP) {
-        getNextToken(); //Skip
-    }
-
     ExpressionAST* lhs = parseMain();
     if (!lhs)
         return nullptr;

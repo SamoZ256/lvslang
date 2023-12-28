@@ -227,11 +227,10 @@ irb::Type* getPromotedType(irb::Type* a, irb::Type* b) {
 
 //Helper structures
 class ExpressionAST;
-class BlockExpressionAST;
 
 struct IfThenBlock {
     ExpressionAST* condition;
-    BlockExpressionAST* block;
+    ExpressionAST* block;
 };
 
 //Base class
@@ -1160,10 +1159,10 @@ public:
 class IfExpressionAST : public ExpressionAST {
 private:
     std::vector<IfThenBlock*> ifThenBlocks;
-    BlockExpressionAST* elseBlock;
+    ExpressionAST* elseBlock;
 
 public:
-    IfExpressionAST(const std::vector<IfThenBlock*>& aIfThenBlocks, BlockExpressionAST* aElseBlock) : ifThenBlocks(aIfThenBlocks), elseBlock(aElseBlock) {}
+    IfExpressionAST(const std::vector<IfThenBlock*>& aIfThenBlocks, ExpressionAST* aElseBlock) : ifThenBlocks(aIfThenBlocks), elseBlock(aElseBlock) {}
 
     irb::Value* codegen(irb::Type* requiredType = nullptr) override {
         setDebugInfo();
@@ -1267,12 +1266,12 @@ public:
 class WhileExpressionAST : public ExpressionAST {
 private:
     ExpressionAST* condition;
-    BlockExpressionAST* block;
+    ExpressionAST* block;
 
     bool isDoWhile;
 
 public:
-    WhileExpressionAST(ExpressionAST* aCondition, BlockExpressionAST* aBlock, bool aIsDoWhile) : condition(aCondition), block(aBlock), isDoWhile(aIsDoWhile) {}
+    WhileExpressionAST(ExpressionAST* aCondition, ExpressionAST* aBlock, bool aIsDoWhile) : condition(aCondition), block(aBlock), isDoWhile(aIsDoWhile) {}
 
     irb::Value* codegen(irb::Type* requiredType = nullptr) override {
         setDebugInfo();
