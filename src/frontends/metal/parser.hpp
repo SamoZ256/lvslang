@@ -85,8 +85,6 @@ irb::Attribute getAttributeFromToken(int attrib) {
         return {irb::Attribute::Enum::AddressSpace, {2}};
     case TOKEN_ATTRIB_DEVICE:
         return {irb::Attribute::Enum::AddressSpace, {1}};
-    case TOKEN_ATTRIB_BUFFER:
-        return {irb::Attribute::Enum::Buffer};
     case TOKEN_ATTRIB_DESCRIPTOR_SET:
         return {irb::Attribute::Enum::DescriptorSet};
     case TOKEN_ATTRIB_POSITION:
@@ -266,9 +264,6 @@ void _setAttributesFromList(const std::vector<irb::Attribute>& attribs, irb::Att
         switch (attrib.attrib) {
         case irb::Attribute::Enum::AddressSpace:
             attributes->addressSpace = attrib.values[0];
-            break;
-        case irb::Attribute::Enum::Buffer:
-            attributes->isBuffer = true;
             break;
         case irb::Attribute::Enum::DescriptorSet:
             attributes->set = attrib.values[0];

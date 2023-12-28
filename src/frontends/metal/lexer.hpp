@@ -329,8 +329,6 @@ int _getNextToken() {
             return TOKEN_ATTRIB_CONSTANT;
         if (identifierStr == "device")
             return TOKEN_ATTRIB_DEVICE;
-        if (identifierStr == "buffer")
-            return TOKEN_ATTRIB_BUFFER;
 
         if (identifierStr == "descriptor_set")
             return TOKEN_ATTRIB_DESCRIPTOR_SET;

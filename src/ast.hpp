@@ -621,6 +621,8 @@ public:
                 attr.isTexture = true;
             else if (arg.type->isSampler())
                 attr.isSampler = true;
+            else if (!attr.isInput)
+                attr.isBuffer = true;
         }
 
         if (TARGET_IS_CODE(irb::target)) {

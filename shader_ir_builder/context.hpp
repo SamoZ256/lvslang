@@ -13,8 +13,6 @@ class SPIRVBlock;
 struct Attribute {
     enum class Enum {
         AddressSpace,
-        Buffer,
-
         DescriptorSet,
         Position,
         Input,

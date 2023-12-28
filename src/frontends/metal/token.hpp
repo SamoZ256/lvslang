@@ -82,7 +82,6 @@ enum Token {
     // 'attrib'
     TOKEN_ATTRIB_CONSTANT = -107,
     TOKEN_ATTRIB_DEVICE = -108,
-    TOKEN_ATTRIB_BUFFER = -109,
 
     // '[[attrib]]'
     TOKEN_ATTRIB_DESCRIPTOR_SET = -110,
