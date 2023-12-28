@@ -487,7 +487,7 @@ fragment FragmentOut fragmentMain(VertexOut fragmentIn [[stage_in]], texture2d<f
 - [ ] Other frontends
     - [ ] Metal Shading Language
         - [x] Basic support
-        - [x] Enforced semi-colons
+        - [x] Enforced semicolons
         - [ ] Auto keyword
         - [x] Attributes after name
         - [ ] Require including Metal standard library
