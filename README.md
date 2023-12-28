@@ -489,7 +489,8 @@ fragment FragmentOut fragmentMain(VertexOut fragmentIn [[stage_in]], texture2d<f
         - [x] Basic support
         - [x] Enforced semi-colons
         - [ ] Auto keyword
-        - [ ] Attributes after name
+        - [x] Attributes after name
+        - [ ] Require including Metal standard library
     - [ ] GLSL
 
 See the [open issues](https://github.com/SamoZ256/lvslang/issues) for a full list of proposed features (and known issues).

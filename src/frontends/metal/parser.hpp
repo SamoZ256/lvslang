@@ -436,9 +436,12 @@ BlockExpressionAST* parseBracesExpression() {
             return nullptr;
 
         //Get rid of semicolons
-        while (crntToken == TOKEN_SKIP) {
-            getNextToken();
+        if (crntToken != TOKEN_SKIP) {
+            logError("expected ';' after expression");
+            return nullptr;
         }
+        while (crntToken == TOKEN_SKIP)
+            getNextToken();
         
         expressions.push_back(expr);
     }
@@ -449,6 +452,7 @@ BlockExpressionAST* parseBracesExpression() {
 }
 
 //TODO: support constant array declarations as well
+//TODO: move this into @ref parseBracesExpression
 //Square brackets
 ExpressionAST* parseSquareBracketsExpression() {
     getNextToken(); // '['
@@ -912,6 +916,10 @@ StructureDefinitionAST* parseStructureDeclaration() {
 
         members.push_back({memberName, memberType, attributes});
 
+        if (crntToken != TOKEN_SKIP) {
+            logError("expected ';' after structure member");
+            return nullptr;
+        }
         while (crntToken == TOKEN_SKIP)
             getNextToken(); //Skip
     }
@@ -921,6 +929,11 @@ StructureDefinitionAST* parseStructureDeclaration() {
         return nullptr;
     }
     getNextToken(); // '}'
+    if (crntToken != TOKEN_SKIP) {
+        logError("expected ';' after structure definition");
+        return nullptr;
+    }
+    getNextToken(); // ';'
 
     return new StructureDefinitionAST(structName, members);
 }
