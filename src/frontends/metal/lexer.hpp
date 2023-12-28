@@ -132,19 +132,19 @@ int getTypeFromString(const std::string& strType) {
     if (strType == "enum")
         return TOKEN_TYPE_ENUM;
 
-    if (identifierStr == "texture1D")
+    if (identifierStr == "texture1d")
         return TOKEN_TYPE_TEXTURE_1D;
-    if (identifierStr == "texture2D")
+    if (identifierStr == "texture2d")
         return TOKEN_TYPE_TEXTURE_2D;
-    if (identifierStr == "texture3D")
+    if (identifierStr == "texture3d")
         return TOKEN_TYPE_TEXTURE_3D;
-    if (identifierStr == "texture1DArray")
+    if (identifierStr == "texture1d_array")
         return TOKEN_TYPE_TEXTURE_1D_ARRAY;
-    if (identifierStr == "texture2DArray")
+    if (identifierStr == "texture2d_array")
         return TOKEN_TYPE_TEXTURE_2D_ARRAY;
-    if (identifierStr == "textureCube")
+    if (identifierStr == "texturecube")
         return TOKEN_TYPE_TEXTURE_CUBE;
-    if (identifierStr == "textureCubeArray")
+    if (identifierStr == "texturecube_array")
         return TOKEN_TYPE_TEXTURE_CUBE_ARRAY;
 
     if (identifierStr == "sampler")

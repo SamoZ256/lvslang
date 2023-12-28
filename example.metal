@@ -27,7 +27,7 @@ struct FragmentOut {
 };
 
 fragment struct FragmentOut fragmentMain(struct VertexOut fragmentIn [[input]],
-                                         texture2D<float> colorTexture [[descriptor_set(0, 1)]],
+                                         texture2d<float> colorTexture [[descriptor_set(0, 1)]],
                                          sampler colorSampler [[descriptor_set(1, 0)]]) {
     struct FragmentOut fragmentOut;
     fragmentOut.color = sample(colorTexture, colorSampler, fragmentIn.texCoord);

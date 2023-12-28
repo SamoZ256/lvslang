@@ -647,6 +647,7 @@ public:
 class StructureType : public Type {
 private:
     Structure* structure;
+    bool decorated = false;
 
 public:
     StructureType(Context& aContext, const std::string& aName) : Type(aContext, TypeID::Structure) {

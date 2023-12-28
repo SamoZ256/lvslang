@@ -40,16 +40,18 @@ Value* StructureType::getValue(IRBuilder* builder, bool decorate) {
 
     Value* value = static_cast<SPIRVBuilder*>(builder)->_addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), nameBegin);
 
-    if (decorate) {
+    if (decorate && !decorated) {
+        //We need to set @ref decorated to 'true' at the beginning, since @ref opTypeMemberDecorate is going to call this function and we want to avoid endless loop
+        decorated = true;
         uint32_t offset = 0;
         for (uint32_t i = 0; i < structure->members.size(); i++) {
             //Offset
-            builder->opMemberDecorate(value, i, Decoration::Offset, {std::to_string(offset)});
+            builder->opTypeMemberDecorate(value->getType(), i, Decoration::Offset, {std::to_string(offset)});
             offset += memberValues[i]->getType()->getBitCount(true) / 8; //To bytes
             //Location
             const auto& attributes = structure->members[i].attributes;
             if (attributes.locationIndex != -1)
-                builder->opMemberDecorate(value, i, Decoration::Location, {std::to_string(attributes.locationIndex)});
+                builder->opTypeMemberDecorate(value->getType(), i, Decoration::Location, {std::to_string(attributes.locationIndex)});
         }
     }
     

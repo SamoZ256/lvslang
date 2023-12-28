@@ -53,6 +53,8 @@ public:
     //TODO: rename the execution model parameter
     virtual void opEntryPoint(Value* entryPoint, const std::string& executionModel, const std::string& name) = 0;
 
+    virtual void opAddInterfaceVariable(Value* val) = 0;
+
     /**
      * Define the execution mode of a fragment entry point.
      * 
@@ -84,17 +86,17 @@ public:
      */
     virtual void opDecorate(Value* value, Decoration decoration, const std::vector<std::string>& values = {}) = 0;
 
+    virtual void opTypeDecorate(Type* type, Decoration decoration, const std::vector<std::string>& values = {}) = 0;
+
     /**
      * Decorate a structure member.
      * 
-     * USELESS FOR AIR
-     * 
-     * @param[in] value the structure whose member to decorate
+     * @param[in] type the structure type whose member to decorate
      * @param[in] memberIndex the index of the member
      * @param[in] decoration the decoration
      * @param[in] values optional values used for decoration
      */
-    virtual void opMemberDecorate(Value* value, uint32_t memberIndex, Decoration decoration, const std::vector<std::string>& values = {}) = 0;
+    virtual void opTypeMemberDecorate(Type* type, uint32_t memberIndex, Decoration decoration, const std::vector<std::string>& values = {}) = 0;
 
     //Types, variables and constants
     /**

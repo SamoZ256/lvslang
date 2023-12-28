@@ -593,16 +593,18 @@ public:
 
         functionDeclarations[_name] = this;
 
-        if (irb::target == irb::Target::SPIRV && functionRole != FunctionRole::Normal && type->getTypeID() != irb::TypeID::Void) {
-            builder->opDecorate(type->getValue(builder, true), irb::Decoration::Block);
-            context.pushRegisterName(_name + "_output");
-            returnVariable = builder->opVariable(new irb::PointerType(context, type, irb::StorageClass::Output));
-            if (functionRole == FunctionRole::Vertex) {
-                builder->opDecorate(returnVariable, irb::Decoration::Location, {"0"});
-            
-                context.pushRegisterName("position");
-                positionVariable = builder->opVariable(new irb::PointerType(context, new irb::VectorType(context, new irb::ScalarType(context, irb::TypeID::Float, 32, true), 4), irb::StorageClass::Output));
-                builder->opDecorate(positionVariable, irb::Decoration::Position);
+        if (TARGET_IS_IR(irb::target) && functionRole != FunctionRole::Normal && type->getTypeID() != irb::TypeID::Void) {
+            builder->opTypeDecorate(type, irb::Decoration::Block);
+            if (irb::target == irb::Target::SPIRV) {
+                context.pushRegisterName(_name + "_output");
+                returnVariable = builder->opVariable(new irb::PointerType(context, type, irb::StorageClass::Output));
+                if (functionRole == FunctionRole::Vertex) {
+                    builder->opDecorate(returnVariable, irb::Decoration::Location, {"0"});
+                
+                    context.pushRegisterName("position");
+                    positionVariable = builder->opVariable(new irb::PointerType(context, new irb::VectorType(context, new irb::ScalarType(context, irb::TypeID::Float, 32, true), 4), irb::StorageClass::Output));
+                    builder->opDecorate(positionVariable, irb::Decoration::Position);
+                }
             }
         }
 
@@ -858,9 +860,9 @@ public:
                 }
                 builder->opEntryPoint(value, stageName, declaration->name());
                 if (irb::target == irb::Target::SPIRV && declaration->getType()->getTypeID() != irb::TypeID::Void) {
-                    dynamic_cast<irb::SPIRVBuilder*>(builder)->addInterfaceVariable(declaration->getReturnVariable()); //TODO: change this to static cast?
+                    builder->opAddInterfaceVariable(declaration->getReturnVariable()); //TODO: change this to static cast?
                     if (declaration->getFunctionRole() == FunctionRole::Vertex)
-                        dynamic_cast<irb::SPIRVBuilder*>(builder)->addInterfaceVariable(declaration->getPositionVariable());
+                        builder->opAddInterfaceVariable(declaration->getPositionVariable());
                 }
                 if (declaration->getFunctionRole() == FunctionRole::Fragment)
                     builder->opExecutionMode(value);
@@ -882,47 +884,55 @@ public:
                         functionHeader += "\t" + arg.name + "." + member.name + " = " + member.name + ";\n";
                 }
             } else {
+                auto& attr = declaration->getArgumentAttributes(i);
                 context.pushRegisterName(arg.name);
+                irb::Value* argValue;
+                irb::StorageClass storageClass = irb::StorageClass::MaxEnum;
+                //TODO: do not hardcode the storage classes
+                if (attr.isBuffer)
+                    storageClass = irb::StorageClass::Uniform;
+                else if (attr.isTexture)
+                    storageClass = irb::StorageClass::UniformConstant;
+                else if (attr.isSampler)
+                    storageClass = irb::StorageClass::UniformConstant;
+                else if (attr.isInput)
+                    storageClass = irb::StorageClass::Input;
+
+                irb::Type* type = arg.type;
+                    
                 if (irb::target == irb::Target::SPIRV && declaration->getFunctionRole() != FunctionRole::Normal) {
-                    irb::Type* type = arg.type;
-                    auto& attr = declaration->getArgumentAttributes(i);
-                    irb::StorageClass storageClass = irb::StorageClass::MaxEnum;
                     //HACK: when the type is buffer, get the element type
                     if (attr.isBuffer)
                         type = type->getElementType();
-                    //TODO: do not hardcode the storage classes
-                    if (attr.isBuffer)
-                        storageClass = irb::StorageClass::Uniform;
-                    else if (attr.isTexture)
-                        storageClass = irb::StorageClass::UniformConstant;
-                    else if (attr.isSampler)
-                        storageClass = irb::StorageClass::UniformConstant;
-                    else if (attr.isInput)
-                        storageClass = irb::StorageClass::Input;
-                    irb::Value* value = builder->opVariable(new irb::PointerType(context, type, storageClass));
+                    argValue = builder->opVariable(new irb::PointerType(context, type, storageClass));
+                } else {
+                    argValue = builder->opFunctionParameter(arg.type);
+                }
+                
+                if (declaration->getFunctionRole() != FunctionRole::Normal) {
                     //TODO: check if these decorations are correct
                     //TODO: support other storage classes as well
                     irb::Structure* structure;
                     switch (storageClass) {
                     case irb::StorageClass::Uniform:
                     case irb::StorageClass::UniformConstant:
-                        builder->opDecorate(value, irb::Decoration::DescriptorSet, {std::to_string(attr.set)});
-                        builder->opDecorate(value, irb::Decoration::Binding, {std::to_string(attr.binding)});
+                        builder->opDecorate(argValue, irb::Decoration::DescriptorSet, {std::to_string(attr.set)});
+                        builder->opDecorate(argValue, irb::Decoration::Binding, {std::to_string(attr.binding)});
                         break;
                     case irb::StorageClass::Input:
                         switch (declaration->getFunctionRole()) {
                         case FunctionRole::Vertex:
                             //TODO: do this error check for every backend?
-                            if (!type->isStructure()) {
+                            if (!arg.type->isStructure()) {
                                 logError("Entry point argument declared with the 'input' attribute must have a structure type");
                                 return nullptr;
                             }
-                            structure = static_cast<irb::StructureType*>(type)->getStructure();
+                            structure = static_cast<irb::StructureType*>(arg.type)->getStructure();
                             for (uint32_t i = 0; i < structure->members.size(); i++)
-                                builder->opMemberDecorate(type->getValue(builder), i, irb::Decoration::Location, {std::to_string(structure->members[i].attributes.locationIndex)});
+                                builder->opTypeMemberDecorate(arg.type, i, irb::Decoration::Location, {std::to_string(structure->members[i].attributes.locationIndex)});
                             break;
                         case FunctionRole::Fragment:
-                            builder->opDecorate(value, irb::Decoration::Location, {"0"});
+                            builder->opDecorate(argValue, irb::Decoration::Location, {"0"});
                             break;
                         default:
                             logError("kernel functions cannot have 'input' attribute");
@@ -932,18 +942,11 @@ public:
                     default:
                         break;
                     }
-                    if (irb::target == irb::Target::SPIRV && attr.isBuffer || (declaration->getFunctionRole() == FunctionRole::Vertex && attr.isInput))
-                        builder->opDecorate(type->getValue(builder, true), irb::Decoration::Block);
-                    static_cast<irb::SPIRVBuilder*>(builder)->addInterfaceVariable(value);
-
-                    variables[arg.name] = {value, false};
-                } else {
-                    irb::Value* argValue = builder->opFunctionParameter(arg.type);
-                    variables[arg.name] = {argValue, false};
-                    if (irb::target == irb::Target::AIR) {
-                        //TODO: decorate the argument
-                    }
+                    if (attr.isBuffer || (declaration->getFunctionRole() == FunctionRole::Vertex && attr.isInput))
+                        builder->opTypeDecorate(type, irb::Decoration::Block);
+                    builder->opAddInterfaceVariable(argValue);
                 }
+                variables[arg.name] = {argValue, false};
             }
         }
 
@@ -1141,9 +1144,10 @@ public:
                         logError("Entry point argument declared with the 'output' attribute must have a structure type");
                         return nullptr;
                     }
+                    //TODO: do this decoration somewhere else
                     irb::Structure* structure = static_cast<irb::StructureType*>(crntFunction->getType())->getStructure();
                     for (uint32_t i = 0; i < structure->members.size(); i++)
-                        builder->opMemberDecorate(crntFunction->getType()->getValue(builder), i, irb::Decoration::Location, {"0"}); //TODO: use the color index
+                        builder->opTypeMemberDecorate(crntFunction->getType(), i, irb::Decoration::Location, {"0"}); //TODO: use the color index
                 }
                 builder->opStore(crntFunction->getReturnVariable(), returnV);
                 builder->opReturn();

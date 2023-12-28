@@ -90,6 +90,14 @@ public:
         entryPoints.push_back({"OpEntryPoint " + executionModel + " " + entryPoint->getName() + " \"" + name + "\""});
     }
 
+    void opAddInterfaceVariable(Value* val) override {
+        if (entryPoints.size() == 0) {
+            IRB_ERROR("cannot add variable to interface when there is no entry point");
+            return;
+        }
+        entryPoints.back().interfaceCode += " " + val->getName();
+    }
+
     void opExecutionMode(Value* entryPoint, const std::string& origin = "OriginLowerLeft") override {
         blockHeader->addCode("OpExecutionMode " + entryPoint->getName() + " " + origin);
         //blockHeader->addCode("OpSource GLSL 450");
@@ -105,8 +113,12 @@ public:
         _opDecorate("OpDecorate " + value->getName(), decoration, values);
     }
 
-    void opMemberDecorate(Value* value, uint32_t memberIndex, Decoration decoration, const std::vector<std::string>& values = {}) override {
-        _opDecorate("OpMemberDecorate " + value->getName() + " " + std::to_string(memberIndex), decoration, values);
+    void opTypeDecorate(Type* type, Decoration decoration, const std::vector<std::string>& values = {}) override {
+        _opDecorate("OpDecorate " + type->getValue(this, true)->getName(), decoration, values);
+    }
+
+    void opTypeMemberDecorate(Type* type, uint32_t memberIndex, Decoration decoration, const std::vector<std::string>& values = {}) override {
+        _opDecorate("OpMemberDecorate " + type->getValue(this, true)->getName() + " " + std::to_string(memberIndex), decoration, values);
     }
 
     Value* opConstant(ConstantValue* val) override {
@@ -407,14 +419,6 @@ public:
             blockTypesVariablesConstants->addCode(code, value->getName());
 
         return value;
-    }
-
-    void addInterfaceVariable(Value* val) {
-        if (entryPoints.size() == 0) {
-            IRB_ERROR("cannot add variable to interface when there is no entry point");
-            return;
-        }
-        entryPoints.back().interfaceCode += " " + val->getName();
     }
 
     Value* _addCodeToTypesVariablesConstantsBlock(Type* type, const std::string& code, const std::string& registerName, const std::string& comment = "") {

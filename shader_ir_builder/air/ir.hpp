@@ -7,10 +7,14 @@
 
 namespace irb {
 
+struct AIRInterfaceVariable {
+
+};
+
 struct AIREntryPoint {
     Value* value;
     //TODO: include the execution model
-    //TODO: include inputs and outputs
+    std::map<Value*, AIRInterfaceVariable> interfaceVariables;
 };
 
 class AIRBuilder : public IRBuilder {
@@ -34,6 +38,14 @@ public:
         entryPoints.push_back({entryPoint});
     }
 
+    void opAddInterfaceVariable(Value* val) override {
+        if (entryPoints.size() == 0) {
+            IRB_ERROR("cannot add variable to interface when there is no entry point");
+            return;
+        }
+        entryPoints.back().interfaceVariables[val] = {};
+    }
+
     void opExecutionMode(Value* entryPoint, const std::string& origin = "OriginLowerLeft") override {
     }
 
@@ -45,7 +57,12 @@ public:
         //TODO: add it to current entry point (but should it really be current entry point? Probably not, it should be matched using the @ref addInterfaceVariable function)
     }
 
-    void opMemberDecorate(Value* value, uint32_t memberIndex, Decoration decoration, const std::vector<std::string>& values = {}) override {
+    void opTypeDecorate(Type* type, Decoration decoration, const std::vector<std::string>& values = {}) override {
+        
+    }
+
+    void opTypeMemberDecorate(Type* type, uint32_t memberIndex, Decoration decoration, const std::vector<std::string>& values = {}) override {
+        
     }
 
     Value* opConstant(ConstantValue* val) override {
