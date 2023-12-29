@@ -7,15 +7,8 @@
 
 namespace irb {
 
-struct SPIRVEntryPoint {
-    std::string entryPointCode;
-    std::string interfaceCode;
-};
-
 class SPIRVBuilder : public IRBuilder {
 private:
-    std::vector<SPIRVEntryPoint> entryPoints;
-
     std::map<std::string, Value*> typesVariablesConstantsDefinitions;
 
     //Blocks
@@ -86,39 +79,151 @@ public:
         blockHeader->addCodeToBeginning("OpMemoryModel Logical GLSL450");
     }
 
-    void opEntryPoint(Value* entryPoint, const std::string& executionModel, const std::string& name) override {
-        entryPoints.push_back({"OpEntryPoint " + executionModel + " " + entryPoint->getName() + " \"" + name + "\""});
-    }
+    void opEntryPoint(Value* entryPoint, FunctionRole functionRole, const std::string& name, Type* returnType, const std::vector<std::pair<Type*, Attributes> >& arguments) override {
+        Function* oldFunction = function;
+        Value* entryPointFunction = opFunction(new FunctionType(context, new ScalarType(context, TypeID::Void, 0, true), {}));
 
-    void opAddInterfaceVariable(Value* val) override {
-        if (entryPoints.size() == 0) {
-            IRB_ERROR("cannot add variable to interface when there is no entry point");
-            return;
-        }
-        entryPoints.back().interfaceCode += " " + val->getName();
-    }
-
-    void opExecutionMode(Value* entryPoint, const std::string& origin = "OriginLowerLeft") override {
-        blockHeader->addCode("OpExecutionMode " + entryPoint->getName() + " " + origin);
+        GET_FUNCTION_ROLE_NAME(functionRole);
+        std::string code = "OpEntryPoint " + functionRoleStr + " " + entryPointFunction->getName() + " \"" + name + "\"";
+        //TODO: support other origins as well
+        if (functionRole == FunctionRole::Fragment)
+            blockHeader->addCode("OpExecutionMode " + entryPointFunction->getName() + " OriginLowerLeft");
         //blockHeader->addCode("OpSource GLSL 450");
         //blockHeader->addCode("OpSourceExtension \"GL_GOOGLE_cpp_style_line_directive\"");
         //blockHeader->addCode("OpSourceExtension \"GL_GOOGLE_include_directive\"");
+
+        //Body
+        Block* block = opBlock();
+        setInsertBlock(block);
+
+        // -------- Input --------
+        std::vector<Value*> argValues;
+        argValues.reserve(arguments.size());
+        for (const auto& argument : arguments) {
+            Type* type = argument.first;
+            const auto& attr = argument.second;
+
+            StorageClass storageClass = StorageClass::MaxEnum;
+            //TODO: do not hardcode the storage classes
+            if (attr.isBuffer)
+                storageClass = StorageClass::Uniform;
+            else if (attr.isTexture)
+                storageClass = StorageClass::UniformConstant;
+            else if (attr.isSampler)
+                storageClass = StorageClass::UniformConstant;
+            else if (attr.isInput)
+                storageClass = StorageClass::Input;
+                
+            Value* argValue = opVariable(new PointerType(context, type, storageClass));
+        
+            //TODO: check if these decorations are correct
+            //TODO: support other storage classes as well
+            Structure* structure;
+            switch (storageClass) {
+            case StorageClass::Uniform:
+            case StorageClass::UniformConstant:
+                opDecorate(argValue, Decoration::DescriptorSet, {std::to_string(attr.set)});
+                opDecorate(argValue, Decoration::Binding, {std::to_string(attr.binding)});
+                break;
+            case StorageClass::Input:
+                switch (functionRole) {
+                case FunctionRole::Vertex:
+                    //TODO: don't throw this error
+                    if (!type->isStructure()) {
+                        IRB_ERROR("Entry point argument declared with the 'input' attribute must have a structure type");
+                        return;
+                    }
+                    structure = static_cast<StructureType*>(type)->getStructure();
+                    for (uint32_t i = 0; i < structure->members.size(); i++)
+                        opTypeMemberDecorate(type, i, Decoration::Location, {std::to_string(structure->members[i].attributes.locationIndex)});
+                    break;
+                case FunctionRole::Fragment:
+                    opDecorate(argValue, Decoration::Location, {"0"});
+                    break;
+                default:
+                    IRB_ERROR("kernel functions cannot have 'input' attribute");
+                }
+                break;
+            default:
+                break;
+            }
+            if (attr.isBuffer || (functionRole == FunctionRole::Vertex && attr.isInput))
+                opTypeDecorate(type, Decoration::Block);
+            
+            //Add to interface
+            code += " " + argValue->getName();
+            
+            //HACK: create a new variable, since we need to have the 'Function' storage class
+            Value* loadedAndStoredArgValue = opVariable(new PointerType(context, type, StorageClass::Function));
+            opStore(loadedAndStoredArgValue, opLoad(argValue));
+            argValues.push_back(loadedAndStoredArgValue);
+        }
+
+        // -------- Call to entry point --------
+        Value* returnValue = opFunctionCall(entryPoint, argValues);
+
+        // -------- Output --------
+        opTypeDecorate(returnType, Decoration::Block);
+        context.pushRegisterName(name + "_output");
+        Value* returnVariable = opVariable(new PointerType(context, returnType, StorageClass::Output));
+        opStore(returnVariable, returnValue);
+        Value* positionVariable = nullptr;
+        if (functionRole == FunctionRole::Vertex) {
+            opDecorate(returnVariable, Decoration::Location, {"0"});
+        
+            context.pushRegisterName("position");
+            positionVariable = opVariable(new PointerType(context, new VectorType(context, new ScalarType(context, TypeID::Float, 32, true), 4), StorageClass::Output));
+            opDecorate(positionVariable, Decoration::Position);
+        }
+        
+        if (functionRole == FunctionRole::Vertex) {
+            //TODO: don't throw this error
+            if (!returnType->isStructure()) {
+                IRB_ERROR("Entry point argument declared with the 'output' attribute must have a structure type");
+                return;
+            }
+            Structure* structure = static_cast<StructureType*>(returnType)->getStructure();
+            Value* positionV = nullptr;
+            for (uint32_t i = 0; i < structure->members.size(); i++) {
+                if (structure->members[i].attributes.isPosition) {
+                    Value* indexV = opConstant(new ConstantInt(context, i, 32, true));
+
+                    positionV = opGetElementPtr(new PointerType(context, structure->members[i].type, StorageClass::Output), returnVariable, {indexV});
+                    positionV = opLoad(positionV);
+                    break;
+                }
+            }
+            if (positionV)
+                opStore(positionVariable, positionV);
+        } else if (functionRole == FunctionRole::Fragment) {
+            //TODO: do this error check for every backend?
+            if (!returnType->isStructure()) {
+                IRB_ERROR("Entry point argument declared with the 'output' attribute must have a structure type");
+                return;
+            }
+            //TODO: do this decoration somewhere else
+            irb::Structure* structure = static_cast<StructureType*>(returnType)->getStructure();
+            for (uint32_t i = 0; i < structure->members.size(); i++)
+                opTypeMemberDecorate(returnType, i, Decoration::Location, {"0"}); //TODO: use the color index
+        }
+
+        //Add to interface
+        code += " " + returnVariable->getName();
+        if (positionVariable)
+            code += " " + positionVariable->getName();
+
+        opReturn();
+
+        opFunctionEnd();
+
+        blockHeader->addCodeToBeginning(code);
+
+        //Set the active function to be the old active funciton
+        function = oldFunction;
     }
 
     void opName(Value* value, const std::string& name) override {
         blockDebug->addCode("OpName " + value->getName() + " \"" + name + "\"");
-    }
-
-    void opDecorate(Value* value, Decoration decoration, const std::vector<std::string>& values = {}) override {
-        _opDecorate("OpDecorate " + value->getName(), decoration, values);
-    }
-
-    void opTypeDecorate(Type* type, Decoration decoration, const std::vector<std::string>& values = {}) override {
-        _opDecorate("OpDecorate " + type->getValue(this, true)->getName(), decoration, values);
-    }
-
-    void opTypeMemberDecorate(Type* type, uint32_t memberIndex, Decoration decoration, const std::vector<std::string>& values = {}) override {
-        _opDecorate("OpMemberDecorate " + type->getValue(this, true)->getName() + " " + std::to_string(memberIndex), decoration, values);
     }
 
     Value* opConstant(ConstantValue* val) override {
@@ -432,11 +537,20 @@ public:
         return mappedValue;
     }
 
+    void opDecorate(Value* value, Decoration decoration, const std::vector<std::string>& values = {}) {
+        _opDecorate("OpDecorate " + value->getName(), decoration, values);
+    }
+
+    void opTypeDecorate(Type* type, Decoration decoration, const std::vector<std::string>& values = {}) {
+        _opDecorate("OpDecorate " + type->getValue(this, true)->getName(), decoration, values);
+    }
+
+    void opTypeMemberDecorate(Type* type, uint32_t memberIndex, Decoration decoration, const std::vector<std::string>& values = {}) {
+        _opDecorate("OpMemberDecorate " + type->getValue(this, true)->getName() + " " + std::to_string(memberIndex), decoration, values);
+    }
+
     //Getters
     std::string getCode() override {
-        for (const auto& entryPoint : entryPoints)
-            blockHeader->addCodeToBeginning(entryPoint.entryPointCode + entryPoint.interfaceCode);
-
         return blockHeader->getCode() + blockDebug->getCode() + blockAnnotations->getCode() + blockTypesVariablesConstants->getCode() + blockMain->getCode();
     }
 };

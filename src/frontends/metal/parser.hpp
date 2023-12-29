@@ -820,7 +820,7 @@ ExpressionAST* parseBinOpRHS(int expressionPrecedence, ExpressionAST* lhs) {
 }
 
 //Function declaration
-FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, FunctionRole functionRole = FunctionRole::Normal) {
+FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, irb::FunctionRole functionRole = irb::FunctionRole::Normal) {
     irb::Attributes attributes;
     irb::Type* functionType = _parseTypeWithAttributesExpression(&attributes);
     
@@ -861,7 +861,7 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, FunctionRol
 
 //TODO: support forward declarations
 //Function definition
-FunctionDefinitionAST* parseFunctionDefinition(FunctionRole functionRole = FunctionRole::Normal) {
+FunctionDefinitionAST* parseFunctionDefinition(irb::FunctionRole functionRole = irb::FunctionRole::Normal) {
     FunctionPrototypeAST* declaration = parseFunctionPrototype(true, functionRole);
     if (!declaration)
         return nullptr;
@@ -1034,15 +1034,15 @@ void mainLoop() {
             break;
         case TOKEN_VERTEX:
             getNextToken(); // 'vertex'
-            expression = parseFunctionDefinition(FunctionRole::Vertex);
+            expression = parseFunctionDefinition(irb::FunctionRole::Vertex);
             break;
         case TOKEN_FRAGMENT:
             getNextToken(); // 'fragment'
-            expression = parseFunctionDefinition(FunctionRole::Fragment);
+            expression = parseFunctionDefinition(irb::FunctionRole::Fragment);
             break;
         case TOKEN_KERNEL:
             getNextToken(); // 'kernel'
-            expression = parseFunctionDefinition(FunctionRole::Kernel);
+            expression = parseFunctionDefinition(irb::FunctionRole::Kernel);
             break;
         case TOKEN_EXTERN:
             expression = parseExtern();
@@ -1073,7 +1073,7 @@ void mainLoop() {
 }
 
 inline void addStandardFuncion(const std::string& name, irb::Type* type, const std::vector<Argument>& arguments) {
-    FunctionPrototypeAST* declaration = new FunctionPrototypeAST(name, type, arguments, false, FunctionRole::Normal, true);
+    FunctionPrototypeAST* declaration = new FunctionPrototypeAST(name, type, arguments, false, irb::FunctionRole::Normal, true);
     functionDeclarations[name] = declaration;
     declaration->codegen();
 }

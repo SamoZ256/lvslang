@@ -14,7 +14,8 @@ struct AIRInterfaceVariable {
 struct AIREntryPoint {
     Value* value;
     //TODO: include the execution model
-    std::map<Value*, AIRInterfaceVariable> interfaceVariables;
+    Type* returnType;
+    std::vector<std::pair<irb::Type*, irb::Attributes> > arguments;
 };
 
 class AIRBuilder : public IRBuilder {
@@ -34,35 +35,12 @@ public:
     void opMemoryModel() override {
     }
 
-    void opEntryPoint(Value* entryPoint, const std::string& executionModel, const std::string& name) override {
+    void opEntryPoint(Value* entryPoint, FunctionRole functionRole, const std::string& name, Type* returnType, const std::vector<std::pair<Type*, Attributes> >& arguments) override {
         entryPoints.push_back({entryPoint});
-    }
-
-    void opAddInterfaceVariable(Value* val) override {
-        if (entryPoints.size() == 0) {
-            IRB_ERROR("cannot add variable to interface when there is no entry point");
-            return;
-        }
-        entryPoints.back().interfaceVariables[val] = {};
-    }
-
-    void opExecutionMode(Value* entryPoint, const std::string& origin = "OriginLowerLeft") override {
     }
 
     void opName(Value* value, const std::string& name) override {
         //TODO: put something here?
-    }
-
-    void opDecorate(Value* value, Decoration decoration, const std::vector<std::string>& values = {}) override {
-        //TODO: add it to current entry point (but should it really be current entry point? Probably not, it should be matched using the @ref addInterfaceVariable function)
-    }
-
-    void opTypeDecorate(Type* type, Decoration decoration, const std::vector<std::string>& values = {}) override {
-        
-    }
-
-    void opTypeMemberDecorate(Type* type, uint32_t memberIndex, Decoration decoration, const std::vector<std::string>& values = {}) override {
-        
     }
 
     Value* opConstant(ConstantValue* val) override {

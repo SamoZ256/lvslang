@@ -46,12 +46,12 @@ Value* StructureType::getValue(IRBuilder* builder, bool decorate) {
         uint32_t offset = 0;
         for (uint32_t i = 0; i < structure->members.size(); i++) {
             //Offset
-            builder->opTypeMemberDecorate(value->getType(), i, Decoration::Offset, {std::to_string(offset)});
+            static_cast<SPIRVBuilder*>(builder)->opTypeMemberDecorate(value->getType(), i, Decoration::Offset, {std::to_string(offset)});
             offset += memberValues[i]->getType()->getBitCount(true) / 8; //To bytes
             //Location
             const auto& attributes = structure->members[i].attributes;
             if (attributes.locationIndex != -1)
-                builder->opTypeMemberDecorate(value->getType(), i, Decoration::Location, {std::to_string(attributes.locationIndex)});
+                static_cast<SPIRVBuilder*>(builder)->opTypeMemberDecorate(value->getType(), i, Decoration::Location, {std::to_string(attributes.locationIndex)});
         }
     }
     

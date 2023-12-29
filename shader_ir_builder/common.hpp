@@ -309,6 +309,37 @@ default: \
     break; \
 }
 
+//TODO: rename?
+enum class FunctionRole {
+    Normal,
+    Vertex,
+    Fragment,
+    Kernel,
+
+    MaxEnum
+};
+
+const std::string functionRoleLUT_SPIRV[] = {
+    "None",
+    "Vertex",
+    "Fragment",
+    "Kernel"
+};
+
+#define GET_FUNCTION_ROLE_NAME(functionRole) \
+IRB_VALIDATE_ENUM_ARGUMENT(FunctionRole, functionRole); \
+std::string functionRole##Str; \
+switch (target) { \
+case Target::SPIRV: \
+    functionRole##Str = functionRoleLUT_SPIRV[(int)functionRole]; \
+    break; \
+case Target::AIR: \
+    throw std::runtime_error("OOOPPPSSSS"); \
+    break; \
+default: \
+    break; \
+}
+
 //Utility functions
 union DoubleToUint64 {
     double d;

@@ -42,6 +42,7 @@ public:
      */
     virtual void opMemoryModel() = 0;
 
+    //TODO: add the new parameters into the comment
     /**
      * Defines an entry point.
      * 
@@ -49,21 +50,7 @@ public:
      * @param[in] executionModel the shader stage of the entry point. Can be either "Vertex", "Fragment" or "Kernel"
      * @param[in] name the name of the entry point in the original code, only for debugging purposes
      */
-    //TODO: accpet the execution model as enum
-    //TODO: rename the execution model parameter
-    virtual void opEntryPoint(Value* entryPoint, const std::string& executionModel, const std::string& name) = 0;
-
-    virtual void opAddInterfaceVariable(Value* val) = 0;
-
-    /**
-     * Define the execution mode of a fragment entry point.
-     * 
-     * USELESS FOR AIR
-     * 
-     * @param[in] entryPoint the id of the entry point function
-     * @param[in] origin the origin of the coordinates, default is "OriginLowerLeft"
-     */
-    virtual void opExecutionMode(Value* entryPoint, const std::string& origin = "OriginLowerLeft") = 0;
+    virtual void opEntryPoint(Value* entryPoint, FunctionRole functionRole, const std::string& name, Type* returnType, const std::vector<std::pair<Type*, Attributes> >& arguments) = 0;
 
     //Debug
     /**
@@ -75,28 +62,6 @@ public:
      * @param[in] name the name to use
      */
     virtual void opName(Value* value, const std::string& name) = 0;
-
-    //Annotations
-    /**
-     * Decorate an id.
-     * 
-     * @param[in] value the id to decorate
-     * @param[in] decoration the decoration
-     * @param[in] values optional values used for decoration
-     */
-    virtual void opDecorate(Value* value, Decoration decoration, const std::vector<std::string>& values = {}) = 0;
-
-    virtual void opTypeDecorate(Type* type, Decoration decoration, const std::vector<std::string>& values = {}) = 0;
-
-    /**
-     * Decorate a structure member.
-     * 
-     * @param[in] type the structure type whose member to decorate
-     * @param[in] memberIndex the index of the member
-     * @param[in] decoration the decoration
-     * @param[in] values optional values used for decoration
-     */
-    virtual void opTypeMemberDecorate(Type* type, uint32_t memberIndex, Decoration decoration, const std::vector<std::string>& values = {}) = 0;
 
     //Types, variables and constants
     /**
