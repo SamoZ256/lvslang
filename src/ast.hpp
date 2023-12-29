@@ -364,11 +364,15 @@ public:
                     if (!iter->second.shouldBeLoaded)
                         value = builder->opLoad(value);
                 } else {
+                    //TODO: only load when needed? @ref shouldBeLoaded
                     irb::Type* type = value->getType()->getElementType();
                     //TODO: check if type is castable as well
-                    bool needsCast = (requiredType && !requiredType->equals(type));
-                    std::string castBegin = (needsCast ? requiredType->getName() + "(" : "");
-                    std::string castEnd = (needsCast ? ")" : "");
+                    std::string castBegin, castEnd;
+                    if (requiredType && !requiredType->equals(type)) {
+                        castBegin = requiredType->getName() + "(";
+                        castEnd = ")";
+                        type = requiredType;
+                    }
                     value = new irb::Value(context, type, castBegin + value->getRawName() + castEnd);
                 }
             }
@@ -446,9 +450,15 @@ public:
         }
 
         irb::Type* type = getPromotedType(l->getType(), r->getType());
+        //TODO: move this to the codegen of l and r
         if (TARGET_IS_IR(irb::target)) {
             l = builder->opCast(l, type);
             r = builder->opCast(r, type);
+        } else {
+            if (!type->equals(l->getType()))
+                l = new irb::Value(context, type, type->getName() + "(" + l->getRawName() + ")");
+            if (!type->equals(r->getType()))
+                r = new irb::Value(context, type, type->getName() + "(" + r->getRawName() + ")");
         }
 
         irb::Operation operation;
@@ -489,9 +499,9 @@ public:
         }
 
         if (TARGET_IS_CODE(irb::target)) {
-            context.pushRegisterName("bin");
             return new irb::Value(context, type, "(" + l->getRawName() + " " + op + " " + r->getRawName() + ")");
         } else {
+            context.pushRegisterName("op");
             irb::Value* value = builder->opOperation(l, r, type, operation);
             if (requiredType)
                 value = builder->opCast(value, requiredType);
@@ -1299,6 +1309,7 @@ public:
     }
 };
 
+//TODO: get rid of this and replace it with @ref InitializerListAST?
 //Array
 class ArrayExpressionAST : public ExpressionAST {
 private:
@@ -1402,7 +1413,7 @@ public:
             else if (irb::target == irb::Target::Metal)
                 exprV = new irb::Value(context, exprV->getType()->getElementType(), "(*" + exprV->getRawName() + ")");
             else if (irb::target == irb::Target::GLSL)
-                exprV = new irb::Value(context, exprV->getType()->getElementType(), exprV->getRawName());
+                exprV = new irb::Value(context, exprV->getType()->getElementType(), exprV->getRawName()); //TODO: check if we should access the element type
         }
         if (!exprV)
             return nullptr;
@@ -1429,7 +1440,7 @@ public:
             }
 
             if (TARGET_IS_CODE(irb::target)) {
-                return new irb::Value(context, type, exprV->getRawName() + "." + memberName);
+                return new irb::Value(context, (loadOnCodegen ? type->getElementType() : type), exprV->getRawName() + "." + memberName);
             } else {
                 irb::Value* indexV = builder->opConstant(new irb::ConstantInt(context, memberIndex, 32, true));
                 irb::Value* elementV = builder->opGetElementPtr(type, exprV, {indexV});
@@ -1604,7 +1615,6 @@ public:
 };
 
 //TODO: support other initializer lists as well (for instance sampler)
-//TODO: enable vector from vector initialization (for instance float3(float2(0.2, 0.3), 0.4))
 class InitializerListExpressionAST : public ExpressionAST {
 private:
     irb::Type* type;
@@ -1616,25 +1626,46 @@ public:
     irb::Value* codegen(irb::Type* requiredType = nullptr) override {
         setDebugInfo();
 
+        std::vector<irb::Value*> components;
+        components.reserve(expressions.size());
+        for (auto* expression : expressions)
+            components.push_back(expression->codegen(type->isScalar() ? type : type->getBaseType()));
+        
+        //"Unpack" the vectors
+        for (uint32_t i = 0; i < components.size(); i++) {
+            irb::Value* component = components[i];
+            if (auto vectorType = dynamic_cast<irb::VectorType*>(component->getType())) {
+                components.erase(components.begin() + i);
+                for (uint8_t j = 0; j < vectorType->getComponentCount(); j++) {
+                    irb::Value* vectorComponent;
+                    if (TARGET_IS_IR(irb::target))
+                        vectorComponent = builder->opVectorExtract(component, new irb::ConstantInt(context, j, 32, true));
+                    else
+                        vectorComponent = new irb::Value(context, vectorType->getBaseType(), component->getRawName() + "[" + std::to_string(j) + "]");
+                    components.insert(components.begin() + i + j, vectorComponent);
+                }
+            }
+        }
+
         if (type->isScalar()) {
-            if (expressions.size() != 1) {
+            if (components.size() != 1) {
                 logError("scalar initializer list must have exactly one value");
                 return nullptr;
             }
         } else if (type->isArray()) {
             uint32_t size = static_cast<irb::ArrayType*>(type)->getSize();
-            if (expressions.size() > size) {
-                logError("array initializer cannot be larger than the array itself (" + std::to_string(expressions.size()) + " > " + std::to_string(size) + ")");
+            if (components.size() > size) {
+                logError("array initializer cannot be larger than the array itself (" + std::to_string(components.size()) + " > " + std::to_string(size) + ")");
                 return nullptr;
             }
         } else if (type->isVector()) {
             uint32_t componentCount = static_cast<irb::VectorType*>(type)->getComponentCount();
-            if (expressions.size() > componentCount) {
-                logError("vector initializer cannot be larger than the vector itself (" + std::to_string(expressions.size()) + " > " + std::to_string(componentCount) + ")");
+            if (components.size() > componentCount) {
+                logError("vector initializer cannot be larger than the vector itself (" + std::to_string(components.size()) + " > " + std::to_string(componentCount) + ")");
                 return nullptr;
             }
-            if (expressions.size() != componentCount && expressions.size() != 1) {
-                logError("not enough components in initializer to construct a vector (got " + std::to_string(expressions.size()) + ", expected either " + std::to_string(componentCount) + " or 1)");
+            if (components.size() != componentCount && components.size() != 1) {
+                logError("not enough components in initializer to construct a vector (got " + std::to_string(components.size()) + ", expected either " + std::to_string(componentCount) + " or 1)");
                 return nullptr;
             }
         } else {
@@ -1644,17 +1675,14 @@ public:
 
         if (TARGET_IS_IR(irb::target)) {
             if (type->isScalar())
-                return expressions[0]->codegen(type);
+                return components[0];
             if (type->isArray()) {
                 //TODO: implement this
+                logError("array initializer lists are not supported for IR backends yet");
                 return nullptr;
             }
             if (type->isVector()) {
                 irb::VectorType* vectorType = static_cast<irb::VectorType*>(type);
-                std::vector<irb::Value*> components;
-                components.reserve((expressions.size()));
-                for (auto* expression : expressions)
-                    components.push_back(expression->codegen(vectorType->getBaseType()));
                 //Fill the list in case it is just a one value initializer
                 if (components.size() == 1) {
                     //TODO: do this in a more elegant way?

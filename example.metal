@@ -16,7 +16,7 @@ struct VertexOut {
 vertex struct VertexOut vertexMain(struct VertexIn vertexIn [[input]],
                                    constant struct Model* model [[descriptor_set(0, 0)]]) {
     struct VertexOut vertexOut;
-    vertexOut.pos = float4(model->pos.x + vertexIn.pos.x * model->scale.x, model->pos.y + vertexIn.pos.y * model->scale.y, 0.0, 1.0);
+    vertexOut.pos = float4(model->pos + vertexIn.pos * model->scale, 0.0, 1.0);
     vertexOut.texCoord = vertexIn.texCoord;
 
     return vertexOut;
