@@ -560,7 +560,6 @@ class FunctionPrototypeAST : public ExpressionAST {
 private:
     std::string _name;
     irb::Type* type;
-    irb::Type* returnType; //Different than type in case of GLSL and SPIR
     std::vector<Argument> _arguments;
     //std::vector<int> attributes;
     bool isDefined;
@@ -589,21 +588,16 @@ public:
                 attr.isSampler = true;
             } else if (!attr.isInput) {
                 attr.isBuffer = true;
-                if (irb::target == irb::Target::SPIRV && functionRole != irb::FunctionRole::Normal)
+                if ((irb::target == irb::Target::SPIRV || irb::target == irb::Target::GLSL) && functionRole != irb::FunctionRole::Normal)
                     arg.type = arg.type->getElementType();
             }
         }
 
         std::vector<irb::Type*> argumentTypes;
-        if (!(irb::target == irb::Target::GLSL && functionRole != irb::FunctionRole::Normal)) {
-            argumentTypes.resize((_arguments.size()));
-            for (uint32_t i = 0; i < argumentTypes.size(); i++)
-                argumentTypes[i] = new irb::PointerType(context, _arguments[i].type, irb::StorageClass::Function);
-        }
-        returnType = type;
-        if (irb::target == irb::Target::GLSL && functionRole != irb::FunctionRole::Normal)
-            returnType = new irb::ScalarType(context, irb::TypeID::Void, 0, false);
-        functionType = new irb::FunctionType(context, returnType, argumentTypes);
+        argumentTypes.resize((_arguments.size()));
+        for (uint32_t i = 0; i < argumentTypes.size(); i++)
+            argumentTypes[i] = new irb::PointerType(context, _arguments[i].type, irb::StorageClass::Function);
+        functionType = new irb::FunctionType(context, type, argumentTypes);
     }
 
     irb::Value* codegen(irb::Type* requiredType = nullptr) override {
@@ -614,10 +608,16 @@ public:
         if (TARGET_IS_CODE(irb::target)) {
             std::string codeStr;
             std::string argsStr;
+            std::string entryPointStr;
             for (uint32_t i = 0; i < _arguments.size(); i++) {
                 Argument& arg = _arguments[i];
                 auto& attr = arg.attributes;
                 if (irb::target == irb::Target::GLSL) {
+                    if (i != 0)
+                        argsStr += ", ";
+                    argsStr += arg.type->getName() + " " + arg.name;
+
+                    //Entry point
                     if (functionRole != irb::FunctionRole::Normal) {
                         std::string typeName;
                         if (attr.isInput) {
@@ -629,10 +629,10 @@ public:
                                     return nullptr;
                                 }
                                 for (const auto& member : static_cast<irb::StructureType*>(arg.type)->getStructure()->members)
-                                    codeStr += "layout (location = " + std::to_string(member.attributes.locationIndex) + ") in " + member.type->getName() + " " + member.name + ";\n\n";
+                                    entryPointStr += "layout (location = " + std::to_string(member.attributes.locationIndex) + ") in " + member.type->getName() + " " + member.name + ";\n\n";
                                 break;
                             case irb::FunctionRole::Fragment:
-                                codeStr += "layout (location = 0) in " + arg.type->getName() + "_Input {\n\t" + arg.type->getName() + " " + arg.name + ";\n};\n\n";
+                                entryPointStr += "layout (location = 0) in " + arg.type->getName() + "_Input {\n\t" + arg.type->getName() + " " + arg.name + ";\n};\n\n";
                                 break;
                             default:
                                 logError("cannot use the 'input' attribute for kernel function");
@@ -645,19 +645,15 @@ public:
                                 else
                                     typeName = "readonly buffer "; //TODO: support other types of buffer as well
                                 //We need to get element type, since GLSL treats it without pointer
-                                typeName += arg.type->getElementType()->getName() + "_Uniform {\n\t" + arg.type->getElementType()->getName() + " " + arg.name + ";\n}";
+                                typeName += arg.type->getName() + "_Uniform {\n\t" + arg.type->getName() + " " + arg.name + ";\n}";
                             } else {
                                 typeName = "uniform " + arg.type->getName();
                             }
-                            codeStr += "layout (set = " + std::to_string(attr.set) + ", binding = " + std::to_string(attr.binding) + ") " + typeName;
+                            entryPointStr += "layout (set = " + std::to_string(attr.set) + ", binding = " + std::to_string(attr.binding) + ") " + typeName;
                             if (!attr.isBuffer)
-                                codeStr += " " + arg.name;
-                            codeStr += ";\n\n";
+                                entryPointStr += " " + arg.name;
+                            entryPointStr += ";\n\n";
                         }
-                    } else {
-                        if (i != 0)
-                            argsStr += ", ";
-                        argsStr += arg.type->getName() + " " + arg.name;
                     }
                 } else {
                     if (i != 0)
@@ -699,9 +695,6 @@ public:
                         break;
                     }
                 } else if (irb::target == irb::Target::GLSL) {
-                    //TODO: make this optional?
-                    _name = "main";
-
                     /*
                     //TODO: do this error check for every backend?
                     if (!type->isStructure()) {
@@ -717,7 +710,7 @@ public:
                     */
                     switch (functionRole) {
                     case irb::FunctionRole::Vertex:
-                        codeStr += "layout (location = 0) out " + type->getName() + "_Output {\n\t" + type->getName() + " _output;\n} _output;\n\n";
+                        entryPointStr += "layout (location = 0) out " + type->getName() + "_Output {\n\t" + type->getName() + " _output;\n} _output;\n\n";
                         break;
                     case irb::FunctionRole::Fragment:
                         //TODO: do this error check for every backend?
@@ -726,15 +719,80 @@ public:
                             return nullptr;
                         }
                         for (const auto& member : static_cast<irb::StructureType*>(type)->getStructure()->members)
-                            codeStr += "layout (location = " + std::string("0") + ") out " + member.type->getName() + " " + member.name + ";\n\n"; //TODO: use the color index std::to_string(member.attributes.colorIndex)
+                            entryPointStr += "layout (location = " + std::string("0") + ") out " + member.type->getName() + " " + member.name + ";\n\n"; //TODO: use the color index std::to_string(member.attributes.colorIndex)
                         break;
                     default:
                         logError("cannot use the 'output' attribute for kernel function");
                         return nullptr;
                     }
+
+                    //Entry point
+                    entryPointStr += "void main() {\n";
+
+                    //-------- Input --------
+                    entryPointStr += "\t//Input\n";
+                    for (uint32_t i = 0; i < _arguments.size(); i++) {
+                        if (functionRole == irb::FunctionRole::Vertex && _arguments[i].attributes.isInput) {
+                            //TODO: throw an error if not structure?
+                            irb::StructureType* structureType = dynamic_cast<irb::StructureType*>(_arguments[i].type);
+                            //HACK: just assemble the input structure
+                            entryPointStr += "\t" + structureType->getName() + " " + _arguments[i].name + ";\n";
+                            for (const auto& member : structureType->getStructure()->members)
+                                entryPointStr += "\t" + _arguments[i].name + "." + member.name + " = " + member.name + ";\n";
+                        }
+                    }
+                    entryPointStr += "\n";
+
+                    //-------- Entry point call --------
+                    entryPointStr += "\t//Entry point call\n";
+                    std::string outputVarName = "_entryPointOutput";
+                    entryPointStr += "\t" + (type->getTypeID() == irb::TypeID::Void ? "" : type->getName() + " " + outputVarName + " = ") + _name + "(";
+                    for (uint32_t i = 0; i < _arguments.size(); i++) {
+                        if (i != 0)
+                            entryPointStr += ", ";
+                        entryPointStr += _arguments[i].name;
+                    }
+
+                    //-------- Output --------
+                    if (type->getTypeID() != irb::TypeID::Void) {
+                        entryPointStr += ");\n\n\t//Output\n";
+
+                        //TODO: support other types besides structure
+                        if (!type->isStructure()) {
+                            logError("Only structures can be returned from an entry point function");
+                            return nullptr;
+                        }
+                        irb::StructureType* structType = static_cast<irb::StructureType*>(type);
+                        irb::Structure* structure = structType->getStructure();
+
+                        for (uint32_t i = 0; i < structure->members.size(); i++) {
+                            const irb::StructureMember& member = structure->members[i];
+                            std::string memberStr = outputVarName + "." + member.name;
+                            entryPointStr += "\t";
+                            if (member.attributes.isPosition) {
+                                entryPointStr += "gl_Position = " + memberStr;
+                            } else {
+                                switch (functionRole) {
+                                case irb::FunctionRole::Vertex:
+                                    entryPointStr += "_output._output." + member.name + " = " + memberStr;
+                                    break;
+                                case irb::FunctionRole::Fragment:
+                                    entryPointStr += member.name + " = " + memberStr;
+                                    break;
+                                default:
+                                    logError("'kernel' functions cannot return a value");
+                                    break;
+                                }
+                            }
+                            entryPointStr += ";\n";
+                        }
+                        entryPointStr += "}\n\n";
+                    }
                 }
             }
-            codeStr += returnType->getName() + " " + _name + "(" + argsStr + ")";
+            codeStr += type->getName() + " " + _name + "(" + argsStr + ")";
+            if (irb::target == irb::Target::GLSL && functionRole != irb::FunctionRole::Normal)
+                codeStr += ";\n\n" + entryPointStr + codeStr;
             if (!isDefined)
                 codeStr += ";";
             
@@ -833,20 +891,11 @@ public:
             }
         }
 
-        std::string functionHeader;
         for (uint32_t i = 0; i < declaration->arguments().size(); i++) {
             auto& arg = declaration->arguments()[i];
             if (TARGET_IS_CODE(irb::target)) {
                 irb::Value* value = new irb::Value(context, new irb::PointerType(context, arg.type, irb::StorageClass::Function), arg.name);
                 variables[arg.name] = {value, false};
-                if (irb::target == irb::Target::GLSL && declaration->getFunctionRole() == irb::FunctionRole::Vertex && arg.attributes.isInput) {
-                    //TODO: throw an error if not structure?
-                    irb::StructureType* structureType = dynamic_cast<irb::StructureType*>(arg.type);
-                    //HACK: just assemble the input structure
-                    functionHeader += "\t" + structureType->getName() + " " + arg.name + ";\n";
-                    for (const auto& member : structureType->getStructure()->members)
-                        functionHeader += "\t" + arg.name + "." + member.name + " = " + member.name + ";\n";
-                }
             } else {
                 auto& attr = declaration->getArgumentAttributes(i);
                 context.pushRegisterName(arg.name);
@@ -867,7 +916,7 @@ public:
         
         if (TARGET_IS_CODE(irb::target)) {
             std::string bodyStr = bodyV->getRawName();
-            bodyStr = bodyStr.substr(0, 2) + functionHeader + bodyStr.substr(2);
+            //bodyStr = bodyStr.substr(0, 2) + functionHeader + bodyStr.substr(2);
             std::string codeStr = declV->getRawName() + " " + bodyStr;
 
             value = new irb::Value(context, nullptr, codeStr);
@@ -983,43 +1032,7 @@ public:
             return nullptr;
 
         if (TARGET_IS_CODE(irb::target)) {
-            if (irb::target == irb::Target::GLSL && crntFunction->getFunctionRole() != irb::FunctionRole::Normal) {
-                irb::Type* type = returnV->getType();
-                //TODO: support other types besides structure
-                if (!type->isStructure()) {
-                    logError("Only structures can be returned from an entry point function");
-                    return nullptr;
-                }
-                irb::StructureType* structType = static_cast<irb::StructureType*>(type);
-                irb::Structure* structure = structType->getStructure();
-
-                std::string code = "\n\t//Return\n\t";
-                for (uint32_t i = 0; i < structure->members.size(); i++) {
-                    const irb::StructureMember& member = structure->members[i];
-                    std::string memberStr = returnV->getRawName() + "." + member.name;
-                    if (member.attributes.isPosition) {
-                        code += "gl_Position = " + memberStr;
-                    } else {
-                        switch (crntFunction->getFunctionRole()) {
-                        case irb::FunctionRole::Vertex:
-                            code += "_output._output." + member.name + " = " + memberStr;
-                            break;
-                        case irb::FunctionRole::Fragment:
-                            code += member.name + " = " + memberStr;
-                            break;
-                        default:
-                            logError("kernel function cannot return a value");
-                            return nullptr;
-                        }
-                    }
-                    if (i != structure->members.size() - 1)
-                        code += ";\n\t";
-                }
-
-                return new irb::Value(context, nullptr, code);
-            } else {
-                return new irb::Value(context, returnV->getType(), "return " + returnV->getRawName());
-            }
+            return new irb::Value(context, returnV->getType(), "return " + returnV->getRawName());
         } else {
             returnV = builder->opCast(returnV, funcReturnType);
             builder->opReturn(returnV);
@@ -1412,8 +1425,6 @@ public:
                 exprV = builder->opLoad(exprV);
             else if (irb::target == irb::Target::Metal)
                 exprV = new irb::Value(context, exprV->getType()->getElementType(), "(*" + exprV->getRawName() + ")");
-            else if (irb::target == irb::Target::GLSL)
-                exprV = new irb::Value(context, exprV->getType()->getElementType(), exprV->getRawName()); //TODO: check if we should access the element type
         }
         if (!exprV)
             return nullptr;
