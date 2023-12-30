@@ -761,7 +761,7 @@ public:
         }
         switch (target) {
         case Target::Metal:
-            nameBegin = "vec<" + componentType->getName() + ", " + std::to_string(componentCount) + ">";
+            nameBegin = componentType->getName() + std::to_string(componentCount);
             break;
         case Target::GLSL:
             switch (componentType->getTypeID()) {
