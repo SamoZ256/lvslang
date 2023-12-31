@@ -426,8 +426,8 @@ public:
 
 class MetadataBlock : public AIRBlock {
 private:
-    std::string _addCode(const std::string& instruction, std::string registerToAssign, const std::string& comment) {
-        std::string inst = "\n" + registerToAssign + " = " + instruction;
+    std::string _addCode(const std::string& instruction, Value* registerToAssign, const std::string& comment) override {
+        std::string inst = "\n" + registerToAssign->getName() + " = " + instruction;
 
         if (comment.size() != 0)
             inst += " ; " + comment;
