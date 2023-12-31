@@ -20,7 +20,7 @@ public:
         value = aValue;
         SPIRVBlock* block = new SPIRVBlock(context);
         setInsertBlock(block);
-        block->addCode("OpFunction " + returnV->getName() + " " + property + " " + functionV->getName(), value->getName(), value->getName());
+        block->addCode("OpFunction " + returnV->getName() + " " + property + " " + functionV->getName(), value, value->getName());
     }
 
     void end() override {

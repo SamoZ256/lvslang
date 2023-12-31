@@ -72,7 +72,7 @@ public:
 
     void opImportSTD_EXT(const std::string& stdName) override {
         importV = new Value(context, nullptr, "import");
-        blockHeader->addCodeToBeginning("OpExtInstImport \"" + stdName + "\"", importV->getName());
+        blockHeader->addCodeToBeginning("OpExtInstImport \"" + stdName + "\"", importV);
     }
 
     void opMemoryModel() override {
@@ -262,7 +262,7 @@ public:
     Value* opFunctionParameter(Type* type) override {
         type = new PointerType(context, type, StorageClass::Function);
         Value* value = new Value(context, type, context.popRegisterName());
-        getSPIRVInsertBlock()->addCode("OpFunctionParameter " + type->getValue(this)->getName(), value->getName());
+        getSPIRVInsertBlock()->addCode("OpFunctionParameter " + type->getValue(this)->getName(), value);
 
         return value;
     }
@@ -274,7 +274,7 @@ public:
 
     Block* opBlock() override {
         SPIRVBlock* block = new SPIRVBlock(context, context.popRegisterName());
-        block->addCodeToBeginning("OpLabel", block->getName());
+        block->addCodeToBeginning("OpLabel", block);
 
         return block;
     }
@@ -291,7 +291,7 @@ public:
             std::swap(l, r);
         if (l->getType()->isVector() && r->getType()->isScalar()) {
             if (operation == Operation::Multiply && type->getBaseType()->getTypeID() == TypeID::Float) {
-                getSPIRVInsertBlock()->addCode("OpVectorTimesScalar " + typeV->getName() + " " + l->getName() + " " + r->getName(), value->getName());
+                getSPIRVInsertBlock()->addCode("OpVectorTimesScalar " + typeV->getName() + " " + l->getName() + " " + r->getName(), value);
                 return value;
             } else {
                 r = opVectorConstruct(static_cast<VectorType*>(type), std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount(), r)); //TODO: check if the type is vector
@@ -305,7 +305,7 @@ public:
         GET_OPERATION_NAME(operation);
 
         //TODO: do not use l for getting op prefix?
-        getSPIRVInsertBlock()->addCode("Op" + (needsPrefix ? l->getType()->getOpPrefix(signSensitive, needsOrd) : "") + operationStr + " " + typeV->getName() + " " + l->getName() + " " + r->getName(), value->getName());
+        getSPIRVInsertBlock()->addCode("Op" + (needsPrefix ? l->getType()->getOpPrefix(signSensitive, needsOrd) : "") + operationStr + " " + typeV->getName() + " " + l->getName() + " " + r->getName(), value);
 
         return value;
     }
@@ -320,7 +320,7 @@ public:
         Type* elementType = v->getType()->getElementType();
         Value* elementTypeV = elementType->getValue(this);
         Value* value = new Value(context, elementType, context.popRegisterName());
-        getSPIRVInsertBlock()->addCode("OpLoad " + elementTypeV->getName() + " " + v->getName(), value->getName());
+        getSPIRVInsertBlock()->addCode("OpLoad " + elementTypeV->getName() + " " + v->getName(), value);
 
         return value;
     }
@@ -358,7 +358,7 @@ public:
         std::string code = "OpFunctionCall " + returnV->getName() + " " + funcV->getName();
         for (auto* arg : arguments)
             code += " " + arg->getName();
-        getSPIRVInsertBlock()->addCode(code, value->getName());
+        getSPIRVInsertBlock()->addCode(code, value);
 
         return value;
     }
@@ -371,7 +371,7 @@ public:
         std::string code = "OpExtInst " + returnV->getName() + " " + importV->getName() + " " + funcName;
         for (auto* arg : arguments)
             code += " " + arg->getName();
-        getSPIRVInsertBlock()->addCode(code, value->getName());
+        getSPIRVInsertBlock()->addCode(code, value);
 
         return value;
     }
@@ -412,7 +412,7 @@ public:
         std::string code = (isAllConstants ? "OpConstantComposite " : "OpCompositeConstruct ") + typeV->getName();
         for (auto* component : components)
             code += " " + component->getName();
-        (isAllConstants ? blockTypesVariablesConstants : getSPIRVInsertBlock())->addCode(code, value->getName());
+        (isAllConstants ? blockTypesVariablesConstants : getSPIRVInsertBlock())->addCode(code, value);
 
         return value;
     }
@@ -432,14 +432,14 @@ public:
         Type* type = vec->getType()->getBaseType();
 
         Value* value = new Value(context, type, context.popRegisterName());
-        getSPIRVInsertBlock()->addCode("OpCompositeExtract " + type->getValue(this)->getName() + " " + vec->getName() + " " + index->getName(), value->getName());
+        getSPIRVInsertBlock()->addCode("OpCompositeExtract " + type->getValue(this)->getName() + " " + vec->getName() + " " + index->getName(), value);
 
         return value;
     }
 
     Value* opVectorInsert(Value* vec, Value* val, ConstantInt* index) override {
         Value* value = new Value(context, vec->getType(), context.popRegisterName());
-        getSPIRVInsertBlock()->addCode("OpCompositeInsert " + vec->getType()->getValue(this)->getName() + " " + val->getName() + " " + vec->getName() + " " + index->getName(), value->getName());
+        getSPIRVInsertBlock()->addCode("OpCompositeInsert " + vec->getType()->getValue(this)->getName() + " " + val->getName() + " " + vec->getName() + " " + index->getName(), value);
 
         return value;
     }
@@ -454,7 +454,7 @@ public:
         std::string code = "OpAccessChain " + elementTypeV->getName() + " " + ptr->getName();
         for (auto* index : indexes)
             code += " " + index->getName();
-        getSPIRVInsertBlock()->addCode(code, value->getName());
+        getSPIRVInsertBlock()->addCode(code, value);
 
         return value;
     }
@@ -490,22 +490,22 @@ public:
 
         Value* typeV = type->getValue(this);
         Value* value = new Value(context, type, context.popRegisterName());
-        getSPIRVInsertBlock()->addCode("Op" + opName + " " + typeV->getName() + " " + val->getName(), value->getName());
+        getSPIRVInsertBlock()->addCode("Op" + opName + " " + typeV->getName() + " " + val->getName(), value);
 
         return value;
     }
 
     Value* opSample(Value* texture, Value* sampler, Value* coords, Value* lod = nullptr) override {
         Value* sampledImageTypeV = new Value(context, nullptr, "sampledImageType");
-        blockTypesVariablesConstants->addCode("OpTypeSampledImage " + texture->getType()->getValue(this)->getName(), sampledImageTypeV->getName());
+        blockTypesVariablesConstants->addCode("OpTypeSampledImage " + texture->getType()->getValue(this)->getName(), sampledImageTypeV);
 
         Value* sampledImage = new Value(context, nullptr, "samplerTexTmp");
-        getSPIRVInsertBlock()->addCode("OpSampledImage " + sampledImageTypeV->getName() + " " + texture->getName() + " " + sampler->getName(), sampledImage->getName());
+        getSPIRVInsertBlock()->addCode("OpSampledImage " + sampledImageTypeV->getName() + " " + texture->getName() + " " + sampler->getName(), sampledImage);
 
         if (!lod)
             lod = opConstant(new ConstantFloat(context, 0.0f, 32));
         Value* value = new Value(context, new VectorType(context, texture->getType()->getBaseType(), 4), context.popRegisterName());
-        getSPIRVInsertBlock()->addCode("OpImageSampleExplicitLod " + value->getType()->getValue(this)->getName() + " " + sampledImage->getName() + " " + coords->getName() + " Lod " + lod->getName(), value->getName());
+        getSPIRVInsertBlock()->addCode("OpImageSampleExplicitLod " + value->getType()->getValue(this)->getName() + " " + sampledImage->getName() + " " + coords->getName() + " Lod " + lod->getName(), value);
 
         return value;
     }
@@ -523,9 +523,9 @@ public:
                 opStore(value, initializer);
         }
         if (storageClass == StorageClass::Function)
-            getSPIRVFirstFunctionBlock()->addCodeToBeginning(code, value->getName());
+            getSPIRVFirstFunctionBlock()->addCodeToBeginning(code, value);
         else
-            blockTypesVariablesConstants->addCode(code, value->getName());
+            blockTypesVariablesConstants->addCode(code, value);
 
         return value;
     }
@@ -535,7 +535,7 @@ public:
         if (!mappedValue) {
             mappedValue = new Value(context, type, registerName);
             mappedValue->setIsConstant(true);
-            blockTypesVariablesConstants->addCode(code, mappedValue->getName(), comment);
+            blockTypesVariablesConstants->addCode(code, mappedValue, comment);
         }
 
         return mappedValue;

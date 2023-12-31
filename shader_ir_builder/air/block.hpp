@@ -10,11 +10,12 @@ protected:
     std::string codeBegin;
     std::string code;
 
-    virtual std::string _addCode(const std::string& instruction, std::string registerToAssign, const std::string& comment) {
-        if (registerToAssign.size() != 0)
-            registerToAssign += " = ";
+    virtual std::string _addCode(const std::string& instruction, Value* registerToAssign, const std::string& comment) {
+        std::string inst = "\n\t";
+        if (registerToAssign != nullptr)
+            inst += registerToAssign->getName() + " = ";
 
-        std::string inst = "\n\t" + registerToAssign + instruction;
+        inst += instruction;
 
         if (comment.size() != 0)
             inst += " ; " + comment;
@@ -25,20 +26,12 @@ protected:
 public:
     AIRBlock(Context& aContext, const std::string& aName = "") : Block(aContext, new BlockType(aContext), aName) {}
 
-    void addCodeToBeginning(const std::string& instruction, const std::string& registerToAssign = "", const std::string& comment = "") {
+    void addCodeToBeginning(const std::string& instruction, Value* registerToAssign = nullptr, const std::string& comment = "") {
         codeBegin += _addCode(instruction, registerToAssign, comment);
     }
 
-    void addCode(const std::string& instruction, const std::string& registerToAssign = "", const std::string& comment = "") {
+    void addCode(const std::string& instruction, Value* registerToAssign = nullptr, const std::string& comment = "") {
         code += _addCode(instruction, registerToAssign, comment);
-    }
-
-    void addCodeRaw(const std::string& newCode) {
-        code += newCode;
-    }
-
-    void addCodeRawToBeginning(const std::string& newCode) {
-        codeBegin += newCode;
     }
 
     //Getters

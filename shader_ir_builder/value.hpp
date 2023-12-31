@@ -261,13 +261,13 @@ protected:
 
 public:
     Value(Context& aContext, Type* aType, std::string aName = "", const std::string aPrefix = "%", bool checkIfNameIsAlreadyUsed = true) : context(aContext), type(aType), prefix(aPrefix) {
+        name = aName;
         if (aName == "") {
             if (target == Target::SPIRV)
                 name = std::to_string(context.crntRegisterNumber++);
             else if (target == Target::AIR)
-                name = (aPrefix == "%" ? "_" : "") + std::to_string(context.crntRegisterNumber++);;
+                name = (prefix == "%" ? "_" : "") + std::to_string(context.crntRegisterNumber++);
         } else {
-            name = aName;
             std::string baseName = name;
 
             //Check if the name isn't already used

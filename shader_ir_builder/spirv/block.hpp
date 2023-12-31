@@ -11,17 +11,17 @@ private:
     std::string code;
 
     //TODO: support comments
-    std::string _addCode(const std::string& instruction, std::string registerToAssign, const std::string& comment) {
-        uint8_t beginSpaceCount = 22;
-        if (registerToAssign.size() != 0) {
-            registerToAssign += " = ";
-            beginSpaceCount = std::max((int)beginSpaceCount - (int)registerToAssign.size(), 0);
-        }
-
+    std::string _addCode(const std::string& instruction, Value* registerToAssign, const std::string& comment) {
         std::string inst;
+        uint8_t beginSpaceCount = 22;
+        if (registerToAssign != nullptr)
+            beginSpaceCount = std::max((int)beginSpaceCount - (int)registerToAssign->getName().size(), 0);
+
         for (uint8_t i = 0; i < beginSpaceCount; i++)
             inst += " ";
-        inst += registerToAssign + instruction;
+        if (registerToAssign != nullptr)
+            inst += registerToAssign->getName() + " = ";
+        inst += instruction;
 
         if (comment.size() != 0) {
             uint8_t endSpaceCount = (uint8_t)std::max(int(54 - inst.size()), 0);
@@ -37,11 +37,11 @@ private:
 public:
     SPIRVBlock(Context& aContext, const std::string& aName = "") : Block(aContext, new BlockType(aContext), aName) {}
 
-    void addCodeToBeginning(const std::string& instruction, const std::string& registerToAssign = "", const std::string& comment = "") {
+    void addCodeToBeginning(const std::string& instruction, Value* registerToAssign = nullptr, const std::string& comment = "") {
         codeBegin += _addCode(instruction, registerToAssign, comment);
     }
 
-    void addCode(const std::string& instruction, const std::string& registerToAssign = "", const std::string& comment = "") {
+    void addCode(const std::string& instruction, Value* registerToAssign = nullptr, const std::string& comment = "") {
         code += _addCode(instruction, registerToAssign, comment);
     }
 

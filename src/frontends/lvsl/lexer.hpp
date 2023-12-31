@@ -279,9 +279,8 @@ int _getNextToken() {
     //Text
     if (isalpha(lastChar) || lastChar == '_') {
         identifierStr = lastChar;
-        while (isalnum((lastChar = getNextChar())) || lastChar == '_') {
+        while (isalnum((lastChar = getNextChar())) || lastChar == '_')
             identifierStr += lastChar;
-        }
 
         if (identifierStr == "func")
             return TOKEN_FUNC;

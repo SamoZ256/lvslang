@@ -138,7 +138,7 @@ public:
             if (prefix == "u" || prefix == "s")
                 prefix = "i";
         }
-        getAIRInsertBlock()->addCode(prefix + operationStr + " " + opKindName + l->getNameWithType() + ", " + r->getName(), value->getName());
+        getAIRInsertBlock()->addCode(prefix + operationStr + " " + opKindName + l->getNameWithType() + ", " + r->getName(), value);
 
         return value;
     }
@@ -152,7 +152,7 @@ public:
         Type* elementType = v->getType()->getElementType();
         Value* value = new Value(context, elementType, context.popRegisterName());
         //TODO: use proper alignment
-        getAIRInsertBlock()->addCode("load " + elementType->getName() + ", " + v->getNameWithType() + ", align 4", value->getName());
+        getAIRInsertBlock()->addCode("load " + elementType->getName() + ", " + v->getNameWithType() + ", align 4", value);
 
         return value;
     }
@@ -188,7 +188,7 @@ public:
             code += arguments[i]->getNameWithType();
         }
         code += ")";
-        getAIRInsertBlock()->addCode(code, (type->getReturnType()->getTypeID() == TypeID::Void ? "" : value->getName()));
+        getAIRInsertBlock()->addCode(code, (type->getReturnType()->getTypeID() == TypeID::Void ? nullptr : value));
 
         return value;
     }
@@ -255,14 +255,14 @@ public:
 
     Value* opVectorExtract(Value* vec, ConstantInt* index) override {
         Value* value = new Value(context, vec->getType()->getBaseType(), context.popRegisterName());
-        getAIRInsertBlock()->addCode("extractelement " + vec->getNameWithType() + ", " + index->getNameWithType(), value->getName());
+        getAIRInsertBlock()->addCode("extractelement " + vec->getNameWithType() + ", " + index->getNameWithType(), value);
 
         return value;
     }
 
     Value* opVectorInsert(Value* vec, Value* val, ConstantInt* index) override {
         Value* value = new Value(context, vec->getType(), context.popRegisterName());
-        getAIRInsertBlock()->addCode("insertelement " + vec->getNameWithType() + ", " + val->getNameWithType() + ", " + index->getNameWithType(), value->getName());
+        getAIRInsertBlock()->addCode("insertelement " + vec->getNameWithType() + ", " + val->getNameWithType() + ", " + index->getNameWithType(), value);
 
         return value;
     }
@@ -278,7 +278,7 @@ public:
         std::string code = "getelementptr inbounds " + ptr->getType()->getElementType()->getName() + ", " + ptr->getNameWithType();
         for (uint32_t i = 0; i < indexes.size(); i++)
             code += ", " + indexes[i]->getNameWithType();
-        getAIRInsertBlock()->addCode(code, value->getName());
+        getAIRInsertBlock()->addCode(code, value);
 
         return value;
     }
@@ -355,7 +355,7 @@ public:
                 return opSTDFunctionCall_EXT(functionName, functionType, {val});
             } else {
                 Value* value = new Value(context, type, context.popRegisterName());
-                getAIRInsertBlock()->addCode(opName + " " + val->getNameWithType() + " to " + type->getName(), value->getName());
+                getAIRInsertBlock()->addCode(opName + " " + val->getNameWithType() + " to " + type->getName(), value);
 
             }
         } else if (val->getType()->isScalar() && type->isVector()) {
@@ -384,7 +384,7 @@ public:
     Value* opVariable(PointerType* type, Value* initializer = nullptr) override {
         Value* value = new Value(context, type, context.popRegisterName());
         //TODO: use proper alignment
-        getAIRFunctionBlock()->addCode("alloca " + type->getElementType()->getName() + ", align 4", value->getName());
+        getAIRFunctionBlock()->addCode("alloca " + type->getElementType()->getName() + ", align 4", value);
         if (initializer)
             opStore(value, initializer);
         
@@ -456,15 +456,15 @@ void AIRBuilder::createMetadata() {
     MetadataValue* maxReadWriteTextures = new MetadataValue(context);
     MetadataValue* maxSamplers = new MetadataValue(context);
 
-    block->addCode("!{i32 2, !\"SDK Version\", [2 x i32] [i32 14, i32 0]}", sdkVersion->getName()); //TODO: here
-    block->addCode("!{i32 1, !\"wchar_size\", i32 4}", wcharSize->getName()); //TODO: here
-    block->addCode("!{i32 7, !\"frame-pointer\", i32 2}", framePointer->getName()); //TODO: here
-    block->addCode("!{i32 7, !\"air.max_device_buffers\", i32 31}", maxDeviceBuffers->getName()); //TODO: here
-    block->addCode("!{i32 7, !\"air.max_constant_buffers\", i32 31}", maxConstantBuffers->getName()); //TODO: here
-    block->addCode("!{i32 7, !\"air.max_threadgroup_buffers\", i32 31}", maxThreadgroupBuffers->getName()); //TODO: here
-    block->addCode("!{i32 7, !\"air.max_textures\", i32 128}", maxTextures->getName()); //TODO: here
-    block->addCode("!{i32 7, !\"air.max_read_write_textures\", i32 8}", maxReadWriteTextures->getName()); //TODO: here
-    block->addCode("!{i32 7, !\"air.max_samplers\", i32 16}", maxSamplers->getName()); //TODO: here
+    block->addCode("!{i32 2, !\"SDK Version\", [2 x i32] [i32 14, i32 0]}", sdkVersion); //TODO: here
+    block->addCode("!{i32 1, !\"wchar_size\", i32 4}", wcharSize); //TODO: here
+    block->addCode("!{i32 7, !\"frame-pointer\", i32 2}", framePointer); //TODO: here
+    block->addCode("!{i32 7, !\"air.max_device_buffers\", i32 31}", maxDeviceBuffers); //TODO: here
+    block->addCode("!{i32 7, !\"air.max_constant_buffers\", i32 31}", maxConstantBuffers); //TODO: here
+    block->addCode("!{i32 7, !\"air.max_threadgroup_buffers\", i32 31}", maxThreadgroupBuffers); //TODO: here
+    block->addCode("!{i32 7, !\"air.max_textures\", i32 128}", maxTextures); //TODO: here
+    block->addCode("!{i32 7, !\"air.max_read_write_textures\", i32 8}", maxReadWriteTextures); //TODO: here
+    block->addCode("!{i32 7, !\"air.max_samplers\", i32 16}", maxSamplers); //TODO: here
 
     std::vector<MetadataValue*> entryPointFunctionInfos[3];
 
@@ -567,16 +567,16 @@ void AIRBuilder::createMetadata() {
                 inputs.emplace_back(structureInfo, structureInfoStr);
         }
 
-        block->addCode("!{" + entryPoint.value->getNameWithType() + ", " + entryPointOutputs->getName() + ", " + entryPointInputs->getName() + "}", entryPointInfo->getName());
-        block->addCode("!{" + outputsStr + "}", entryPointOutputs->getName()); //TODO: here
+        block->addCode("!{" + entryPoint.value->getNameWithType() + ", " + entryPointOutputs->getName() + ", " + entryPointInputs->getName() + "}", entryPointInfo);
+        block->addCode("!{" + outputsStr + "}", entryPointOutputs); //TODO: here
         //TODO: add output information
-        block->addCode("!{" + inputsStr + "}", entryPointInputs->getName()); //TODO: here
+        block->addCode("!{" + inputsStr + "}", entryPointInputs); //TODO: here
         //TODO: add input information
 
         for (const auto& output : outputs)
-            block->addCode(output.second, output.first->getName());
+            block->addCode(output.second, output.first);
         for (const auto& input : inputs)
-            block->addCode(input.second, input.first->getName());
+            block->addCode(input.second, input.first);
 
         entryPointFunctionInfos[(int)entryPoint.functionRole - 1].push_back(entryPointInfo);
     }
@@ -589,13 +589,13 @@ void AIRBuilder::createMetadata() {
     MetadataValue* languageVersion = new MetadataValue(context);
     MetadataValue* sourceFilename = new MetadataValue(context);
 
-    block->addCode("!{!\"air.compile.denorms_disable\"}", denorms->getName()); //TODO: here
-    block->addCode("!{!\"air.compile.fast_math_disable\"}", fastMath->getName()); //TODO: here
-    block->addCode("!{!\"air.compile.framebuffer_fetch_enable\"}", framebufferFetch->getName()); //TODO: here
-    block->addCode("!{!\"Apple metal version 32023.35 (metalfe-32023.35)\"}", identification->getName()); //TODO: here
-    block->addCode("!{i32 2, i32 6, i32 0}", version->getName()); //TODO: here
-    block->addCode("!{!\"LVSL\", i32 3, i32 1, i32 0}", languageVersion->getName()); //TODO: here
-    block->addCode("!{!\"/Users/samuliak/Desktop/lvslang/test.lvsl\"}", sourceFilename->getName()); //TODO: here
+    block->addCode("!{!\"air.compile.denorms_disable\"}", denorms); //TODO: here
+    block->addCode("!{!\"air.compile.fast_math_disable\"}", fastMath); //TODO: here
+    block->addCode("!{!\"air.compile.framebuffer_fetch_enable\"}", framebufferFetch); //TODO: here
+    block->addCode("!{!\"Apple metal version 32023.35 (metalfe-32023.35)\"}", identification); //TODO: here
+    block->addCode("!{i32 2, i32 6, i32 0}", version); //TODO: here
+    block->addCode("!{!\"LVSL\", i32 3, i32 1, i32 0}", languageVersion); //TODO: here
+    block->addCode("!{!\"/Users/samuliak/Desktop/lvslang/test.lvsl\"}", sourceFilename); //TODO: here
 
     MetadataValue* llvmModuleFlags = new MetadataValue(context, "llvm.module.flags");
     MetadataValue* airFunctions[3] = {nullptr};
@@ -609,7 +609,7 @@ void AIRBuilder::createMetadata() {
     MetadataValue* airLanguageVersion = new MetadataValue(context, "air.language_version");
     MetadataValue* airSourceFilename = new MetadataValue(context, "air.source_file_name");
 
-    block->addCodeToBeginning("!{" + sdkVersion->getName() + ", " + wcharSize->getName() + ", " + framePointer->getName() + ", " + maxDeviceBuffers->getName() + ", " + maxConstantBuffers->getName() + ", " + maxThreadgroupBuffers->getName() + ", " + maxTextures->getName() + ", " + maxReadWriteTextures->getName() + ", " + maxSamplers->getName() + "}", llvmModuleFlags->getName());
+    block->addCodeToBeginning("!{" + sdkVersion->getName() + ", " + wcharSize->getName() + ", " + framePointer->getName() + ", " + maxDeviceBuffers->getName() + ", " + maxConstantBuffers->getName() + ", " + maxThreadgroupBuffers->getName() + ", " + maxTextures->getName() + ", " + maxReadWriteTextures->getName() + ", " + maxSamplers->getName() + "}", llvmModuleFlags);
     for (uint8_t i = 0; i < 3; i++) {
         if (airFunctions[i]) {
             std::string code = "!{";
@@ -619,14 +619,14 @@ void AIRBuilder::createMetadata() {
                 code += entryPointFunctionInfos[i][j]->getName();
             }
             code += "}";
-            block->addCodeToBeginning(code, airFunctions[i]->getName());
+            block->addCodeToBeginning(code, airFunctions[i]);
         }
     }
-    block->addCodeToBeginning("!{" + denorms->getName() + ", " + fastMath->getName() + ", " + framebufferFetch->getName() + "}", airCompileOptions->getName());
-    block->addCodeToBeginning("!{" + identification->getName() + "}", llvmIdent->getName());
-    block->addCodeToBeginning("!{" + version->getName() + "}", airVersion->getName());
-    block->addCodeToBeginning("!{" + languageVersion->getName() + "}", airLanguageVersion->getName());
-    block->addCodeToBeginning("!{" + sourceFilename->getName() + "}", airSourceFilename->getName());
+    block->addCodeToBeginning("!{" + denorms->getName() + ", " + fastMath->getName() + ", " + framebufferFetch->getName() + "}", airCompileOptions);
+    block->addCodeToBeginning("!{" + identification->getName() + "}", llvmIdent);
+    block->addCodeToBeginning("!{" + version->getName() + "}", airVersion);
+    block->addCodeToBeginning("!{" + languageVersion->getName() + "}", airLanguageVersion);
+    block->addCodeToBeginning("!{" + sourceFilename->getName() + "}", airSourceFilename);
 
     code += block->getCode();
 }
