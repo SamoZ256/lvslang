@@ -260,21 +260,23 @@ protected:
     std::string prefix;
 
 public:
-    //HACK: add "_" before the name to prevent LLVM error "instruction expected to be numbered '%n'"
-    Value(Context& aContext, Type* aType, std::string aName = "", const std::string aPrefix = "%_", bool checkIfNameIsAlreadyUsed = true) : context(aContext), type(aType), prefix(aPrefix) {
-        std::string baseName;
-        if (aName == "")
-            baseName = std::to_string(context.crntRegisterNumber++);
-        else
-            baseName = aName;
-        name = baseName;
+    Value(Context& aContext, Type* aType, std::string aName = "", const std::string aPrefix = "%", bool checkIfNameIsAlreadyUsed = true) : context(aContext), type(aType), prefix(aPrefix) {
+        if (aName == "") {
+            if (target == Target::SPIRV)
+                name = std::to_string(context.crntRegisterNumber++);
+            else if (target == Target::AIR)
+                name = (aPrefix == "%" ? "_" : "") + std::to_string(context.crntRegisterNumber++);;
+        } else {
+            name = aName;
+            std::string baseName = name;
 
-        //Check if the name isn't already used
-        if (TARGET_IS_IR(target) && checkIfNameIsAlreadyUsed) {
-            uint32_t nb = 0;
-            while (context.registerNames.contains(getName()))
-                name = baseName + std::to_string(nb++);
-            context.registerNames.insert(getName());
+            //Check if the name isn't already used
+            if (TARGET_IS_IR(target) && checkIfNameIsAlreadyUsed) {
+                uint32_t nb = 0;
+                while (context.registerNames.contains(getName()))
+                    name = baseName + std::to_string(nb++);
+                context.registerNames.insert(getName());
+            }
         }
     }
 
@@ -492,7 +494,7 @@ protected:
     std::string valueStr;
 
 public:
-    ConstantValue(Context& aContext, Type* aType, std::string aValueStr) : Value(aContext, aType), valueStr(aValueStr) {
+    ConstantValue(Context& aContext, Type* aType, std::string aValueStr) : Value(aContext, aType, "const"), valueStr(aValueStr) {
         _isConstant = true;
     }
 
@@ -662,7 +664,7 @@ public:
             error("use of undeclared structure '" + aName + "'", "StructureType::StructureType");
         }
         if (target == Target::AIR)
-            nameBegin = "%_" + aName; //HACK: add "_"
+            nameBegin = "%" + aName;
         else
             nameBegin = aName;
     }
