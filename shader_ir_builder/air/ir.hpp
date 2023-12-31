@@ -15,7 +15,7 @@ struct AIREntryPoint {
     Value* value;
     FunctionRole functionRole;
     Type* returnType;
-    std::vector<std::pair<irb::Type*, irb::Attributes> > arguments;
+    std::vector<Argument> arguments;
 };
 
 class AIRBuilder : public IRBuilder {
@@ -35,7 +35,7 @@ public:
     void opMemoryModel() override {
     }
 
-    void opEntryPoint(Value* entryPoint, FunctionRole functionRole, const std::string& name, Type* returnType, const std::vector<std::pair<Type*, Attributes> >& arguments) override {
+    void opEntryPoint(Value* entryPoint, FunctionRole functionRole, const std::string& name, Type* returnType, const std::vector<Argument>& arguments) override {
         entryPoints.push_back({entryPoint, functionRole, returnType, arguments});
     }
 
@@ -267,7 +267,13 @@ public:
         return value;
     }
 
-    Value* opGetElementPtr(Type* elementType, Value* ptr, const std::vector<Value*>& indexes) override {
+    Value* opGetElementPtr(PointerType* elementType, Value* ptr, const std::vector<Value*>& indexes) override {
+        if (!ptr->getType()->isPointer()) {
+            IRB_INVALID_ARGUMENT_WITH_REASON("ptr", "type of 'ptr' is not pointer type");
+            return nullptr;
+        }
+        //HACK: set the address space
+        elementType->setAddressSpace(static_cast<PointerType*>(ptr->getType())->getAddressSpace());
         Value* value = new Value(context, elementType, context.popRegisterName());
         std::string code = "getelementptr inbounds " + ptr->getType()->getElementType()->getName() + ", " + ptr->getNameWithType();
         for (uint32_t i = 0; i < indexes.size(); i++)
@@ -482,7 +488,7 @@ void AIRBuilder::createMetadata() {
             Structure* structure = static_cast<StructureType*>(entryPoint.returnType)->getStructure();
             for (uint32_t i = 0; i < structure->members.size(); i++) {
                 const auto& member = structure->members[i];
-                MetadataValue* memberOutput = new MetadataValue(context);
+                MetadataValue* crntOutput = new MetadataValue(context);
                 std::string str = "!{";
                 if (entryPoint.functionRole == FunctionRole::Vertex) {
                     if (member.attributes.isPosition)
@@ -496,9 +502,69 @@ void AIRBuilder::createMetadata() {
 
                 if (i != 0)
                     outputsStr += ", ";
-                outputsStr += memberOutput->getName();
-                outputs.emplace_back(memberOutput, str);
+                outputsStr += crntOutput->getName();
+                outputs.emplace_back(crntOutput, str);
             }
+        }
+        for (uint32_t i = 0; i < entryPoint.arguments.size(); i++) {
+            const auto& argument = entryPoint.arguments[i];
+            MetadataValue* crntInput = new MetadataValue(context);
+            MetadataValue* structureInfo = nullptr;
+            std::string str = "!{i32 " + std::to_string(i) + ", ";
+            std::string structureInfoStr;
+            if (argument.attributes.isInput) {
+                if (entryPoint.functionRole == FunctionRole::Vertex) {
+                    str += "!\"air.vertex_input\", !\"air.location_index\", i32 " + std::to_string(i) + ", i32 1"; //TODO: here
+                } else if (entryPoint.functionRole == FunctionRole::Fragment) {
+                    //TODO: implement this
+                }
+            } else {
+                if (argument.attributes.isBuffer) {
+                    if (!argument.type->isPointer()) {
+                        IRB_ERROR("argument marked with 'buffer' attribute must have pointer type");
+                        return;
+                    }
+                    //TODO: support non-structure types as well
+                    if (!argument.type->getElementType()->isStructure()) {
+                        IRB_ERROR("argument marked with 'buffer' attribute must have element type of structure");
+                        return;
+                    }
+                    StructureType* structureType = static_cast<StructureType*>(argument.type->getElementType());
+
+                    //Structure info
+                    structureInfo = new MetadataValue(context);
+                    structureInfoStr = "!{";
+                    uint32_t offset = 0;
+                    for (uint32_t i = 0; i < structureType->getStructure()->members.size(); i++) {
+                        const auto& member = structureType->getStructure()->members[i];
+                        uint32_t size = member.type->getBitCount(true) / 8;
+                        if (i != 0)
+                            structureInfoStr += ", ";
+                        //TODO: don't use type name directly, use the name as if it was in Metal Shading Language
+                        structureInfoStr += "i32 " + std::to_string(offset) + ", i32 " + std::to_string(size) + ", i32 0, !\"" + member.type->getName() + "\", !\"" + member.name + "\""; //TODO: here
+                        offset += size;
+                    }
+                    structureInfoStr += "}";
+
+                    uint32_t align = 8; //TODO: do not hardcode this
+                    str += "!\"air.buffer\", !\"air.location_index\", i32 " + std::to_string(argument.attributes.bindings.buffer) + ", i32 1, !\"air.read\", !\"air.address_space\", i32 " + std::to_string(static_cast<PointerType*>(argument.type)->getAddressSpace()) + ", !\"air.struct_type_info\", " + structureInfo->getName() + ", !\"air.arg_type_size\", i32 " + std::to_string(structureType->getBitCount(true) / 8) + ", !\"air.arg_type_align_size\", i32 " + std::to_string(align);
+                } else if (argument.attributes.isTexture) {
+                    //TODO: do not hardcode template arguments
+                    str += "!\"air.texture\", !\"air.location_index\", i32 " + std::to_string(argument.attributes.bindings.texture) + ", i32 1, !\"air.sample\"";
+                } else if (argument.attributes.isSampler) {
+                    str += "!\"air.sampler\", !\"air.location_index\", i32 " + std::to_string(argument.attributes.bindings.sampler) + ", i32 1";
+                } else {
+                    IRB_ERROR("Every entry point input must be marked with exactly one of these attributes: 'input', 'buffer', 'texture' or 'sampler'");
+                    return;
+                }
+            }
+            str += ", !\"air.arg_type_name\", !\"" + argument.type->getName() + "\", !\"air.arg_name\", !\"" + argument.name + "\"}"; //TODO: don't use type name directly, use the name as if it was in Metal Shading Language
+            if (i != 0)
+                inputsStr += ", ";
+            inputsStr += crntInput->getName();
+            inputs.emplace_back(crntInput, str);
+            if (structureInfo)
+                inputs.emplace_back(structureInfo, structureInfoStr);
         }
 
         block->addCode("!{" + entryPoint.value->getNameWithType() + ", " + entryPointOutputs->getName() + ", " + entryPointInputs->getName() + "}", entryPointInfo->getName());

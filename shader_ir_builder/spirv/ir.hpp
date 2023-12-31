@@ -79,7 +79,7 @@ public:
         blockHeader->addCodeToBeginning("OpMemoryModel Logical GLSL450");
     }
 
-    void opEntryPoint(Value* entryPoint, FunctionRole functionRole, const std::string& name, Type* returnType, const std::vector<std::pair<Type*, Attributes> >& arguments) override {
+    void opEntryPoint(Value* entryPoint, FunctionRole functionRole, const std::string& name, Type* returnType, const std::vector<Argument>& arguments) override {
         Function* oldFunction = function;
         Value* entryPointFunction = opFunction(new FunctionType(context, new ScalarType(context, TypeID::Void, 0, true), {}));
 
@@ -100,8 +100,8 @@ public:
         std::vector<Value*> argValues;
         argValues.reserve(arguments.size());
         for (const auto& argument : arguments) {
-            Type* type = argument.first;
-            const auto& attr = argument.second;
+            Type* type = argument.type;
+            const auto& attr = argument.attributes;
 
             StorageClass storageClass = StorageClass::MaxEnum;
             //TODO: do not hardcode the storage classes
@@ -122,8 +122,8 @@ public:
             switch (storageClass) {
             case StorageClass::Uniform:
             case StorageClass::UniformConstant:
-                opDecorate(argValue, Decoration::DescriptorSet, {std::to_string(attr.set)});
-                opDecorate(argValue, Decoration::Binding, {std::to_string(attr.binding)});
+                opDecorate(argValue, Decoration::DescriptorSet, {std::to_string(attr.bindings.set)});
+                opDecorate(argValue, Decoration::Binding, {std::to_string(attr.bindings.binding)});
                 break;
             case StorageClass::Input:
                 switch (functionRole) {
@@ -444,7 +444,11 @@ public:
         return value;
     }
 
-    Value* opGetElementPtr(Type* elementType, Value* ptr, const std::vector<Value*>& indexes) override {
+    Value* opGetElementPtr(PointerType* elementType, Value* ptr, const std::vector<Value*>& indexes) override {
+        if (!ptr->getType()->isPointer()) {
+            IRB_INVALID_ARGUMENT_WITH_REASON("ptr", "type of 'ptr' is not pointer type");
+            return nullptr;
+        }
         Value* elementTypeV = elementType->getValue(this);
         Value* value = new Value(context, elementType, context.popRegisterName());
         std::string code = "OpAccessChain " + elementTypeV->getName() + " " + ptr->getName();

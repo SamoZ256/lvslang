@@ -582,10 +582,14 @@ public:
         return storageClass;
     }
 
+    inline int getAddressSpace() const {
+        return addressSpace;
+    }
+
     //Setters
     inline void setAddressSpace(int aAddressSpace) {
         addressSpace = aAddressSpace;
-        if (target == Target::AIR)
+        if (target == Target::AIR && addressSpace != -1)
             nameBegin = "ptr addrspace(" + std::to_string(addressSpace) + ")";
     }
 };

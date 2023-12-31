@@ -268,8 +268,8 @@ void _setAttributesFromList(const std::vector<irb::Attribute>& attribs, irb::Att
             attributes->addressSpace = attrib.values[0];
             break;
         case irb::Attribute::Enum::DescriptorSet:
-            attributes->set = attrib.values[0];
-            attributes->binding = attrib.values[1];
+            attributes->bindings.set = attrib.values[0];
+            attributes->bindings.binding = attrib.values[1];
             break;
         case irb::Attribute::Enum::Position:
             attributes->isPosition = true;
@@ -843,7 +843,7 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, irb::Functi
         return nullptr;
     }
 
-    std::vector<Argument> arguments;
+    std::vector<irb::Argument> arguments;
     do {
         getNextToken(); // '('
         irb::Attributes argAttributes;
@@ -853,7 +853,7 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, irb::Functi
         std::string name = identifierStr;
         getNextToken(); // argument name
         _parseAttributes(&argAttributes);
-        arguments.push_back(Argument{name, type, argAttributes});
+        arguments.push_back(irb::Argument{name, type, argAttributes});
     } while (crntToken == ',');
     if (crntToken != ')') {
         logError("expected ')' to match the '('");
@@ -1077,7 +1077,7 @@ void mainLoop() {
     }
 }
 
-inline void addStandardFuncion(const std::string& name, irb::Type* type, const std::vector<Argument>& arguments) {
+inline void addStandardFuncion(const std::string& name, irb::Type* type, const std::vector<irb::Argument>& arguments) {
     FunctionPrototypeAST* declaration = new FunctionPrototypeAST(name, type, arguments, false, irb::FunctionRole::Normal, true);
     functionDeclarations[name] = declaration;
     declaration->codegen();

@@ -474,7 +474,8 @@ fragment FragmentOut fragmentMain(VertexOut fragmentIn [[stage_in]], texture2d<f
     - [x] Module flags
     - [ ] Per entry point information
         - [x] Basic information
-        - [ ] Inputs and outputs
+        - [ ] Inputs
+        - [x] Outputs
     - [x] Additional information
 - [ ] Proper alignment in AIR backend
 - [ ] Make buffer it's own type

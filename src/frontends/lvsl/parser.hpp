@@ -361,8 +361,8 @@ irb::Type* _parseTypeWithAttributesExpression(irb::Attributes* attributes = null
                 attributes->addressSpace = attrib.values[0];
                 break;
             case irb::Attribute::Enum::DescriptorSet:
-                attributes->set = attrib.values[0];
-                attributes->binding = attrib.values[1];
+                attributes->bindings.set = attrib.values[0];
+                attributes->bindings.binding = attrib.values[1];
                 break;
             case irb::Attribute::Enum::Position:
                 attributes->isPosition = true;
@@ -859,7 +859,7 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, irb::Functi
         return nullptr;
     }
 
-    std::vector<Argument> arguments;
+    std::vector<irb::Argument> arguments;
     do {
         if (getNextToken() == TOKEN_IDENTIFIER) {
             std::string name = identifierStr;
@@ -869,7 +869,7 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, irb::Functi
                 irb::Type* type = _parseTypeWithAttributesExpression(&argAttributes);
                 if (!type)
                     return nullptr;
-                arguments.push_back(Argument{name, type, argAttributes});
+                arguments.push_back(irb::Argument{name, type, argAttributes});
             } else {
                 logError("expected argument type");
 
@@ -1116,7 +1116,7 @@ void mainLoop() {
     }
 }
 
-inline void addStandardFuncion(const std::string& name, irb::Type* type, const std::vector<Argument>& arguments) {
+inline void addStandardFuncion(const std::string& name, irb::Type* type, const std::vector<irb::Argument>& arguments) {
     FunctionPrototypeAST* declaration = new FunctionPrototypeAST(name, type, arguments, false, irb::FunctionRole::Normal, true);
     functionDeclarations[name] = declaration;
     declaration->codegen();

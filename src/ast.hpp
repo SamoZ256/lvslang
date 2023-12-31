@@ -549,18 +549,12 @@ public:
     }
 };
 
-struct Argument {
-    std::string name;
-    irb::Type* type;
-    irb::Attributes attributes;
-};
-
 //Function declaration
 class FunctionPrototypeAST : public ExpressionAST {
 private:
     std::string _name;
     irb::Type* type;
-    std::vector<Argument> _arguments;
+    std::vector<irb::Argument> _arguments;
     //std::vector<int> attributes;
     bool isDefined;
     irb::FunctionRole functionRole;
@@ -570,9 +564,9 @@ private:
     irb::FunctionType* functionType;
 
 public:
-    FunctionPrototypeAST(const std::string& aName, irb::Type* aType, std::vector<Argument> aArguments/*, const std::vector<int>& aAttributes*/, bool aIsDefined, irb::FunctionRole aFunctionRole, bool aIsSTDFunction = false) : _name(aName), type(aType), _arguments(aArguments)/*, attributes(aAttributes)*/, isDefined(aIsDefined), functionRole(aFunctionRole), isSTDFunction(aIsSTDFunction) {
+    FunctionPrototypeAST(const std::string& aName, irb::Type* aType, std::vector<irb::Argument> aArguments/*, const std::vector<int>& aAttributes*/, bool aIsDefined, irb::FunctionRole aFunctionRole, bool aIsSTDFunction = false) : _name(aName), type(aType), _arguments(aArguments)/*, attributes(aAttributes)*/, isDefined(aIsDefined), functionRole(aFunctionRole), isSTDFunction(aIsSTDFunction) {
         for (uint32_t i = 0; i < _arguments.size(); i++) {
-            Argument& arg = _arguments[i];
+            irb::Argument& arg = _arguments[i];
             auto& attr = arg.attributes;
             if (attr.addressSpace != 0) {
                 irb::PointerType* pointerType = dynamic_cast<irb::PointerType*>(arg.type);
@@ -582,12 +576,15 @@ public:
                 }
                 pointerType->setAddressSpace(attr.addressSpace);
             }
-            if (arg.type->isTexture()) {
+            if (arg.type->isTexture() || (arg.type->isPointer() && arg.type->getElementType()->isTexture())) {
                 attr.isTexture = true;
-            } else if (arg.type->isSampler()) {
+                attr.bindings.texture = getTextureBinding(attr.bindings.set, attr.bindings.binding);
+            } else if (arg.type->isSampler() || (arg.type->isPointer() && arg.type->getElementType()->isSampler())) {
                 attr.isSampler = true;
+                attr.bindings.sampler = getSamplerBinding(attr.bindings.set, attr.bindings.binding);
             } else if (!attr.isInput) {
                 attr.isBuffer = true;
+                attr.bindings.buffer = getBufferBinding(attr.bindings.set, attr.bindings.binding);
                 if ((irb::target == irb::Target::SPIRV || irb::target == irb::Target::GLSL) && functionRole != irb::FunctionRole::Normal)
                     arg.type = arg.type->getElementType();
             }
@@ -610,7 +607,7 @@ public:
             std::string argsStr;
             std::string entryPointStr;
             for (uint32_t i = 0; i < _arguments.size(); i++) {
-                Argument& arg = _arguments[i];
+                irb::Argument& arg = _arguments[i];
                 auto& attr = arg.attributes;
                 if (irb::target == irb::Target::GLSL) {
                     if (i != 0)
@@ -649,7 +646,7 @@ public:
                             } else {
                                 typeName = "uniform " + arg.type->getName();
                             }
-                            entryPointStr += "layout (set = " + std::to_string(attr.set) + ", binding = " + std::to_string(attr.binding) + ") " + typeName;
+                            entryPointStr += "layout (set = " + std::to_string(attr.bindings.set) + ", binding = " + std::to_string(attr.bindings.binding) + ") " + typeName;
                             if (!attr.isBuffer)
                                 entryPointStr += " " + arg.name;
                             entryPointStr += ";\n\n";
@@ -667,11 +664,11 @@ public:
                     
                     std::string attribute;
                     if (attr.isBuffer)
-                        attribute = " [[buffer(" + std::to_string(getBufferBinding(attr.set, attr.binding)) + ")]]";
+                        attribute = " [[buffer(" + std::to_string(attr.bindings.buffer) + ")]]";
                     if (attr.isTexture)
-                        attribute = " [[texture(" + std::to_string(getTextureBinding(attr.set, attr.binding)) + ")]]";
+                        attribute = " [[texture(" + std::to_string(attr.bindings.texture) + ")]]";
                     if (attr.isSampler)
-                        attribute = " [[sampler(" + std::to_string(getSamplerBinding(attr.set, attr.binding)) + ")]]";
+                        attribute = " [[sampler(" + std::to_string(attr.bindings.sampler) + ")]]";
                     if (attr.isInput)
                         attribute = " [[stage_in]]";
 
@@ -817,7 +814,7 @@ public:
         return _name;
     }
 
-    inline const std::vector<Argument>& arguments() const {
+    inline const std::vector<irb::Argument>& arguments() const {
         return _arguments;
     }
 
@@ -877,11 +874,7 @@ public:
             context.pushRegisterName(declaration->name());
             value = builder->opFunction(functionType, declaration->getValue());
             if (declaration->getFunctionRole() != irb::FunctionRole::Normal) {
-                std::vector<std::pair<irb::Type*, irb::Attributes> > arguments;
-                arguments.reserve(declaration->arguments().size());
-                for (const auto& argument : declaration->arguments())
-                    arguments.emplace_back(argument.type, argument.attributes);
-                builder->opEntryPoint(value, declaration->getFunctionRole(), declaration->name(), declaration->getType(), arguments);
+                builder->opEntryPoint(value, declaration->getFunctionRole(), declaration->name(), declaration->getType(), declaration->arguments());
                 if (irb::target == irb::Target::SPIRV && declaration->getType()->getTypeID() != irb::TypeID::Void) {
                     //builder->opAddInterfaceVariable(declaration->getReturnVariable()); //TODO: change this to static cast?
                     //if (declaration->getFunctionRole() == FunctionRole::Vertex)
@@ -1409,7 +1402,7 @@ private:
     std::string memberName;
     bool exprShouldBeLoadedBeforeAccessingMember;
 
-    irb::Type* type = nullptr;
+    irb::PointerType* type = nullptr;
 
 public:
     MemberAccessExpressionAST(ExpressionAST* aExpression, const std::string& aMemberName, bool aExprShouldBeLoadedBeforeAccessingMember) : expression(aExpression), memberName(aMemberName), exprShouldBeLoadedBeforeAccessingMember(aExprShouldBeLoadedBeforeAccessingMember) {}
@@ -1439,7 +1432,7 @@ public:
             uint32_t memberIndex;
             for (memberIndex = 0; memberIndex < structure->members.size(); memberIndex++) {
                 if (memberName == structure->members[memberIndex].name) {
-                    type = new irb::PointerType(context, structure->members[memberIndex].type, exprType->getStorageClass()); //TODO: move this to structure definition
+                    type = new irb::PointerType(context, structure->members[memberIndex].type, exprType->getStorageClass()); //TODO: move this to structure definition?
                     break;
                 }
             }

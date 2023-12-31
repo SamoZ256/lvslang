@@ -50,7 +50,7 @@ public:
      * @param[in] executionModel the shader stage of the entry point. Can be either "Vertex", "Fragment" or "Kernel"
      * @param[in] name the name of the entry point in the original code, only for debugging purposes
      */
-    virtual void opEntryPoint(Value* entryPoint, FunctionRole functionRole, const std::string& name, Type* returnType, const std::vector<std::pair<Type*, Attributes> >& arguments) = 0;
+    virtual void opEntryPoint(Value* entryPoint, FunctionRole functionRole, const std::string& name, Type* returnType, const std::vector<Argument>& arguments) = 0;
 
     //Debug
     /**
@@ -116,7 +116,7 @@ public:
 
     virtual Value* opVectorInsert(Value* vec, Value* val, ConstantInt* index) = 0;
 
-    virtual Value* opGetElementPtr(Type* elementType, Value* ptr, const std::vector<Value*>& indexes) = 0;
+    virtual Value* opGetElementPtr(PointerType* elementType, Value* ptr, const std::vector<Value*>& indexes) = 0;
 
     virtual void opUnreachable() = 0;
 

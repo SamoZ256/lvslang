@@ -30,7 +30,6 @@ struct Attribute {
 
 struct Attributes {
     uint8_t addressSpace = 0;
-    uint32_t set = 0, binding = 0;
     int8_t locationIndex = -1;
     int8_t colorIndex = -1;
     bool isBuffer = false;
@@ -39,6 +38,18 @@ struct Attributes {
     bool isPosition = false;
     bool isInput = false;
     bool isOutput = false;
+    struct {
+        uint32_t set = 0, binding = 0;
+        uint32_t buffer = 0;
+        uint32_t texture = 0;
+        uint32_t sampler = 0;
+    } bindings;
+};
+
+struct Argument {
+    std::string name;
+    Type* type;
+    Attributes attributes;
 };
 
 struct StructureMember {
