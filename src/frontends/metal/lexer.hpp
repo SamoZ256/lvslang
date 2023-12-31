@@ -338,6 +338,8 @@ int _getNextToken() {
             return TOKEN_ATTRIB_INPUT;
         if (identifierStr == "location")
             return TOKEN_ATTRIB_LOCATION;
+        if (identifierStr == "color")
+            return TOKEN_ATTRIB_COLOR;
         
         return TOKEN_IDENTIFIER;
     }

@@ -17,6 +17,7 @@ struct Attribute {
         Position,
         Input,
         Location,
+        Color,
 
         //NoAlias,
         //ReadOnly,
@@ -31,6 +32,7 @@ struct Attributes {
     uint8_t addressSpace = 0;
     uint32_t set = 0, binding = 0;
     int8_t locationIndex = -1;
+    int8_t colorIndex = -1;
     bool isBuffer = false;
     bool isTexture = false;
     bool isSampler = false;

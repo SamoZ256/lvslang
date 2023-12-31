@@ -93,6 +93,8 @@ irb::Attribute getAttributeFromToken(int attrib) {
         return {irb::Attribute::Enum::Input};
     case TOKEN_ATTRIB_LOCATION:
         return {irb::Attribute::Enum::Location};
+    case TOKEN_ATTRIB_COLOR:
+        return {irb::Attribute::Enum::Color};
     default:
         return {irb::Attribute::Enum::MaxEnum};
     }
@@ -277,6 +279,9 @@ void _setAttributesFromList(const std::vector<irb::Attribute>& attribs, irb::Att
             break;
         case irb::Attribute::Enum::Location:
             attributes->locationIndex = attrib.values[0];
+            break;
+        case irb::Attribute::Enum::Color:
+            attributes->colorIndex = attrib.values[0];
             break;
         default:
             break;

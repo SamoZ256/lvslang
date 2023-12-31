@@ -204,7 +204,7 @@ public:
             //TODO: do this decoration somewhere else
             irb::Structure* structure = static_cast<StructureType*>(returnType)->getStructure();
             for (uint32_t i = 0; i < structure->members.size(); i++)
-                opTypeMemberDecorate(returnType, i, Decoration::Location, {"0"}); //TODO: use the color index
+                opTypeMemberDecorate(returnType, i, Decoration::Location, {std::to_string(structure->members[i].attributes.colorIndex)});
         }
 
         //Add to interface

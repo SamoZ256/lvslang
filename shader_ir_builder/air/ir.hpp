@@ -13,7 +13,7 @@ struct AIRInterfaceVariable {
 
 struct AIREntryPoint {
     Value* value;
-    //TODO: include the execution model
+    FunctionRole functionRole;
     Type* returnType;
     std::vector<std::pair<irb::Type*, irb::Attributes> > arguments;
 };
@@ -36,7 +36,7 @@ public:
     }
 
     void opEntryPoint(Value* entryPoint, FunctionRole functionRole, const std::string& name, Type* returnType, const std::vector<std::pair<Type*, Attributes> >& arguments) override {
-        entryPoints.push_back({entryPoint});
+        entryPoints.push_back({entryPoint, functionRole, returnType, arguments});
     }
 
     void opName(Value* value, const std::string& name) override {
@@ -467,14 +467,52 @@ void AIRBuilder::createMetadata() {
         MetadataValue* entryPointOutputs = new MetadataValue(context);
         MetadataValue* entryPointInputs = new MetadataValue(context);
 
+        std::vector<std::pair<MetadataValue*, std::string> > outputs;
+        std::vector<std::pair<MetadataValue*, std::string> > inputs;
+        std::string outputsStr;
+        std::string inputsStr;
+
+        if (entryPoint.returnType->getTypeID() != TypeID::Void) {
+            //TODO: support non-structure types as well
+            if (!entryPoint.returnType->isStructure()) {
+                IRB_ERROR("Blah blah");
+                return;
+            }
+
+            Structure* structure = static_cast<StructureType*>(entryPoint.returnType)->getStructure();
+            for (uint32_t i = 0; i < structure->members.size(); i++) {
+                const auto& member = structure->members[i];
+                MetadataValue* memberOutput = new MetadataValue(context);
+                std::string str = "!{";
+                if (entryPoint.functionRole == FunctionRole::Vertex) {
+                    if (member.attributes.isPosition)
+                        str += "!\"air.position\"";
+                    else
+                        str += "!\"air.vertex_output\", !\"generated(randomstuff)\""; //TODO: find out what should be inside 'generated'
+                } else if (entryPoint.functionRole == FunctionRole::Fragment) {
+                    str += "!\"air.render_target\", i32 " + std::to_string(member.attributes.colorIndex) + ", i32 0"; //TODO: find out if the last argument should always be 0
+                }
+                str += ", !\"air.arg_type_name\", !\"" + member.type->getName() + "\", !\"air.arg_name\", !\"" + member.name + "\"}"; //TODO: don't use type name directly, use the name as if it was in Metal Shading Language
+
+                if (i != 0)
+                    outputsStr += ", ";
+                outputsStr += memberOutput->getName();
+                outputs.emplace_back(memberOutput, str);
+            }
+        }
+
         block->addCode("!{" + entryPoint.value->getNameWithType() + ", " + entryPointOutputs->getName() + ", " + entryPointInputs->getName() + "}", entryPointInfo->getName());
-        block->addCode("!{}", entryPointOutputs->getName()); //TODO: here
+        block->addCode("!{" + outputsStr + "}", entryPointOutputs->getName()); //TODO: here
         //TODO: add output information
-        block->addCode("!{}", entryPointInputs->getName()); //TODO: here
+        block->addCode("!{" + inputsStr + "}", entryPointInputs->getName()); //TODO: here
         //TODO: add input information
 
-        //TODO: add it to the correct list
-        entryPointFunctionInfos[0].push_back(entryPointInfo);
+        for (const auto& output : outputs)
+            block->addCode(output.second, output.first->getName());
+        for (const auto& input : inputs)
+            block->addCode(input.second, input.first->getName());
+
+        entryPointFunctionInfos[(int)entryPoint.functionRole - 1].push_back(entryPointInfo);
     }
 
     MetadataValue* denorms = new MetadataValue(context);

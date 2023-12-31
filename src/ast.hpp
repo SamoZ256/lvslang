@@ -719,7 +719,7 @@ public:
                             return nullptr;
                         }
                         for (const auto& member : static_cast<irb::StructureType*>(type)->getStructure()->members)
-                            entryPointStr += "layout (location = " + std::string("0") + ") out " + member.type->getName() + " " + member.name + ";\n\n"; //TODO: use the color index std::to_string(member.attributes.colorIndex)
+                            entryPointStr += "layout (location = " + std::to_string(member.attributes.colorIndex) + ") out " + member.type->getName() + " " + member.name + ";\n\n";
                         break;
                     default:
                         logError("cannot use the 'output' attribute for kernel function");
@@ -770,19 +770,18 @@ public:
                             std::string memberStr = outputVarName + "." + member.name;
                             entryPointStr += "\t";
                             if (member.attributes.isPosition) {
-                                entryPointStr += "gl_Position = " + memberStr;
-                            } else {
-                                switch (functionRole) {
-                                case irb::FunctionRole::Vertex:
-                                    entryPointStr += "_output._output." + member.name + " = " + memberStr;
-                                    break;
-                                case irb::FunctionRole::Fragment:
-                                    entryPointStr += member.name + " = " + memberStr;
-                                    break;
-                                default:
-                                    logError("'kernel' functions cannot return a value");
-                                    break;
-                                }
+                                entryPointStr += "gl_Position = " + memberStr + ";\n";
+                            }
+                            switch (functionRole) {
+                            case irb::FunctionRole::Vertex:
+                                entryPointStr += "_output._output." + member.name + " = " + memberStr;
+                                break;
+                            case irb::FunctionRole::Fragment:
+                                entryPointStr += member.name + " = " + memberStr;
+                                break;
+                            default:
+                                logError("'kernel' functions cannot return a value");
+                                break;
                             }
                             entryPointStr += ";\n";
                         }
@@ -1550,6 +1549,8 @@ public:
                     attributesEnd += " [[position]]";
                 if (member.attributes.locationIndex != -1)
                     attributesEnd += " [[attribute(" + std::to_string(member.attributes.locationIndex) + ")]]";
+                if (member.attributes.colorIndex != -1)
+                    attributesEnd += " [[color(" + std::to_string(member.attributes.colorIndex) + ")]]";
             }
             codeStr += "\t" + member.type->getNameBegin() + " " + member.name + member.type->getNameEnd() + attributesEnd + ";\n";
         }

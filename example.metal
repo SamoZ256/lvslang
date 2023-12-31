@@ -23,14 +23,14 @@ vertex struct VertexOut vertexMain(struct VertexIn vertexIn [[input]],
 };
 
 struct FragmentOut {
-    float4 color;
+    float4 outColor [[color(0)]];
 };
 
 fragment struct FragmentOut fragmentMain(struct VertexOut fragmentIn [[input]],
                                          texture2d<float> colorTexture [[descriptor_set(0, 1)]],
                                          sampler colorSampler [[descriptor_set(1, 0)]]) {
     struct FragmentOut fragmentOut;
-    fragmentOut.color = sample(colorTexture, colorSampler, fragmentIn.texCoord);
+    fragmentOut.outColor = sample(colorTexture, colorSampler, fragmentIn.texCoord);
 
     return fragmentOut;
 }
