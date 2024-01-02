@@ -123,10 +123,10 @@ public:
         typeID = enumeration->type->getTypeID(); //HACK: set the typeID later
         //if (target != Target::GLSL)
         //    nameBegin = "struct ";
-        if (irb::target == irb::Target::GLSL)
-            nameBegin = enumeration->type->getNameBegin();
-        else if (irb::target == irb::Target::Metal)
+        if (irb::target == irb::Target::Metal || irb::target == irb::Target::HLSL)
             nameBegin = aName;
+        else if (irb::target == irb::Target::GLSL)
+            nameBegin = enumeration->type->getNameBegin();
         else if (irb::target == irb::Target::AIR)
             nameBegin = enumeration->type->getName();
 
@@ -691,20 +691,15 @@ public:
                     default:
                         break;
                     }
+                } else if (irb::target == irb::Target::HLSL) {
+                    switch (functionRole) {
+                    case irb::FunctionRole::Fragment:
+                        //TODO: do something here?
+                        break;
+                    default:
+                        break;
+                    }
                 } else if (irb::target == irb::Target::GLSL) {
-                    /*
-                    //TODO: do this error check for every backend?
-                    if (!type->isStructure()) {
-                        logError("Entry point argument declared with the 'input' attribute must have a structure type");
-                        return nullptr;
-                    }
-                    irb::StructureType* structureType = static_cast<irb::StructureType*>(type);
-                    uint32_t index = 0;
-                    for (const auto& member : structureType->getStructure()->members) {
-                        if (!member.attributes.isPosition)
-                            codeStr += "layout (location = " + std::to_string(index++) + ") out " + member.type->getName() + " " + member.name + ";\n\n";
-                    }
-                    */
                     switch (functionRole) {
                     case irb::FunctionRole::Vertex:
                         entryPointStr += "layout (location = 0) out " + type->getName() + "_Output {\n\t" + type->getName() + " _output;\n} _output;\n\n";
@@ -979,9 +974,15 @@ public:
                     else if (callee == "sin")
                         code = "sin(" + argVs[0]->getRawName() + ")";
                     break;
+                case irb::Target::HLSL:
+                    if (callee == "sample")
+                        code = argVs[0]->getRawName() + ".Sample(" + argVs[1]->getRawName() + ", " + argVs[2]->getRawName() + ")";
+                    else if (callee == "sin")
+                        code = "sin(" + argVs[0]->getRawName() + ")";
+                    break;
                 case irb::Target::GLSL:
                     if (callee == "sample")
-                        code = "texture(sampler2D(" + argVs[0]->getRawName() + ", " + argVs[1]->getRawName() + "), " + argVs[2]->getRawName() + ")";
+                        code = "texture(sampler2D(" + argVs[0]->getRawName() + ", " + argVs[1]->getRawName() + "), " + argVs[2]->getRawName() + ")"; //TODO: support other samplers + textures as well
                     else if (callee == "sin")
                         code = "sin(" + argVs[0]->getRawName() + ")";
                     break;
@@ -1417,6 +1418,8 @@ public:
                 exprV = builder->opLoad(exprV);
             else if (irb::target == irb::Target::Metal)
                 exprV = new irb::Value(context, exprV->getType()->getElementType(), "(*" + exprV->getRawName() + ")");
+            else if (irb::target == irb::Target::HLSL)
+                exprV = new irb::Value(context, exprV->getType()->getElementType(), "(*" + exprV->getRawName() + ")"); //TODO: do something else
         }
         if (!exprV)
             return nullptr;
@@ -1544,6 +1547,14 @@ public:
                     attributesEnd += " [[attribute(" + std::to_string(member.attributes.locationIndex) + ")]]";
                 if (member.attributes.colorIndex != -1)
                     attributesEnd += " [[color(" + std::to_string(member.attributes.colorIndex) + ")]]";
+            } else if (irb::target == irb::Target::HLSL) {
+                //TODO: add commas between attributes
+                if (member.attributes.isPosition)
+                    attributesEnd += " : POSITION";
+                if (member.attributes.locationIndex != -1)
+                    attributesEnd += " : COLOR" + std::to_string(member.attributes.locationIndex); //TODO: don't always use color?
+                if (member.attributes.colorIndex != -1)
+                    attributesEnd += " : COLOR" + std::to_string(member.attributes.colorIndex); //TODO: check if this is correct
             }
             codeStr += "\t" + member.type->getNameBegin() + " " + member.name + member.type->getNameEnd() + attributesEnd + ";\n";
         }
@@ -1581,7 +1592,7 @@ public:
         }
 
         std::string codeStr;
-        if (irb::target == irb::Target::Metal) {
+        if (irb::target == irb::Target::Metal || irb::target == irb::Target::HLSL) {
             codeStr = "enum " + name + " {\n";
             for (auto& value : values)
                 codeStr += "\t" + value.name + " = " + std::to_string(value.value) + ",\n";
@@ -1611,7 +1622,7 @@ public:
         if (TARGET_IS_IR(irb::target)) {
             return builder->opConstant(new irb::ConstantValue(context, enumeration->type, std::to_string(value.value)));
         } else {
-            if (irb::target == irb::Target::Metal)
+            if (irb::target == irb::Target::Metal || irb::target == irb::Target::HLSL)
                 return new irb::Value(context, enumeration->type, value.name);
             else
                 return new irb::Value(context, enumeration->type, std::to_string(value.value));

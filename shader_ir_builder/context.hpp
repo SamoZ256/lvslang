@@ -60,6 +60,7 @@ struct StructureMember {
 
 struct Structure {
     std::vector<StructureMember> members;
+    bool decorated = false; //For SPIRV backend
 };
 
 class Context {

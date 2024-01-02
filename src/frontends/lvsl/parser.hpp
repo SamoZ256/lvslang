@@ -1177,7 +1177,7 @@ std::string compile(const std::string& sourceName) {
         context.codeHeader = "#version " + getGLSLVersionString()/* + " core"*/;
         break;
     case irb::Target::HLSL:
-        LVSLANG_ERROR_UNSUPPORTED_TARGET("HLSL");
+        //TODO: add something here?
         break;
     case irb::Target::SPIRV:
         builder = new irb::SPIRVBuilder(context, true);

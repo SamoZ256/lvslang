@@ -15,7 +15,7 @@ private:
         std::string inst;
         uint8_t beginSpaceCount = 22;
         if (registerToAssign != nullptr)
-            beginSpaceCount = std::max((int)beginSpaceCount - (int)registerToAssign->getName().size(), 0);
+            beginSpaceCount = std::max((int)beginSpaceCount - (int)registerToAssign->getName().size() - 3, 0);
 
         for (uint8_t i = 0; i < beginSpaceCount; i++)
             inst += " ";

@@ -73,6 +73,8 @@ int main(int argc, char* argv[]) {
                 std::string optionName = arg.substr(2);
                 if (optionName == "msl")
                     options.target = irb::Target::Metal;
+                if (optionName == "hlsl")
+                    options.target = irb::Target::HLSL;
                 else if (optionName == "glsl")
                     options.target = irb::Target::GLSL;
                 else if (optionName == "spirv")

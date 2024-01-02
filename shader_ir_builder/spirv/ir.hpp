@@ -128,6 +128,7 @@ public:
             case StorageClass::Input:
                 switch (functionRole) {
                 case FunctionRole::Vertex:
+                    //TODO: do this somewhere else
                     //TODO: don't throw this error
                     if (!type->isStructure()) {
                         IRB_ERROR("Entry point argument declared with the 'input' attribute must have a structure type");
@@ -135,7 +136,7 @@ public:
                     }
                     structure = static_cast<StructureType*>(type)->getStructure();
                     for (uint32_t i = 0; i < structure->members.size(); i++)
-                        opTypeMemberDecorate(type, i, Decoration::Location, {std::to_string(structure->members[i].attributes.locationIndex)});
+                        opMemberDecorate(type->getValue(this), i, Decoration::Location, {std::to_string(structure->members[i].attributes.locationIndex)});
                     break;
                 case FunctionRole::Fragment:
                     opDecorate(argValue, Decoration::Location, {"0"});
@@ -148,7 +149,7 @@ public:
                 break;
             }
             if (attr.isBuffer || (functionRole == FunctionRole::Vertex && attr.isInput))
-                opTypeDecorate(type, Decoration::Block);
+                opDecorate(type->getValue(this, true), Decoration::Block);
             
             //Add to interface
             code += " " + argValue->getName();
@@ -163,7 +164,7 @@ public:
         Value* returnValue = opFunctionCall(entryPoint, argValues);
 
         // -------- Output --------
-        opTypeDecorate(returnType, Decoration::Block);
+        opDecorate(returnType->getValue(this), Decoration::Block);
         context.pushRegisterName(name + "_output");
         Value* returnVariable = opVariable(new PointerType(context, returnType, StorageClass::Output));
         opStore(returnVariable, returnValue);
@@ -204,7 +205,7 @@ public:
             //TODO: do this decoration somewhere else
             irb::Structure* structure = static_cast<StructureType*>(returnType)->getStructure();
             for (uint32_t i = 0; i < structure->members.size(); i++)
-                opTypeMemberDecorate(returnType, i, Decoration::Location, {std::to_string(structure->members[i].attributes.colorIndex)});
+                opMemberDecorate(returnType->getValue(this), i, Decoration::Location, {std::to_string(structure->members[i].attributes.colorIndex)});
         }
 
         //Add to interface
@@ -468,7 +469,10 @@ public:
             return val;
 
         std::string opName = type->getCastOpName(val->getType());
-        if (opName == "NR") { //Not required
+        if (opName == "NP") { //Not possible
+            //TODO: warn?
+            return val;
+        } if (opName == "NR") { //Not required
             return val;
         } else if (opName == "VC") { //Vector construct //TODO: I am actually not sure if I want this
             VectorType* srcVec = static_cast<VectorType*>(val->getType());
@@ -530,8 +534,9 @@ public:
         return value;
     }
 
-    Value* _addCodeToTypesVariablesConstantsBlock(Type* type, const std::string& code, const std::string& registerName, const std::string& comment = "") {
-        auto& mappedValue = typesVariablesConstantsDefinitions[code];
+    Value* _addCodeToTypesVariablesConstantsBlock(Type* type, const std::string& code, const std::string& registerName, const std::string& comment = "", const std::string& userDefinedName = "") {
+        //HACK: use @ref userDefinedName to prevent structures with same members to end up as the same value
+        auto& mappedValue = typesVariablesConstantsDefinitions[code + userDefinedName];
         if (!mappedValue) {
             mappedValue = new Value(context, type, registerName);
             mappedValue->setIsConstant(true);
@@ -545,12 +550,8 @@ public:
         _opDecorate("OpDecorate " + value->getName(), decoration, values);
     }
 
-    void opTypeDecorate(Type* type, Decoration decoration, const std::vector<std::string>& values = {}) {
-        _opDecorate("OpDecorate " + type->getValue(this, true)->getName(), decoration, values);
-    }
-
-    void opTypeMemberDecorate(Type* type, uint32_t memberIndex, Decoration decoration, const std::vector<std::string>& values = {}) {
-        _opDecorate("OpMemberDecorate " + type->getValue(this, true)->getName() + " " + std::to_string(memberIndex), decoration, values);
+    void opMemberDecorate(Value* value, uint32_t memberIndex, Decoration decoration, const std::vector<std::string>& values = {}) {
+        _opDecorate("OpMemberDecorate " + value->getName() + " " + std::to_string(memberIndex), decoration, values);
     }
 
     //Getters

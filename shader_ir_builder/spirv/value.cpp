@@ -38,20 +38,26 @@ Value* StructureType::getValue(IRBuilder* builder, bool decorate) {
     for (auto* memberValue : memberValues)
         code += " " + memberValue->getName();
 
-    Value* value = static_cast<SPIRVBuilder*>(builder)->_addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), nameBegin);
+    Value* value = static_cast<SPIRVBuilder*>(builder)->_addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), nameBegin, nameBegin);
 
-    if (decorate && !decorated) {
-        //We need to set @ref decorated to 'true' at the beginning, since @ref opTypeMemberDecorate is going to call this function and we want to avoid endless loop
-        decorated = true;
+    if (decorate && !structure->decorated) {
+        //We need to set @ref decorated to 'true' at the beginning, since @ref opMemberDecorate is going to call this function and we want to avoid endless loop
+        structure->decorated = true;
         uint32_t offset = 0;
         for (uint32_t i = 0; i < structure->members.size(); i++) {
             //Offset
-            static_cast<SPIRVBuilder*>(builder)->opTypeMemberDecorate(value->getType(), i, Decoration::Offset, {std::to_string(offset)});
+            static_cast<SPIRVBuilder*>(builder)->opMemberDecorate(value, i, Decoration::Offset, {std::to_string(offset)});
             offset += memberValues[i]->getType()->getBitCount(true) / 8; //To bytes
+            //TODO: uncomment?
             //Location
+            /*
             const auto& attributes = structure->members[i].attributes;
             if (attributes.locationIndex != -1)
-                static_cast<SPIRVBuilder*>(builder)->opTypeMemberDecorate(value->getType(), i, Decoration::Location, {std::to_string(attributes.locationIndex)});
+                static_cast<SPIRVBuilder*>(builder)->opMemberDecorate(value-, i, Decoration::Location, {std::to_string(attributes.locationIndex)});
+            //Color
+            if (attributes.colorIndex != -1)
+                static_cast<SPIRVBuilder*>(builder)->opMemberDecorate(value, i, Decoration::Location, {std::to_string(attributes.colorIndex)});
+            */
         }
     }
     

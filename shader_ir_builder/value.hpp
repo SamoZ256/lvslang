@@ -86,6 +86,45 @@ inline std::string getTypeName(TypeID typeID, uint32_t bitCount, bool isSigned) 
             break;
         }
         return "";
+    case Target::HLSL:
+        switch (typeID) {
+        case TypeID::Void:
+            return "void";
+        case TypeID::Bool:
+            return "bool";
+        case TypeID::Integer:
+            switch (bitCount) {
+            case 8:
+                strTmp = "int8_t"; //TODO: check if this is correct
+                break;
+            case 16:
+                strTmp = "int16_t";
+                break;
+            case 32:
+                strTmp = "int";
+                break;
+            default:
+                IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of integer can only be 8, 16 or 32");
+                return nullptr;
+            }
+            if (!isSigned)
+                strTmp = "u" + strTmp;
+            
+            return strTmp;
+        case TypeID::Float:
+            switch (bitCount) {
+            case 16:
+                return "min16float"; //TODO: check if this is correct
+            case 32:
+                return "float";
+            default:
+                IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of float can only be 16 or 32");
+                return nullptr;
+            }
+        default:
+            break;
+        }
+        return "";
     case Target::GLSL:
         switch (typeID) {
         case TypeID::Void:
@@ -424,6 +463,8 @@ public:
     }
 
     std::string getCastOpName(Type* castFrom) override {
+        if (castFrom->isVector())
+            return "NP"; //Not possible
         switch (castFrom->getTypeID()) {
         case TypeID::Bool:
         case TypeID::Integer:
@@ -653,7 +694,6 @@ public:
 class StructureType : public Type {
 private:
     Structure* structure;
-    bool decorated = false;
 
 public:
     StructureType(Context& aContext, const std::string& aName) : Type(aContext, TypeID::Structure) {
@@ -767,6 +807,7 @@ public:
         }
         switch (target) {
         case Target::Metal:
+        case Target::HLSL:
             nameBegin = componentType->getName() + std::to_string(componentCount);
             break;
         case Target::GLSL:
@@ -867,6 +908,11 @@ public:
         if (target == Target::Metal) {
             std::string viewName = "2d"; //TODO: use actual view name
             nameBegin = "texture" + viewName + "<" + type->getName() + ">";
+        } else if (target == Target::HLSL) {
+            std::string viewName = "2D"; //TODO: use actual view name
+            nameBegin = "Texture" + viewName;
+            if (type->getTypeID() != TypeID::Float || type->getBitCount() != 32)
+                nameBegin += "<" + type->getName() + ">"; //TODO: check if this is correct
         } else if (target == Target::GLSL) {
             std::string viewName = "2D";
             nameBegin = "texture" + viewName; //TODO: use prefix based on type
