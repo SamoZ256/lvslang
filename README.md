@@ -6,7 +6,7 @@ This is a compiler for the Lava Shading Language (LVSL). It compiles into other 
 
 | SPIRV | Metal AIR | HLSL bytecode | Metal Shading Language | HLSL | GLSL |
 | :---: | :-------: | :-----------: | :--------------------: | :--: | :--: |
-|  ✅   |    ❔     |      ❌       |           ✅            |  ❌  |  ✅  |
+|  ✅   |    ❔     |      ❌       |           ✅            |  ❔  |  ✅  |
 
 ## Getting Started
 
