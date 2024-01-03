@@ -576,17 +576,19 @@ public:
                 }
                 pointerType->setAddressSpace(attr.addressSpace);
             }
-            if (arg.type->isTexture() || (arg.type->isPointer() && arg.type->getElementType()->isTexture())) {
-                attr.isTexture = true;
-                attr.bindings.texture = getTextureBinding(attr.bindings.set, attr.bindings.binding);
-            } else if (arg.type->isSampler() || (arg.type->isPointer() && arg.type->getElementType()->isSampler())) {
-                attr.isSampler = true;
-                attr.bindings.sampler = getSamplerBinding(attr.bindings.set, attr.bindings.binding);
-            } else if (!attr.isInput) {
-                attr.isBuffer = true;
-                attr.bindings.buffer = getBufferBinding(attr.bindings.set, attr.bindings.binding);
-                if ((irb::target == irb::Target::SPIRV || irb::target == irb::Target::GLSL) && functionRole != irb::FunctionRole::Normal)
-                    arg.type = arg.type->getElementType();
+            if (functionRole != irb::FunctionRole::Normal) {
+                if (arg.type->isTexture() || (arg.type->isPointer() && arg.type->getElementType()->isTexture())) {
+                    attr.isTexture = true;
+                    attr.bindings.texture = getTextureBinding(attr.bindings.set, attr.bindings.binding);
+                } else if (arg.type->isSampler() || (arg.type->isPointer() && arg.type->getElementType()->isSampler())) {
+                    attr.isSampler = true;
+                    attr.bindings.sampler = getSamplerBinding(attr.bindings.set, attr.bindings.binding);
+                } else if (!attr.isInput) {
+                    attr.isBuffer = true;
+                    attr.bindings.buffer = getBufferBinding(attr.bindings.set, attr.bindings.binding);
+                    if ((irb::target == irb::Target::SPIRV || irb::target == irb::Target::GLSL) && functionRole != irb::FunctionRole::Normal)
+                        arg.type = arg.type->getElementType();
+                }
             }
         }
 
@@ -1550,11 +1552,11 @@ public:
             } else if (irb::target == irb::Target::HLSL) {
                 //TODO: add commas between attributes
                 if (member.attributes.isPosition)
-                    attributesEnd += " : POSITION";
+                    attributesEnd += " : SV_Position";
                 if (member.attributes.locationIndex != -1)
                     attributesEnd += " : COLOR" + std::to_string(member.attributes.locationIndex); //TODO: don't always use color?
                 if (member.attributes.colorIndex != -1)
-                    attributesEnd += " : COLOR" + std::to_string(member.attributes.colorIndex); //TODO: check if this is correct
+                    attributesEnd += " : SV_Target" + std::to_string(member.attributes.colorIndex); //TODO: check if this is correct
             }
             codeStr += "\t" + member.type->getNameBegin() + " " + member.name + member.type->getNameEnd() + attributesEnd + ";\n";
         }
