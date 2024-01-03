@@ -100,19 +100,6 @@ static std::map<std::string, Variable> variables;
 static std::map<std::string, FunctionPrototypeAST*> functionDeclarations;
 static std::map<std::string, Enumeration*> enumerations;
 
-//TODO: increase the bindings gradually
-uint32_t getBufferBinding(uint32_t set, uint32_t binding) {
-    return 0;
-}
-
-uint32_t getTextureBinding(uint32_t set, uint32_t binding) {
-    return 0;
-}
-
-uint32_t getSamplerBinding(uint32_t set, uint32_t binding) {
-    return 0;
-}
-
 class EnumType : public irb::Type {
 private:
     Enumeration* enumeration;
@@ -565,6 +552,7 @@ private:
 
 public:
     FunctionPrototypeAST(const std::string& aName, irb::Type* aType, std::vector<irb::Argument> aArguments/*, const std::vector<int>& aAttributes*/, bool aIsDefined, irb::FunctionRole aFunctionRole, bool aIsSTDFunction = false) : _name(aName), type(aType), _arguments(aArguments)/*, attributes(aAttributes)*/, isDefined(aIsDefined), functionRole(aFunctionRole), isSTDFunction(aIsSTDFunction) {
+        uint32_t bufferBinding = 0, textureBinding = 0, samplerBinding = 0;
         for (uint32_t i = 0; i < _arguments.size(); i++) {
             irb::Argument& arg = _arguments[i];
             auto& attr = arg.attributes;
@@ -577,15 +565,16 @@ public:
                 pointerType->setAddressSpace(attr.addressSpace);
             }
             if (functionRole != irb::FunctionRole::Normal) {
+                //TDOO: save the bindings for reflection
                 if (arg.type->isTexture() || (arg.type->isPointer() && arg.type->getElementType()->isTexture())) {
                     attr.isTexture = true;
-                    attr.bindings.texture = getTextureBinding(attr.bindings.set, attr.bindings.binding);
+                    attr.bindings.texture = textureBinding++;
                 } else if (arg.type->isSampler() || (arg.type->isPointer() && arg.type->getElementType()->isSampler())) {
                     attr.isSampler = true;
-                    attr.bindings.sampler = getSamplerBinding(attr.bindings.set, attr.bindings.binding);
+                    attr.bindings.sampler = samplerBinding++;
                 } else if (!attr.isInput) {
                     attr.isBuffer = true;
-                    attr.bindings.buffer = getBufferBinding(attr.bindings.set, attr.bindings.binding);
+                    attr.bindings.buffer = bufferBinding++;
                     if ((irb::target == irb::Target::SPIRV || irb::target == irb::Target::GLSL) && functionRole != irb::FunctionRole::Normal)
                         arg.type = arg.type->getElementType();
                 }
@@ -644,7 +633,7 @@ public:
                                 else
                                     typeName = "readonly buffer "; //TODO: support other types of buffer as well
                                 //We need to get element type, since GLSL treats it without pointer
-                                typeName += arg.type->getName() + "_Uniform {\n\t" + arg.type->getName() + " " + arg.name + ";\n}";
+                                typeName += arg.name + "_Uniform {\n\t" + arg.type->getName() + " " + arg.name + ";\n}";
                             } else {
                                 typeName = "uniform " + arg.type->getName();
                             }
@@ -764,7 +753,7 @@ public:
                             std::string memberStr = outputVarName + "." + member.name;
                             entryPointStr += "\t";
                             if (member.attributes.isPosition) {
-                                entryPointStr += "gl_Position = " + memberStr + ";\n";
+                                entryPointStr += "gl_Position = " + memberStr + ";\n\t";
                             }
                             switch (functionRole) {
                             case irb::FunctionRole::Vertex:
