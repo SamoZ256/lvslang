@@ -506,19 +506,42 @@ void AIRBuilder::createMetadata() {
                 outputs.emplace_back(crntOutput, str);
             }
         }
+        uint32_t inputIndex = 0;
         for (uint32_t i = 0; i < entryPoint.arguments.size(); i++) {
             const auto& argument = entryPoint.arguments[i];
-            MetadataValue* crntInput = new MetadataValue(context);
-            MetadataValue* structureInfo = nullptr;
-            std::string str = "!{i32 " + std::to_string(i) + ", ";
-            std::string structureInfoStr;
             if (argument.attributes.isInput) {
-                if (entryPoint.functionRole == FunctionRole::Vertex) {
-                    str += "!\"air.vertex_input\", !\"air.location_index\", i32 " + std::to_string(i) + ", i32 1"; //TODO: here
-                } else if (entryPoint.functionRole == FunctionRole::Fragment) {
-                    //TODO: implement this
+                //TODO: support non-structure types as well
+                if (!argument.type->isStructure()) {
+                    IRB_ERROR("argument marked with 'buffer' attribute must have element type of structure");
+                    return;
+                }
+                Structure* structure = static_cast<StructureType*>(argument.type)->getStructure();
+                for (uint32_t j = 0; j < structure->members.size(); j++) {
+                    const auto& member = structure->members[j];
+                    MetadataValue* crntInput = new MetadataValue(context);
+                    std::string str = "!{i32 " + std::to_string(inputIndex) + ", ";
+
+                    if (entryPoint.functionRole == FunctionRole::Vertex) {
+                        str += "!\"air.vertex_input\", !\"air.location_index\", i32 " + std::to_string(j) + ", i32 1"; //TODO: here
+                    } else if (entryPoint.functionRole == FunctionRole::Fragment) {
+                        if (member.attributes.isPosition)
+                            str += "!\"air.position\", !\"air.center\", !\"air.no_perspective\"";
+                        else
+                            str += "!\"air.fragment_input\", !\"generated(randomstuff)\", !\"air.center\", !\"air.perspective\""; //TODO: here
+                    }
+
+                    str += ", !\"air.arg_type_name\", !\"" + member.type->getName() + "\", !\"air.arg_name\", !\"" + member.name + "\"}"; //TODO: don't use type name directly, use the name as if it was in Metal Shading Language
+                    if (inputIndex != 0)
+                        inputsStr += ", ";
+                    inputsStr += crntInput->getName();
+                    inputs.emplace_back(crntInput, str);
+                    inputIndex++;
                 }
             } else {
+                MetadataValue* crntInput = new MetadataValue(context);
+                MetadataValue* structureInfo = nullptr;
+                std::string str = "!{i32 " + std::to_string(inputIndex) + ", ";
+                std::string structureInfoStr;
                 if (argument.attributes.isBuffer) {
                     if (!argument.type->isPointer()) {
                         IRB_ERROR("argument marked with 'buffer' attribute must have pointer type");
@@ -535,10 +558,10 @@ void AIRBuilder::createMetadata() {
                     structureInfo = new MetadataValue(context);
                     structureInfoStr = "!{";
                     uint32_t offset = 0;
-                    for (uint32_t i = 0; i < structureType->getStructure()->members.size(); i++) {
-                        const auto& member = structureType->getStructure()->members[i];
+                    for (uint32_t j = 0; j < structureType->getStructure()->members.size(); j++) {
+                        const auto& member = structureType->getStructure()->members[j];
                         uint32_t size = member.type->getBitCount(true) / 8;
-                        if (i != 0)
+                        if (j != 0)
                             structureInfoStr += ", ";
                         //TODO: don't use type name directly, use the name as if it was in Metal Shading Language
                         structureInfoStr += "i32 " + std::to_string(offset) + ", i32 " + std::to_string(size) + ", i32 0, !\"" + member.type->getName() + "\", !\"" + member.name + "\""; //TODO: here
@@ -557,14 +580,15 @@ void AIRBuilder::createMetadata() {
                     IRB_ERROR("Every entry point input must be marked with exactly one of these attributes: 'input', 'buffer', 'texture' or 'sampler'");
                     return;
                 }
+                str += ", !\"air.arg_type_name\", !\"" + argument.type->getName() + "\", !\"air.arg_name\", !\"" + argument.name + "\"}"; //TODO: don't use type name directly, use the name as if it was in Metal Shading Language
+                if (inputIndex != 0)
+                    inputsStr += ", ";
+                inputsStr += crntInput->getName();
+                inputs.emplace_back(crntInput, str);
+                if (structureInfo)
+                    inputs.emplace_back(structureInfo, structureInfoStr);
+                inputIndex++;
             }
-            str += ", !\"air.arg_type_name\", !\"" + argument.type->getName() + "\", !\"air.arg_name\", !\"" + argument.name + "\"}"; //TODO: don't use type name directly, use the name as if it was in Metal Shading Language
-            if (i != 0)
-                inputsStr += ", ";
-            inputsStr += crntInput->getName();
-            inputs.emplace_back(crntInput, str);
-            if (structureInfo)
-                inputs.emplace_back(structureInfo, structureInfoStr);
         }
 
         block->addCode("!{" + entryPoint.value->getNameWithType() + ", " + entryPointOutputs->getName() + ", " + entryPointInputs->getName() + "}", entryPointInfo);
@@ -592,7 +616,7 @@ void AIRBuilder::createMetadata() {
     block->addCode("!{!\"air.compile.denorms_disable\"}", denorms); //TODO: here
     block->addCode("!{!\"air.compile.fast_math_disable\"}", fastMath); //TODO: here
     block->addCode("!{!\"air.compile.framebuffer_fetch_enable\"}", framebufferFetch); //TODO: here
-    block->addCode("!{!\"Apple metal version 32023.35 (metalfe-32023.35)\"}", identification); //TODO: here
+    block->addCode("!{!\"Lvslang\"}", identification); //TODO: here
     block->addCode("!{i32 2, i32 6, i32 0}", version); //TODO: here
     block->addCode("!{!\"LVSL\", i32 3, i32 1, i32 0}", languageVersion); //TODO: here
     block->addCode("!{!\"/Users/samuliak/Desktop/lvslang/test.lvsl\"}", sourceFilename); //TODO: here
