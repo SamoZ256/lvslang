@@ -575,7 +575,7 @@ public:
                 } else if (!attr.isInput) {
                     attr.isBuffer = true;
                     attr.bindings.buffer = bufferBinding++;
-                    if ((irb::target == irb::Target::SPIRV || irb::target == irb::Target::GLSL) && functionRole != irb::FunctionRole::Normal)
+                    if ((irb::target == irb::Target::SPIRV || irb::target == irb::Target::GLSL || irb::target == irb::Target::HLSL) && functionRole != irb::FunctionRole::Normal)
                         arg.type = arg.type->getElementType();
                 }
             }
@@ -600,9 +600,45 @@ public:
             for (uint32_t i = 0; i < _arguments.size(); i++) {
                 irb::Argument& arg = _arguments[i];
                 auto& attr = arg.attributes;
-                if (irb::target == irb::Target::GLSL) {
-                    if (i != 0)
-                        argsStr += ", ";
+                if (i != 0)
+                    argsStr += ", ";
+                if (irb::target == irb::Target::Metal) {
+                    std::string addressSpace;
+                    if (attr.addressSpace == 2)
+                        addressSpace = "constant ";
+                    else if (attr.addressSpace == 1)
+                        addressSpace = "device ";
+                    
+                    std::string attribute;
+                    if (attr.isBuffer)
+                        attribute = " [[buffer(" + std::to_string(attr.bindings.buffer) + ")]]";
+                    if (attr.isTexture)
+                        attribute = " [[texture(" + std::to_string(attr.bindings.texture) + ")]]";
+                    if (attr.isSampler)
+                        attribute = " [[sampler(" + std::to_string(attr.bindings.sampler) + ")]]";
+                    if (attr.isInput)
+                        attribute = " [[stage_in]]";
+
+                    argsStr += addressSpace + arg.type->getName() + " " + arg.name + attribute;
+                } else if (irb::target == irb::Target::HLSL) {
+                    argsStr += arg.type->getName() + " " + arg.name;
+
+                    //Entry point
+                    if (functionRole != irb::FunctionRole::Normal) {
+                        if (!attr.isInput) {
+                            if (attr.isBuffer) {
+                                entryPointStr += "cbuffer "; //TODO: support other types of buffer as well
+                                //We need to get element type, since HLSL treats it without pointer
+                                entryPointStr += arg.name + "_Uniform : register(b" + std::to_string(attr.bindings.buffer) + ") {\n\t" + arg.type->getName() + " " + arg.name + ";\n}";
+                            } else if (attr.isTexture) {
+                                entryPointStr += arg.type->getName() + " " + arg.name + " : register(t" + std::to_string(attr.bindings.sampler) + ")";
+                            } else if (attr.isSampler) {
+                                entryPointStr += arg.type->getName() + " " + arg.name + " : register(s" + std::to_string(attr.bindings.sampler) + ")";
+                            }
+                            entryPointStr += ";\n\n";
+                        }
+                    }
+                } else {
                     argsStr += arg.type->getName() + " " + arg.name;
 
                     //Entry point
@@ -643,27 +679,6 @@ public:
                             entryPointStr += ";\n\n";
                         }
                     }
-                } else {
-                    if (i != 0)
-                        argsStr += ", ";
-
-                    std::string addressSpace;
-                    if (attr.addressSpace == 2)
-                        addressSpace = "constant ";
-                    else if (attr.addressSpace == 1)
-                        addressSpace = "device ";
-                    
-                    std::string attribute;
-                    if (attr.isBuffer)
-                        attribute = " [[buffer(" + std::to_string(attr.bindings.buffer) + ")]]";
-                    if (attr.isTexture)
-                        attribute = " [[texture(" + std::to_string(attr.bindings.texture) + ")]]";
-                    if (attr.isSampler)
-                        attribute = " [[sampler(" + std::to_string(attr.bindings.sampler) + ")]]";
-                    if (attr.isInput)
-                        attribute = " [[stage_in]]";
-
-                    argsStr += addressSpace + arg.type->getName() + " " + arg.name + attribute;
                 }
             }
 
@@ -683,13 +698,55 @@ public:
                         break;
                     }
                 } else if (irb::target == irb::Target::HLSL) {
-                    switch (functionRole) {
-                    case irb::FunctionRole::Fragment:
-                        //TODO: do something here?
-                        break;
-                    default:
-                        break;
+                    if (type->getTypeID() != irb::TypeID::Void) {
+                        entryPointStr += "struct " + type->getName() + "_Output {\n\t" + type->getName() + " output : TEXCOORD0;\n";
+                        if (functionRole == irb::FunctionRole::Vertex)
+                            entryPointStr += "\tfloat4 position : SV_Position;\n";
+                        entryPointStr += "};\n\n";
                     }
+
+                    //Entry point
+                    std::string argsStr;
+                    for (const auto& argument : _arguments) {
+                        if (argument.attributes.isInput) {
+                            argsStr += argument.type->getName() + " " + argument.name;
+                            break;
+                        }
+                    }
+                    entryPointStr += type->getName() + "_Output _" + _name + "(" + argsStr + ") {\n";
+
+                    //-------- Entry point call --------
+                    entryPointStr += "\t//Entry point call\n";
+                    std::string outputVarName = "_entryPointOutput";
+                    entryPointStr += "\t" + (type->getTypeID() == irb::TypeID::Void ? "" : type->getName() + " " + outputVarName + " = ") + _name + "(";
+                    for (uint32_t i = 0; i < _arguments.size(); i++) {
+                        if (i != 0)
+                            entryPointStr += ", ";
+                        entryPointStr += _arguments[i].name;
+                    }
+                    entryPointStr += ");\n";
+
+                    //-------- Output --------
+                    if (type->getTypeID() != irb::TypeID::Void) {
+                        entryPointStr += "\n\t//Output\n\t" + type->getName() + "_Output __output;\n\t__output.output = " + outputVarName + ";\n";
+                        if (functionRole == irb::FunctionRole::Vertex) {
+                            //TODO: support non-structure types as well
+                            if (!type->isStructure()) {
+                                logError("Entry point output must have a structure type");
+                                return nullptr;
+                            }
+                            irb::Structure* structure = static_cast<irb::StructureType*>(type)->getStructure();
+                            for (const auto& member : structure->members) {
+                                if (member.attributes.isPosition) {
+                                    entryPointStr += "\t__output.position = " + outputVarName + "." + member.name + ";\n";
+                                    break;
+                                }
+                            }
+                        }
+                        entryPointStr += "\n\treturn __output;\n";
+                    }
+
+                    entryPointStr += "}\n\n";
                 } else if (irb::target == irb::Target::GLSL) {
                     switch (functionRole) {
                     case irb::FunctionRole::Vertex:
@@ -768,12 +825,13 @@ public:
                             }
                             entryPointStr += ";\n";
                         }
-                        entryPointStr += "}\n\n";
                     }
+                    
+                    entryPointStr += "}\n\n";
                 }
             }
             codeStr += type->getName() + " " + _name + "(" + argsStr + ")";
-            if (irb::target == irb::Target::GLSL && functionRole != irb::FunctionRole::Normal)
+            if ((irb::target == irb::Target::GLSL || irb::target == irb::Target::HLSL) && functionRole != irb::FunctionRole::Normal)
                 codeStr += ";\n\n" + entryPointStr + codeStr;
             if (!isDefined)
                 codeStr += ";";
@@ -967,7 +1025,7 @@ public:
                     break;
                 case irb::Target::HLSL:
                     if (callee == "sample")
-                        code = argVs[0]->getRawName() + ".Sample(" + argVs[1]->getRawName() + ", " + argVs[2]->getRawName() + ")";
+                        code = argVs[0]->getRawName() + ".SampleLevel(" + argVs[1]->getRawName() + ", " + argVs[2]->getRawName() + ", 0.0f)";
                     else if (callee == "sin")
                         code = "sin(" + argVs[0]->getRawName() + ")";
                     break;
@@ -1409,8 +1467,6 @@ public:
                 exprV = builder->opLoad(exprV);
             else if (irb::target == irb::Target::Metal)
                 exprV = new irb::Value(context, exprV->getType()->getElementType(), "(*" + exprV->getRawName() + ")");
-            else if (irb::target == irb::Target::HLSL)
-                exprV = new irb::Value(context, exprV->getType()->getElementType(), "(*" + exprV->getRawName() + ")"); //TODO: do something else
         }
         if (!exprV)
             return nullptr;
@@ -1543,7 +1599,7 @@ public:
                 if (member.attributes.isPosition)
                     attributesEnd += " : SV_Position";
                 if (member.attributes.locationIndex != -1)
-                    attributesEnd += " : COLOR" + std::to_string(member.attributes.locationIndex); //TODO: don't always use color?
+                    attributesEnd += " : TEXCOORD" + std::to_string(member.attributes.locationIndex); //TODO: don't always use texcoord?
                 if (member.attributes.colorIndex != -1)
                     attributesEnd += " : SV_Target" + std::to_string(member.attributes.colorIndex); //TODO: check if this is correct
             }

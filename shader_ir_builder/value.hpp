@@ -95,8 +95,6 @@ inline std::string getTypeName(TypeID typeID, uint32_t bitCount, bool isSigned) 
         case TypeID::Integer:
             switch (bitCount) {
             case 8:
-                strTmp = "int8_t"; //TODO: check if this is correct
-                break;
             case 16:
                 strTmp = "int16_t";
                 break;
@@ -970,6 +968,8 @@ public:
         //TODO: add template addguments
         if (TARGET_IS_IR(target)) {
             nameBegin = "%\"struct.metal::sampler\"";
+        } else if (target == Target::HLSL) {
+            nameBegin = "SamplerState";
         } else {
             nameBegin = "sampler";
         }
