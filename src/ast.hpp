@@ -1596,8 +1596,9 @@ public:
                     attributesEnd += " [[color(" + std::to_string(member.attributes.colorIndex) + ")]]";
             } else if (irb::target == irb::Target::HLSL) {
                 //TODO: add commas between attributes
-                if (member.attributes.isPosition)
-                    attributesEnd += " : SV_Position";
+                //TODO: uncomment?
+                //if (member.attributes.isPosition)
+                //    attributesEnd += " : SV_Position";
                 if (member.attributes.locationIndex != -1)
                     attributesEnd += " : TEXCOORD" + std::to_string(member.attributes.locationIndex); //TODO: don't always use texcoord?
                 if (member.attributes.colorIndex != -1)
