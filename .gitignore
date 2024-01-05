@@ -2,6 +2,7 @@ build
 xcode
 test.*
 test-*.*
+test-*
 *test.*
 .vscode
 .DS_Store
