@@ -4,33 +4,9 @@
 #include <sstream>
 #include <fstream>
 
-#include "frontends/lvsl/parser.hpp"
-#include "frontends/metal/parser.hpp"
+#include "lvslang/lvslang.hpp"
 
 #define INVALID_COMMAND_LINE_ARGUMENT(arg) std::cout << "Invalid command line argument '" arg "'" << std::endl;
-
-std::string readFile(const std::string& filename) {
-    std::string content;
-    std::ifstream file;
-    // ensure ifstream objects can throw exceptions:
-    file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    try {
-        // open files
-        file.open(filename);
-        std::stringstream stream;
-        // read file's buffer contents into streams
-        stream << file.rdbuf();
-        // close file handlers
-        file.close();
-        // convert stream into string
-        content = stream.str();
-    } catch (std::ifstream::failure e) {
-        std::cout << "Error: could not open file '" << filename << "'" << std::endl;
-        throw std::runtime_error("");
-    }
-
-    return content;
-}
 
 void writeToFile(const std::string& filename, const std::string& source) {
     std::ofstream file;
@@ -112,7 +88,6 @@ int main(int argc, char* argv[]) {
             modifier = Modifier::None;
         }
     }
-    irb::target = options.target;
 
     if (!options.inputSpecified)
         throw std::runtime_error("no input sources specified");
@@ -121,7 +96,7 @@ int main(int argc, char* argv[]) {
         bool found = false;
         for (auto& it : irb::glslVersionMap) {
             if (it.second == options.version) {
-                glslVersion = it.first;
+                lvslang::glslVersion = it.first;
                 found = true;
                 break;
             }
@@ -130,16 +105,7 @@ int main(int argc, char* argv[]) {
             INVALID_COMMAND_LINE_ARGUMENT("version");
     }
 
-    setSource(readFile(options.inputName));
-
-    std::string extension = options.inputName.substr(options.inputName.find_last_of('.'));
-    std::string code;
-    if (extension == ".lvsl")
-        code = lvsl::compile(options.inputName);
-    else if (extension == ".metal")
-        code = metal::compile(options.inputName);
-    else
-        throw std::runtime_error("unsupported output file extension '" + extension + "'");
+    std::string code = lvslang::compile(options.target, options.inputName);
 
     if (options.outputSpecified) {
         writeToFile(options.outputName, code);

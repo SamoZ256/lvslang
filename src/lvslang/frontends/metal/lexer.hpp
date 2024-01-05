@@ -2,9 +2,11 @@
 #define LVSLANG_METAL_LEXER_H
 
 #include "../../common.hpp"
-#include "../../../shader_ir_builder/value.hpp"
+#include "../../../../shader_ir_builder/value.hpp"
 
 #include "token.hpp"
+
+namespace lvslang {
 
 namespace metal {
 
@@ -459,5 +461,7 @@ int getNextToken() {
 }
 
 } //namespace lvsl
+
+} //namespace lvslang
 
 #endif

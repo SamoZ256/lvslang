@@ -1,7 +1,9 @@
 #ifndef LVSLANG_COMMON_H
 #define LVSLANG_COMMON_H
 
-#include "../shader_ir_builder/common.hpp"
+#include "../../shader_ir_builder/common.hpp"
+
+namespace lvslang {
 
 //Errors and warnings
 #define _LVSLANG_MSG(type, msg) fprintf(stderr, "[LVSLANG:" type "]::%s: %s\n", __FUNCTION__, msg)
@@ -124,5 +126,7 @@ char getNextChar() {
 
     return source[crntLine][stringPos++];
 }
+
+} //namespace lvslang
 
 #endif

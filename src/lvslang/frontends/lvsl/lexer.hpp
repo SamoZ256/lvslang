@@ -2,9 +2,11 @@
 #define LVSLANG_LVSL_LEXER_H
 
 #include "../../common.hpp"
-#include "../../../shader_ir_builder/value.hpp"
+#include "../../../../shader_ir_builder/value.hpp"
 
 #include "token.hpp"
+
+namespace lvslang {
 
 namespace lvsl {
 
@@ -464,5 +466,7 @@ int getNextToken() {
 }
 
 } //namespace lvsl
+
+} //namespace lvslang
 
 #endif

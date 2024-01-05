@@ -3,8 +3,10 @@
 
 #include <limits>
 
-#include "../shader_ir_builder/spirv/ir.hpp"
-#include "../shader_ir_builder/air/ir.hpp"
+#include "../../shader_ir_builder/spirv/ir.hpp"
+#include "../../shader_ir_builder/air/ir.hpp"
+
+namespace lvslang {
 
 //Forward declarations
 class FunctionPrototypeAST;
@@ -1782,5 +1784,7 @@ public:
         return true;
     }
 };
+
+} //namespace lvslang
 
 #endif

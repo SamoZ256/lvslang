@@ -618,7 +618,7 @@ void AIRBuilder::createMetadata() {
     block->addCode("!{!\"air.compile.framebuffer_fetch_enable\"}", framebufferFetch); //TODO: here
     block->addCode("!{!\"Lvslang\"}", identification); //TODO: here
     block->addCode("!{i32 2, i32 6, i32 0}", version); //TODO: here
-    block->addCode("!{!\"LVSL\", i32 3, i32 1, i32 0}", languageVersion); //TODO: here
+    block->addCode("!{!\"LVSL\", i32 0, i32 7, i32 0}", languageVersion); //TODO: here
     block->addCode("!{!\"/Users/samuliak/Desktop/lvslang/test.lvsl\"}", sourceFilename); //TODO: here
 
     MetadataValue* llvmModuleFlags = new MetadataValue(context, "llvm.module.flags");

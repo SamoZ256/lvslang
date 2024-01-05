@@ -1,6 +1,8 @@
 #ifndef LVSLANG_METAL_TOKEN_H
 #define LVSLANG_METAL_TOKEN_H
 
+namespace lvslang {
+
 namespace metal {
 
 #define TOKEN_TYPE_ENUM_MIN TOKEN_TYPE_SAMPLER
@@ -156,5 +158,7 @@ inline bool tokenIsAttrib(int token) {
 }
 
 } //namespace lvsl
+
+} //namespace lvslang
 
 #endif

@@ -1,6 +1,8 @@
 #ifndef LVSLANG_LVSL_TOKEN_H
 #define LVSLANG_LVSL_TOKEN_H
 
+namespace lvslang {
+
 namespace lvsl {
 
 #define TOKEN_TYPE_ENUM_MIN TOKEN_TYPE_SAMPLER
@@ -159,5 +161,7 @@ inline bool tokenIsAttrib(int token) {
 }
 
 } //namespace lvsl
+
+} //namespace lvslang
 
 #endif
