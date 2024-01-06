@@ -16,6 +16,30 @@ static irb::GLSLVersion glslVersion = irb::GLSLVersion::_1_10;
 irb::Context context;
 irb::IRBuilder* builder;
 
+//TODO: support templates
+struct StandardFunction {
+    irb::Type* type;
+    std::vector<irb::Argument> arguments;
+    irb::FunctionType* functionType;
+    irb::Value* value = nullptr;
+};
+
+//TODO: support overloads
+std::map<std::string, StandardFunction> standardFunctions;
+
+inline void addStandardFuncion(const std::string& name, irb::Type* type, const std::vector<irb::Argument>& arguments) {
+    //FunctionPrototypeAST* declaration = new FunctionPrototypeAST(name, type, arguments, false, irb::FunctionRole::Normal, true);
+    //functionDeclarations[name] = declaration;
+    //declaration->codegen();
+    StandardFunction standardFunction = {type, arguments};
+    std::vector<irb::Type*> argumentTypes;
+    argumentTypes.resize((arguments.size()));
+    for (uint32_t i = 0; i < argumentTypes.size(); i++)
+        argumentTypes[i] = new irb::PointerType(context, arguments[i].type, irb::StorageClass::Function);
+    standardFunction.functionType = new irb::FunctionType(context, type, argumentTypes);
+    standardFunctions[name] = standardFunction;
+}
+
 static FunctionPrototypeAST* crntFunction = nullptr;
 static uint32_t currentIndentation = 0;
 
@@ -547,13 +571,12 @@ private:
     //std::vector<int> attributes;
     bool isDefined;
     irb::FunctionRole functionRole;
-    bool isSTDFunction;
 
     irb::Value* value;
     irb::FunctionType* functionType;
 
 public:
-    FunctionPrototypeAST(const std::string& aName, irb::Type* aType, std::vector<irb::Argument> aArguments/*, const std::vector<int>& aAttributes*/, bool aIsDefined, irb::FunctionRole aFunctionRole, bool aIsSTDFunction = false) : _name(aName), type(aType), _arguments(aArguments)/*, attributes(aAttributes)*/, isDefined(aIsDefined), functionRole(aFunctionRole), isSTDFunction(aIsSTDFunction) {
+    FunctionPrototypeAST(const std::string& aName, irb::Type* aType, std::vector<irb::Argument> aArguments/*, const std::vector<int>& aAttributes*/, bool aIsDefined, irb::FunctionRole aFunctionRole) : _name(aName), type(aType), _arguments(aArguments)/*, attributes(aAttributes)*/, isDefined(aIsDefined), functionRole(aFunctionRole) {
         uint32_t bufferBinding = 0, textureBinding = 0, samplerBinding = 0;
         for (uint32_t i = 0; i < _arguments.size(); i++) {
             irb::Argument& arg = _arguments[i];
@@ -840,16 +863,15 @@ public:
             
             return new irb::Value(context, type, codeStr);
         } else {
-            if (isSTDFunction) {
+            /*if (isSTDFunction) {
                 std::string regName = _name;
                 regName[0] = toupper(regName[0]);
                 regName = "import " + regName;
                 value = new irb::Value(context, nullptr, regName);
-            } else {
-                context.pushRegisterName(_name);
-                value = builder->opRegisterFunction(functionType);
-                builder->opName(value, _name + "(");
-            }
+            } else {*/
+            context.pushRegisterName(_name);
+            value = builder->opRegisterFunction(functionType);
+            builder->opName(value, _name + "(");
 
             return new irb::Value(context, functionType);
         }
@@ -874,10 +896,6 @@ public:
 
     inline irb::FunctionRole getFunctionRole() const {
         return functionRole;
-    }
-
-    inline bool getIsSTDFunction() const {
-        return isSTDFunction;
     }
 
     inline irb::Value* getValue() const {
@@ -978,46 +996,56 @@ private:
     std::string callee;
     std::vector<ExpressionAST*> arguments;
 
-    FunctionPrototypeAST* declaration;
-
 public:
     CallExpressionAST(const std::string& aCallee, std::vector<ExpressionAST*> aArguments) : callee(aCallee), arguments(aArguments) {}
 
     irb::Value* codegen(irb::Type* requiredType = nullptr) override {
         setDebugInfo();
 
-        declaration = functionDeclarations[callee];
-        if (!declaration) {
-            logError(("Use of undeclared function '" + callee + "'").c_str());
-
-            return nullptr;
-        }
-
-        if (declaration->arguments().size() != arguments.size()) {
-            logError(("Expected " + std::to_string(declaration->arguments().size()) + " arguments, got " + std::to_string(arguments.size()) + " instead").c_str());
-
-            return nullptr;
-        }
-
-        std::string argsStr;
-        std::vector<irb::Value*> argVs(arguments.size());
-        for (uint32_t i = 0; i < arguments.size(); i++) {
-            ExpressionAST* arg = arguments[i];
-            argVs[i] = arg->codegen(declaration->arguments()[i].type);
-            if (TARGET_IS_IR(irb::target) && !arg->isVariable() && !declaration->getIsSTDFunction()) {
-                irb::Value* paramV = argVs[i];
-                context.pushRegisterName("param");
-                argVs[i] = builder->opVariable(new irb::PointerType(context, paramV->getType(), irb::StorageClass::Function));
-                builder->opStore(argVs[i], paramV);
+        if (FunctionPrototypeAST* declaration = functionDeclarations[callee]) {
+            std::string argsStr;
+            std::vector<irb::Value*> argVs(arguments.size());
+            for (uint32_t i = 0; i < arguments.size(); i++) {
+                ExpressionAST* arg = arguments[i];
+                argVs[i] = arg->codegen(declaration->arguments()[i].type);
+                if (TARGET_IS_IR(irb::target) && !arg->isVariable()) {
+                    irb::Value* paramV = argVs[i];
+                    context.pushRegisterName("param");
+                    argVs[i] = builder->opVariable(new irb::PointerType(context, paramV->getType(), irb::StorageClass::Function));
+                    builder->opStore(argVs[i], paramV);
+                }
+                if (i != 0)
+                    argsStr += ", ";
+                argsStr += argVs[i]->getRawName();
             }
-            if (i != 0)
-                argsStr += ", ";
-            argsStr += argVs[i]->getRawName();
-        }
 
-        if (TARGET_IS_CODE(irb::target)) {
-            std::string code;
-            if (declaration->getIsSTDFunction()) {
+            if (declaration->arguments().size() != arguments.size()) {
+                logError(("Expected " + std::to_string(declaration->arguments().size()) + " arguments, got " + std::to_string(arguments.size()) + " instead").c_str());
+
+                return nullptr;
+            }
+
+            if (TARGET_IS_CODE(irb::target)) {
+                std::string code = callee + "(" + argsStr + ")";
+
+                return new irb::Value(context, declaration->getType(), code);
+            } else {
+                return builder->opFunctionCall(declaration->getValue(), argVs);
+            }
+        } else if (standardFunctions.count(callee)) { //TODO: find a more elegant way
+            auto& standardFunction = standardFunctions[callee];
+            std::string argsStr;
+            std::vector<irb::Value*> argVs(arguments.size());
+            for (uint32_t i = 0; i < arguments.size(); i++) {
+                ExpressionAST* arg = arguments[i];
+                argVs[i] = arg->codegen(standardFunction.arguments[i].type);
+                if (i != 0)
+                    argsStr += ", ";
+                argsStr += argVs[i]->getRawName();
+            }
+
+            if (TARGET_IS_CODE(irb::target)) {
+                std::string code;
                 switch (irb::target) {
                 case irb::Target::Metal:
                     if (callee == "sample")
@@ -1040,20 +1068,24 @@ public:
                 default:
                     break;
                 }
+
+                return new irb::Value(context, standardFunction.type, code);
             } else {
-                code = callee + "(" + argsStr + ")";
-            }
-            return new irb::Value(context, declaration->getType(), code);
-        } else {
-            if (declaration->getIsSTDFunction()) {
-                std::string name = declaration->name();
-                if (name == "sample")
+                if (!standardFunction.value) {
+                    std::string regName = callee;
+                    regName[0] = toupper(regName[0]);
+                    regName = "import " + regName;
+                    standardFunction.value = new irb::Value(context, nullptr, regName);
+                }
+                if (callee == "sample")
                     return builder->opSample(argVs[0], argVs[1], argVs[2]);
                 else
-                    return builder->opSTDFunctionCall_EXT(name, declaration->getFunctionType(), argVs);
-            } else {
-                return builder->opFunctionCall(declaration->getValue(), argVs);
+                    return builder->opSTDFunctionCall_EXT(callee, standardFunction.functionType, argVs);
             }
+        } else {
+            logError(("Use of undeclared function '" + callee + "'").c_str());
+
+            return nullptr;
         }
     }
 };

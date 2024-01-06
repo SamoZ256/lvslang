@@ -1079,12 +1079,6 @@ void mainLoop() {
     }
 }
 
-inline void addStandardFuncion(const std::string& name, irb::Type* type, const std::vector<irb::Argument>& arguments) {
-    FunctionPrototypeAST* declaration = new FunctionPrototypeAST(name, type, arguments, false, irb::FunctionRole::Normal, true);
-    functionDeclarations[name] = declaration;
-    declaration->codegen();
-}
-
 std::string compile(const std::string& sourceName) {
     std::cout << "Using Metal frontend" << std::endl;
 
