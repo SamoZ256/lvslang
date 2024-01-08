@@ -310,7 +310,7 @@ public:
             //Check if the name isn't already used
             if (TARGET_IS_IR(target) && checkIfNameIsAlreadyUsed) {
                 uint32_t nb = 0;
-                while (context.registerNames.contains(getName()))
+                while (std::find(context.registerNames.begin(), context.registerNames.end(), getName()) != context.registerNames.end())
                     name = baseName + std::to_string(nb++);
                 context.registerNames.insert(getName());
             }

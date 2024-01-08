@@ -152,6 +152,8 @@ public:
                 opDecorate(type->getValue(this, true), Decoration::Block);
             
             //Add to interface
+            //TODO: uncomment in case when SPIRV version is less than 1.4
+            //if (storageClass == StorageClass::Input || storageClass == StorageClass::Output)
             code += " " + argValue->getName();
             
             //HACK: create a new variable, since we need to have the 'Function' storage class

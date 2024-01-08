@@ -1,12 +1,12 @@
 ## About The Project
 
-This is a compiler for the Lava Shading Language (LVSL). It compiles into other shading languages (GLSL, Metal Shading Language) and bytecodes (SPIRV, AIR).
+This is a compiler for various shading languages. It compiles into other shading languages (Metal Shading Language, HLSL, GLSL) and bytecodes (SPIRV, AIR).
 
 ### Backend status
 
 | SPIRV | Metal AIR | HLSL bytecode | Metal Shading Language | HLSL | GLSL |
 | :---: | :-------: | :-----------: | :--------------------: | :--: | :--: |
-|  ✅   |    ❔     |      ❌       |           ✅            |  ❔  |  ✅  |
+|  ✅   |    ❔     |      ❌       |           ✅            |  ✅  |  ✅  |
 
 ## Getting Started
 

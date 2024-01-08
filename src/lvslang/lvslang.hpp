@@ -1,6 +1,9 @@
 #ifndef LVSLANG_H
 #define LVSLANG_H
 
+#include "spirv-tools/libspirv.hpp"
+#include "spirv-tools/optimizer.hpp"
+
 #include "frontends/lvsl/parser.hpp"
 #include "frontends/metal/parser.hpp"
 
@@ -29,20 +32,94 @@ std::string readFile(const std::string& filename) {
     return content;
 }
 
-std::string compile(irb::Target aTarget, const std::string& sourceName) {
-    irb::target = aTarget;
+enum class OptimizationLevel {
+    None,
+    O1,
+    O2,
+    O3,
+    OS
+};
 
-    setSource(readFile(sourceName));
+struct CompileOptions {
+    std::string inputName;
+    std::string outputName;
+    irb::GLSLVersion glslVersion;
+    irb::Target target = irb::Target::None;
+    bool outputAssembly = false;
+    OptimizationLevel optimizationLevel = OptimizationLevel::O2;
+};
 
-    std::string extension = sourceName.substr(sourceName.find_last_of('.'));
+bool compile(const CompileOptions& options, std::string& outputCode) {
+    irb::target = options.target;
+    lvslang::glslVersion = options.glslVersion;
+
+    setSource(readFile(options.inputName));
+
+    std::string extension = options.inputName.substr(options.inputName.find_last_of('.'));
+    std::string code;
     if (extension == ".lvsl")
-        return lvsl::compile(sourceName);
+        code = lvsl::compile(options.inputName);
     else if (extension == ".metal")
-        return metal::compile(sourceName);
+        code = metal::compile(options.inputName);
     else
         throw std::runtime_error("unsupported output file extension '" + extension + "'");
     
-    return "";
+    //Assemble and optimize
+    if (irb::target == irb::Target::SPIRV) {
+        spvtools::SpirvTools core(SPV_ENV_UNIVERSAL_1_6);
+        spvtools::Optimizer opt(SPV_ENV_UNIVERSAL_1_6);
+
+        auto printMsgToStderr = [](spv_message_level_t, const char*,
+                                      const spv_position_t&, const char* m) {
+            std::cerr << "error: " << m << std::endl;
+        };
+        core.SetMessageConsumer(printMsgToStderr);
+        opt.SetMessageConsumer(printMsgToStderr);
+
+        std::vector<uint32_t> binary;
+        if (!core.Assemble(code, &binary)) {
+            LVSLANG_ERROR("spirv assembler failed");
+            return false;
+        }
+        if (!core.Validate(binary)) {
+            LVSLANG_ERROR("spirv validator failed");
+            return false;
+        }
+
+        switch (options.optimizationLevel) {
+        case OptimizationLevel::None:
+            break;
+        //TODO: differentiate between these?
+        case OptimizationLevel::O1:
+        case OptimizationLevel::O2:
+        case OptimizationLevel::O3:
+            opt.RegisterPerformancePasses();
+            break;
+        case OptimizationLevel::OS:
+            //TODO: optimize for size
+            break;
+        }
+        if (!opt.Run(binary.data(), binary.size(), &binary)) {
+            LVSLANG_ERROR("spirv optimizer failed");
+            return false;
+        }
+
+        if (options.outputAssembly) {
+            if (!core.Disassemble(binary, &outputCode, SPV_BINARY_TO_TEXT_OPTION_INDENT | SPV_BINARY_TO_TEXT_OPTION_FRIENDLY_NAMES | SPV_BINARY_TO_TEXT_OPTION_COMMENT)) {
+                LVSLANG_ERROR("spirv disassembler failed");
+                return false;
+            }
+        } else {
+            outputCode = std::string((const char*)binary.data(), binary.size());
+        }
+    } else if (irb::target == irb::Target::AIR) {
+        //TODO: assemble and optimize
+        outputCode = code;
+    } else {
+        outputCode = code;
+    }
+
+    return true;
 }
 
 } //namespace lvslang

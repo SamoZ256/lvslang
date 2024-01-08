@@ -15,16 +15,6 @@ void writeToFile(const std::string& filename, const std::string& source) {
     file.close();
 }
 
-struct Options {
-    std::string inputName;
-    bool inputSpecified = false;
-    std::string outputName;
-    bool outputSpecified = false;
-    std::string version;
-    bool versionSpecified = false;
-    irb::Target target = irb::Target::None;
-};
-
 enum class Modifier {
     None,
     Output,
@@ -34,8 +24,9 @@ enum class Modifier {
 };
 
 int main(int argc, char* argv[]) {
-    Options options;
+    lvslang::CompileOptions options;
     Modifier modifier = Modifier::None;
+    std::string glslVersionStr;
     for (uint32_t i = 1; i < argc; i++) {
         std::string arg(argv[i]);
 
@@ -60,27 +51,31 @@ int main(int argc, char* argv[]) {
                 else if (optionName == "version")
                     modifier = Modifier::Version;
             } else {
-                for (uint32_t j = 1; j < arg.size(); j++) {
-                    switch (arg[j]) {
-                    case 'o':
-                        modifier = Modifier::Output;
-                        break;
-                    }
-                }
+                if (arg == "-o")
+                    modifier = Modifier::Output;
+                else if (arg == "-S")
+                    options.outputAssembly = true;
+                else if (arg == "-O0")
+                    options.optimizationLevel = lvslang::OptimizationLevel::None;
+                else if (arg == "-O1")
+                    options.optimizationLevel = lvslang::OptimizationLevel::O1;
+                else if (arg == "-O2")
+                    options.optimizationLevel = lvslang::OptimizationLevel::O2;
+                else if (arg == "-O3")
+                    options.optimizationLevel = lvslang::OptimizationLevel::O3;
+                else if (arg == "-OS")
+                    options.optimizationLevel = lvslang::OptimizationLevel::OS;
             }
         } else {
             switch (modifier) {
             case Modifier::None: //Input
                 options.inputName = arg;
-                options.inputSpecified = true;
                 break;
             case Modifier::Output: //Output
                 options.outputName = arg;
-                options.outputSpecified = true;
                 break;
             case Modifier::Version: //Version
-                options.version = arg;
-                options.versionSpecified = true;
+                glslVersionStr = arg;
             default:
                 break;
             }
@@ -89,14 +84,16 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    if (!options.inputSpecified)
-        throw std::runtime_error("no input sources specified");
+    if (options.inputName == "") {
+        LVSLANG_ERROR("no input sources specified");
+        return 1;
+    }
     
-    if (options.versionSpecified) {
+    if (glslVersionStr != "") {
         bool found = false;
         for (auto& it : irb::glslVersionMap) {
-            if (it.second == options.version) {
-                lvslang::glslVersion = it.first;
+            if (it.second == glslVersionStr) {
+                options.glslVersion = it.first;
                 found = true;
                 break;
             }
@@ -104,14 +101,15 @@ int main(int argc, char* argv[]) {
         if (!found)
             INVALID_COMMAND_LINE_ARGUMENT("version");
     }
+    
+    std::string code;
+    if (!lvslang::compile(options, code))
+        return 1;
 
-    std::string code = lvslang::compile(options.target, options.inputName);
-
-    if (options.outputSpecified) {
-        writeToFile(options.outputName, code);
-    } else {
+    if (options.outputName == "")
         std::cout << code;
-    }
+    else
+        writeToFile(options.outputName, code);
 
     return 0;
 }
