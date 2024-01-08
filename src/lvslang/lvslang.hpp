@@ -96,7 +96,7 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
             opt.RegisterPerformancePasses();
             break;
         case OptimizationLevel::OS:
-            //TODO: optimize for size
+            opt.RegisterSizePasses();
             break;
         }
         if (!opt.Run(binary.data(), binary.size(), &binary)) {
