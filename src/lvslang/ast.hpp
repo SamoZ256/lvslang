@@ -189,9 +189,6 @@ std::string getGLSLVersionString() {
     std::string versionStr = irb::glslVersionMap.at(glslVersion);
 
     switch (glslVersion) {
-    case irb::GLSLVersion::None:
-        LVSLANG_ERROR_UNSUPPORTED_TARGET_VERSIONS("None", "GLSL");
-        break;
     case irb::GLSLVersion::_1_10 ... irb::GLSLVersion::_1_50:
         LVSLANG_ERROR_UNSUPPORTED_TARGET_VERSIONS("1.10 to 1.50", "GLSL");
         break;

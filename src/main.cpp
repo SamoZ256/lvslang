@@ -86,10 +86,12 @@ int main(int argc, char* argv[]) {
             case Modifier::Output: //Output
                 options.outputName = arg;
                 break;
-            case Modifier::SPIRVVersion: //GLSLVersion
+            case Modifier::SPIRVVersion: //SPIRVVersion
                 spirvVersionStr = arg;
+                break;
             case Modifier::GLSLVersion: //GLSLVersion
                 glslVersionStr = arg;
+                break;
             default:
                 break;
             }
@@ -103,6 +105,19 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     
+    if (spirvVersionStr != "") {
+        bool found = false;
+        for (auto& it : irb::spirvVersionMap) {
+            if (it.second == spirvVersionStr) {
+                options.spirvVersion = it.first;
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+            INVALID_COMMAND_LINE_ARGUMENT("spirv version");
+    }
+    
     if (glslVersionStr != "") {
         bool found = false;
         for (auto& it : irb::glslVersionMap) {
@@ -113,7 +128,7 @@ int main(int argc, char* argv[]) {
             }
         }
         if (!found)
-            INVALID_COMMAND_LINE_ARGUMENT("version");
+            INVALID_COMMAND_LINE_ARGUMENT("glsl version");
     }
     
     std::string code;

@@ -43,14 +43,16 @@ enum class OptimizationLevel {
 struct CompileOptions {
     std::string inputName;
     std::string outputName;
-    irb::GLSLVersion glslVersion;
     irb::Target target = irb::Target::None;
+    irb::SPIRVVersion spirvVersion = irb::SPIRVVersion::_1_4;
+    irb::GLSLVersion glslVersion = irb::GLSLVersion::_3_30;
     bool outputAssembly = false;
     OptimizationLevel optimizationLevel = OptimizationLevel::O2;
 };
 
 bool compile(const CompileOptions& options, std::string& outputCode) {
     irb::target = options.target;
+    irb::spirvVersion = options.spirvVersion;
     lvslang::glslVersion = options.glslVersion;
 
     setSource(readFile(options.inputName));
@@ -69,9 +71,36 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
         if (options.optimizationLevel == OptimizationLevel::None && options.outputAssembly) {
             outputCode = code;
         } else {
+            spv_target_env targetEnv;
             //TODO: use vulkan env?
-            spvtools::SpirvTools core(SPV_ENV_UNIVERSAL_1_6);
-            spvtools::Optimizer opt(SPV_ENV_UNIVERSAL_1_6);
+            switch (options.spirvVersion) {
+            case irb::SPIRVVersion::_1_0:
+                targetEnv = SPV_ENV_UNIVERSAL_1_0;
+                break;
+            case irb::SPIRVVersion::_1_1:
+                targetEnv = SPV_ENV_UNIVERSAL_1_1;
+                break;
+            case irb::SPIRVVersion::_1_2:
+                targetEnv = SPV_ENV_UNIVERSAL_1_2;
+                break;
+            case irb::SPIRVVersion::_1_3:
+                targetEnv = SPV_ENV_UNIVERSAL_1_3;
+                break;
+            case irb::SPIRVVersion::_1_4:
+                targetEnv = SPV_ENV_UNIVERSAL_1_4;
+                break;
+            case irb::SPIRVVersion::_1_5:
+                targetEnv = SPV_ENV_UNIVERSAL_1_5;
+                break;
+            case irb::SPIRVVersion::_1_6:
+                targetEnv = SPV_ENV_UNIVERSAL_1_6;
+                break;
+            default:
+                break;
+            }
+
+            spvtools::SpirvTools core(targetEnv);
+            spvtools::Optimizer opt(targetEnv);
 
             auto printMsgToStderr = [](spv_message_level_t, const char*,
                                         const spv_position_t&, const char* m) {

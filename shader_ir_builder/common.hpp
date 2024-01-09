@@ -173,9 +173,32 @@ enum class Target {
 #define TARGET_IS_CODE(target) ((int)target >= (int)irb::Target::Metal && (int)target <= (int)irb::Target::GLSL)
 #define TARGET_IS_IR(target) ((int)target >= (int)irb::Target::SPIRV && (int)target <= (int)irb::Target::AIR)
 
-enum class GLSLVersion {
-    None,
+enum class SPIRVVersion {
+    //1.x
+    _1_0,
+    _1_1,
+    _1_2,
+    _1_3,
+    _1_4,
+    _1_5,
+    _1_6,
 
+    MaxEnum
+};
+
+static SPIRVVersion spirvVersion;
+
+extern std::map<SPIRVVersion, std::string> spirvVersionMap;
+
+inline bool spirvVersionIsLessThanOrEqual(SPIRVVersion lessThanOrEqual) {
+    return ((int)spirvVersion <= (int)lessThanOrEqual);
+}
+
+inline bool spirvVersionIsGreaterThanOrEqual(SPIRVVersion greaterThanOrEqual) {
+    return ((int)spirvVersion >= (int)greaterThanOrEqual);
+}
+
+enum class GLSLVersion {
     //1.x
     _1_10,
     _1_20,
