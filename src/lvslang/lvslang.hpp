@@ -66,51 +66,56 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
     
     //Assemble and optimize
     if (irb::target == irb::Target::SPIRV) {
-        spvtools::SpirvTools core(SPV_ENV_UNIVERSAL_1_6);
-        spvtools::Optimizer opt(SPV_ENV_UNIVERSAL_1_6);
+        if (options.optimizationLevel == OptimizationLevel::None && options.outputAssembly) {
+            outputCode = code;
+        } else {
+            //TODO: use vulkan env?
+            spvtools::SpirvTools core(SPV_ENV_UNIVERSAL_1_6);
+            spvtools::Optimizer opt(SPV_ENV_UNIVERSAL_1_6);
 
-        auto printMsgToStderr = [](spv_message_level_t, const char*,
-                                      const spv_position_t&, const char* m) {
-            std::cerr << "error: " << m << std::endl;
-        };
-        core.SetMessageConsumer(printMsgToStderr);
-        opt.SetMessageConsumer(printMsgToStderr);
+            auto printMsgToStderr = [](spv_message_level_t, const char*,
+                                        const spv_position_t&, const char* m) {
+                std::cerr << "error: " << m << std::endl;
+            };
+            core.SetMessageConsumer(printMsgToStderr);
+            opt.SetMessageConsumer(printMsgToStderr);
 
-        std::vector<uint32_t> binary;
-        if (!core.Assemble(code, &binary)) {
-            LVSLANG_ERROR("spirv assembler failed");
-            return false;
-        }
-        if (!core.Validate(binary)) {
-            LVSLANG_ERROR("spirv validator failed");
-            return false;
-        }
-
-        switch (options.optimizationLevel) {
-        case OptimizationLevel::None:
-            break;
-        //TODO: differentiate between these?
-        case OptimizationLevel::O1:
-        case OptimizationLevel::O2:
-        case OptimizationLevel::O3:
-            opt.RegisterPerformancePasses();
-            break;
-        case OptimizationLevel::OS:
-            opt.RegisterSizePasses();
-            break;
-        }
-        if (!opt.Run(binary.data(), binary.size(), &binary)) {
-            LVSLANG_ERROR("spirv optimizer failed");
-            return false;
-        }
-
-        if (options.outputAssembly) {
-            if (!core.Disassemble(binary, &outputCode, SPV_BINARY_TO_TEXT_OPTION_INDENT | SPV_BINARY_TO_TEXT_OPTION_FRIENDLY_NAMES | SPV_BINARY_TO_TEXT_OPTION_COMMENT)) {
-                LVSLANG_ERROR("spirv disassembler failed");
+            std::vector<uint32_t> binary;
+            if (!core.Assemble(code, &binary)) {
+                LVSLANG_ERROR("spirv assembler failed");
                 return false;
             }
-        } else {
-            outputCode = std::string((const char*)binary.data(), binary.size());
+            if (!core.Validate(binary)) {
+                LVSLANG_ERROR("spirv validator failed");
+                return false;
+            }
+
+            switch (options.optimizationLevel) {
+            case OptimizationLevel::None:
+                break;
+            //TODO: differentiate between these?
+            case OptimizationLevel::O1:
+            case OptimizationLevel::O2:
+            case OptimizationLevel::O3:
+                opt.RegisterPerformancePasses();
+                break;
+            case OptimizationLevel::OS:
+                opt.RegisterSizePasses();
+                break;
+            }
+            if (!opt.Run(binary.data(), binary.size(), &binary)) {
+                LVSLANG_ERROR("spirv optimizer failed");
+                return false;
+            }
+
+            if (options.outputAssembly) {
+                if (!core.Disassemble(binary, &outputCode, SPV_BINARY_TO_TEXT_OPTION_INDENT | SPV_BINARY_TO_TEXT_OPTION_FRIENDLY_NAMES | SPV_BINARY_TO_TEXT_OPTION_COMMENT)) {
+                    LVSLANG_ERROR("spirv disassembler failed");
+                    return false;
+                }
+            } else {
+                outputCode = std::string((const char*)binary.data(), binary.size());
+            }
         }
     } else if (irb::target == irb::Target::AIR) {
         //TODO: assemble and optimize
