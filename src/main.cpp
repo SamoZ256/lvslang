@@ -6,7 +6,7 @@
 
 #include "lvslang/lvslang.hpp"
 
-#define INVALID_COMMAND_LINE_ARGUMENT(arg) std::cout << "Invalid command line argument '" arg "'" << std::endl;
+#define INVALID_COMMAND_LINE_ARGUMENT(arg) std::cout << "Invalid command line argument '" + std::string(arg) + "'" << std::endl;
 
 void writeToFile(const std::string& filename, const std::string& source) {
     std::ofstream file;
@@ -18,7 +18,8 @@ void writeToFile(const std::string& filename, const std::string& source) {
 enum class Modifier {
     None,
     Output,
-    Version,
+    SPIRVVersion,
+    GLSLVersion,
 
     MaxEnum
 };
@@ -26,6 +27,7 @@ enum class Modifier {
 int main(int argc, char* argv[]) {
     lvslang::CompileOptions options;
     Modifier modifier = Modifier::None;
+    std::string spirvVersionStr;
     std::string glslVersionStr;
     for (uint32_t i = 1; i < argc; i++) {
         std::string arg(argv[i]);
@@ -33,38 +35,48 @@ int main(int argc, char* argv[]) {
         //Option
         if (arg[0] == '-') {
             if (arg.size() == 1)
-                throw std::runtime_error("'-' must be followed by option");
+                throw std::runtime_error("'-' must be followed by an option");
             if (arg[1] == '-') {
                 if (arg.size() == 2)
-                    throw std::runtime_error("'-' must be followed by option");
-                std::string optionName = arg.substr(2);
-                if (optionName == "msl")
+                    throw std::runtime_error("'--' must be followed by an option");
+
+                if (arg == "--msl") {
                     options.target = irb::Target::Metal;
-                if (optionName == "hlsl")
+                } else if (arg == "--hlsl") {
                     options.target = irb::Target::HLSL;
-                else if (optionName == "glsl")
+                } else if (arg == "--glsl") {
                     options.target = irb::Target::GLSL;
-                else if (optionName == "spirv")
+                } else if (arg == "--spirv") {
                     options.target = irb::Target::SPIRV;
-                else if (optionName == "air")
+                } else if (arg == "--air") {
                     options.target = irb::Target::AIR;
-                else if (optionName == "version")
-                    modifier = Modifier::Version;
+                } else if (arg == "--spirv-version") {
+                    modifier = Modifier::SPIRVVersion;
+                } else if (arg == "--glsl-version") {
+                    modifier = Modifier::GLSLVersion;
+                } else {
+                    INVALID_COMMAND_LINE_ARGUMENT(arg);
+                    return 1;
+                }
             } else {
-                if (arg == "-o")
+                if (arg == "-o") {
                     modifier = Modifier::Output;
-                else if (arg == "-S")
+                } else if (arg == "-S") {
                     options.outputAssembly = true;
-                else if (arg == "-O0")
+                } else if (arg == "-O0") {
                     options.optimizationLevel = lvslang::OptimizationLevel::None;
-                else if (arg == "-O1")
+                } else if (arg == "-O1") {
                     options.optimizationLevel = lvslang::OptimizationLevel::O1;
-                else if (arg == "-O2")
+                } else if (arg == "-O2") {
                     options.optimizationLevel = lvslang::OptimizationLevel::O2;
-                else if (arg == "-O3")
+                } else if (arg == "-O3") {
                     options.optimizationLevel = lvslang::OptimizationLevel::O3;
-                else if (arg == "-OS")
+                } else if (arg == "-OS") {
                     options.optimizationLevel = lvslang::OptimizationLevel::OS;
+                } else {
+                    INVALID_COMMAND_LINE_ARGUMENT(arg);
+                    return 1;
+                }
             }
         } else {
             switch (modifier) {
@@ -74,7 +86,9 @@ int main(int argc, char* argv[]) {
             case Modifier::Output: //Output
                 options.outputName = arg;
                 break;
-            case Modifier::Version: //Version
+            case Modifier::SPIRVVersion: //GLSLVersion
+                spirvVersionStr = arg;
+            case Modifier::GLSLVersion: //GLSLVersion
                 glslVersionStr = arg;
             default:
                 break;
