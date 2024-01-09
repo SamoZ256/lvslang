@@ -1073,6 +1073,7 @@ ExpressionAST* parseExpression(int expressionPrecedence) {
 void mainLoop() {
     while (true) {
         ExpressionAST* expression = nullptr;
+        bool skipUntillBlockEnd = true;
         switch (crntToken) {
         case TOKEN_EOF:
             return;
@@ -1107,12 +1108,23 @@ void mainLoop() {
         default:
             logError("unknown top level token '" + std::to_string(crntToken) + "'");
             getNextToken(); //For recovery
+            skipUntillBlockEnd = false;
             break;
         }
 
         if (expression) {
             if (auto* value = expression->codegen()) {
                 context.codeMain += value->getRawName() + "\n\n";
+            }
+        } else if (skipUntillBlockEnd) {
+            while (true) {
+                getNextToken();
+                if (crntToken == TOKEN_EOF)
+                    return;
+                if (crntToken == '}') {
+                    getNextToken(); // '}'
+                    break;
+                }
             }
         }
     }
