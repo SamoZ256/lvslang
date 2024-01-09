@@ -48,7 +48,7 @@ public:
 
         blockHeader->addCodeRawToBeginning(
 "; SPIR-V\n" \
-"; Version:   1.0\n" \
+"; Version:   " + spirvVersionMap[spirvVersion] + "\n" \
 "; Generator: Lvslang; 11\n" \
 "; Bound:     385\n" \
 "; Schema:    0\n" \

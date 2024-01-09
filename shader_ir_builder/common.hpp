@@ -198,30 +198,6 @@ inline bool spirvVersionIsGreaterThanOrEqual(SPIRVVersion greaterThanOrEqual) {
     return ((int)spirvVersion >= (int)greaterThanOrEqual);
 }
 
-enum class GLSLVersion {
-    //1.x
-    _1_10,
-    _1_20,
-    _1_30,
-    _1_40,
-    _1_50,
-
-    //3.x
-    _3_30,
-
-    //4.x
-    _4_00,
-    _4_10,
-    _4_20,
-    _4_30,
-    _4_40,
-    _4_50,
-
-    MaxEnum
-};
-
-extern std::map<GLSLVersion, std::string> glslVersionMap;
-
 enum class Extension {
     _8bit_storage,
     _16bit_storage,
@@ -230,6 +206,7 @@ enum class Extension {
     MaxEnum
 };
 
+//TODO: move the GLSL part to @ref ast.hpp
 //is enabled, glsl name, spirv name
 extern std::tuple<bool, std::string, std::string> extensions[(int)Extension::MaxEnum];
 

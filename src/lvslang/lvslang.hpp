@@ -45,7 +45,7 @@ struct CompileOptions {
     std::string outputName;
     irb::Target target = irb::Target::None;
     irb::SPIRVVersion spirvVersion = irb::SPIRVVersion::_1_4;
-    irb::GLSLVersion glslVersion = irb::GLSLVersion::_3_30;
+    GLSLVersion glslVersion = GLSLVersion::_3_30;
     bool outputAssembly = false;
     OptimizationLevel optimizationLevel = OptimizationLevel::O2;
 };

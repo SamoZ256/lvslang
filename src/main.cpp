@@ -120,7 +120,7 @@ int main(int argc, char* argv[]) {
     
     if (glslVersionStr != "") {
         bool found = false;
-        for (auto& it : irb::glslVersionMap) {
+        for (auto& it : lvslang::glslVersionMap) {
             if (it.second == glslVersionStr) {
                 options.glslVersion = it.first;
                 found = true;
