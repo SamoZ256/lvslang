@@ -1080,6 +1080,7 @@ void mainLoop() {
             return;
         case TOKEN_SKIP:
             getNextToken(); // ';'
+            skipUntillBlockEnd = false;
             break;
         case TOKEN_FUNC:
             expression = parseFunctionDefinition();

@@ -331,7 +331,7 @@ public:
     }
 
     inline std::string getNameWithTypeAndAttributes() {
-        return type->getName() + type->getAttributes() + getName();
+        return type->getName() + type->getAttributes() + " " + getName();
     }
 
     inline bool isConstant() const {

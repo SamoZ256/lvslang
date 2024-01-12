@@ -185,6 +185,7 @@ public:
         for (uint32_t i = 0; i < arguments.size(); i++) {
             if (i != 0)
                 code += ", ";
+            //TODO: add attributes from function definition
             code += arguments[i]->getNameWithType();
         }
         code += ")";
