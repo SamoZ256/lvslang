@@ -1031,6 +1031,7 @@ ExpressionAST* parseTopLevelTypeExpression() {
 
 //Main loop
 void mainLoop() {
+    getNextToken();
     while (true) {
         ExpressionAST* expression = nullptr;
         bool skipUntillBlockEnd = true;
@@ -1091,7 +1092,7 @@ void mainLoop() {
     }
 }
 
-std::string compile(const std::string& sourceName) {
+void compile() {
     std::cout << "Using Metal frontend" << std::endl;
 
     binopPrecedence[TOKEN_OPERATOR_LOGICAL_AND                      ] = 8;
@@ -1135,59 +1136,11 @@ std::string compile(const std::string& sourceName) {
     binopPrecedence[TOKEN_OPERATOR_DOT                              ] = 400;
     binopPrecedence[TOKEN_OPERATOR_FUNCTION_RETURN_TYPE             ] = 400;
 
-    switch (irb::target) {
-    case irb::Target::None:
-        IRB_ERROR("No target specified");
-        break;
-    case irb::Target::Metal:
-        context.codeHeader = "#include <metal_stdlib>\nusing namespace metal;";
-        break;
-    case irb::Target::GLSL:
-        context.codeHeader = "#version " + getGLSLVersionString()/* + " core"*/;
-        break;
-    case irb::Target::HLSL:
-        //TODO: add something here?
-        break;
-    case irb::Target::SPIRV:
-        builder = new irb::SPIRVBuilder(context, true);
-        break;
-    case irb::Target::AIR:
-        //TODO: support other data layouts as well
-        //TODO: target triple should be omitted so as to prevent llvm-opt errors
-        context.codeHeader = \
-        "source_filename = \"" + sourceName + "\"\n" \
-        "target datalayout = \"e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v24:32:32-v32:32:32-v48:64:64-v64:64:64-v96:128:128-v128:128:128-v192:256:256-v256:256:256-v512:512:512-v1024:1024:1024-n8:16:32\"\n" \
-        "target triple = \"air64-apple-macosx14.0.0\"";
-        builder = new irb::AIRBuilder(context, true);
-        break;
-    default:
-        LVSLANG_ERROR_UNSUPPORTED_TARGET("Unknown");
-        break;
-    }
-
     //Standard library
     addStandardFuncion("sin", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
     addStandardFuncion("sample", new irb::VectorType(context, createScalarType(TOKEN_TYPE_FLOAT), 4), {{.type = new irb::TextureType(context, irb::TextureViewType::_2D, createScalarType(TOKEN_TYPE_FLOAT))}, {.type = new irb::SamplerType(context)}, {.type = new irb::VectorType(context, createScalarType(TOKEN_TYPE_FLOAT), 2)}}); //TODO: overload this function?
 
-    //Extensions
-    //TODO: enable them only if needed
-    enableExtension(irb::Extension::_8bit_storage);
-    enableExtension(irb::Extension::_16bit_storage);
-    enableExtension(irb::Extension::explicit_arithmetic_types);
-
-    if (irb::target == irb::Target::SPIRV) {
-        builder->opImportSTD_EXT("GLSL.std.450");
-        builder->opMemoryModel();
-    }
-
-    getNextToken();
     mainLoop();
-
-    if (irb::target == irb::Target::AIR)
-        static_cast<irb::AIRBuilder*>(builder)->createMetadata();
-    std::string code = context.codeHeader + "\n\n" + (TARGET_IS_IR(irb::target) ? builder->getCode() : context.codeMain);
-
-    return code;
 }
 
 } //namespace lvsl

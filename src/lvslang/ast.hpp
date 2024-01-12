@@ -11,45 +11,6 @@ namespace lvslang {
 //Forward declarations
 class FunctionPrototypeAST;
 
-enum class GLSLVersion {
-    //1.x
-    _1_10,
-    _1_20,
-    _1_30,
-    _1_40,
-    _1_50,
-
-    //3.x
-    _3_30,
-
-    //4.x
-    _4_00,
-    _4_10,
-    _4_20,
-    _4_30,
-    _4_40,
-    _4_50,
-
-    MaxEnum
-};
-
-std::map<GLSLVersion, std::string> glslVersionMap = {
-    {GLSLVersion::_1_10, "110"},
-    {GLSLVersion::_1_20, "120"},
-    {GLSLVersion::_1_30, "130"},
-    {GLSLVersion::_1_40, "140"},
-    {GLSLVersion::_1_50, "150"},
-
-    {GLSLVersion::_3_30, "330"},
-
-    {GLSLVersion::_4_00, "400"},
-    {GLSLVersion::_4_10, "410"},
-    {GLSLVersion::_4_20, "420"},
-    {GLSLVersion::_4_30, "430"},
-    {GLSLVersion::_4_40, "440"},
-    {GLSLVersion::_4_50, "450"}
-};
-
 static GLSLVersion glslVersion = GLSLVersion::_1_10;
 
 irb::Context context;
