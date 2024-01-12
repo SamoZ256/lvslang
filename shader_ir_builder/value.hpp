@@ -231,7 +231,7 @@ public:
     }
 
     virtual std::string getAttributes() {
-        return "noundef ";
+        return " noundef";
     }
 
     virtual bool isScalar() {
@@ -331,7 +331,7 @@ public:
     }
 
     inline std::string getNameWithTypeAndAttributes() {
-        return type->getName() + " " + type->getAttributes() + getName();
+        return type->getName() + type->getAttributes() + getName();
     }
 
     inline bool isConstant() const {
@@ -567,6 +567,8 @@ private:
     StorageClass storageClass;
     int addressSpace = -1;
 
+    std::string attributesStr;
+
 public:
     PointerType(Context& aContext, Type* aBaseType, StorageClass aStorageClass) : Type(aContext, TypeID::Pointer), _baseType(aBaseType), storageClass(aStorageClass) {
         if (TARGET_IS_CODE(target))
@@ -603,7 +605,7 @@ public:
     //TODO: override @ref getOpPrefix
 
     std::string getAttributes() override {
-        return _baseType->getAttributes();
+        return attributesStr + _baseType->getAttributes();
     }
 
     bool isPointer() override {
@@ -632,6 +634,11 @@ public:
         addressSpace = aAddressSpace;
         if (target == Target::AIR && addressSpace != -1)
             nameBegin = "ptr addrspace(" + std::to_string(addressSpace) + ")";
+    }
+
+    inline void setIsBuffer() {
+        if (target == Target::AIR)
+            attributesStr += " \"air-buffer-no-alias\"";
     }
 };
 

@@ -595,10 +595,16 @@ public:
                     attr.isSampler = true;
                     attr.bindings.sampler = samplerBinding++;
                 } else if (!attr.isInput) {
+                    irb::PointerType* pointerType = dynamic_cast<irb::PointerType*>(arg.type);
+                    if (!pointerType) {
+                        logError("only pointers can be used as buffers");
+                        return;
+                    }
                     attr.isBuffer = true;
                     attr.bindings.buffer = bufferBinding++;
                     if ((irb::target == irb::Target::SPIRV || irb::target == irb::Target::GLSL || irb::target == irb::Target::HLSL) && functionRole != irb::FunctionRole::Normal)
                         arg.type = arg.type->getElementType();
+                    pointerType->setIsBuffer();
                 }
             }
         }
