@@ -71,8 +71,8 @@ int main(int argc, char* argv[]) {
                     options.optimizationLevel = lvslang::OptimizationLevel::O2;
                 } else if (arg == "-O3") {
                     options.optimizationLevel = lvslang::OptimizationLevel::O3;
-                } else if (arg == "-OS") {
-                    options.optimizationLevel = lvslang::OptimizationLevel::OS;
+                } else if (arg == "-Os") {
+                    options.optimizationLevel = lvslang::OptimizationLevel::Os;
                 } else {
                     INVALID_COMMAND_LINE_ARGUMENT(arg);
                     return 1;

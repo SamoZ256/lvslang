@@ -4,6 +4,15 @@
 #include "spirv-tools/libspirv.hpp"
 #include "spirv-tools/optimizer.hpp"
 
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IR/Verifier.h"
+#include "llvm/IR/PassManager.h"
+#include "llvm/Passes/PassBuilder.h"
+#include "llvm/Passes/PassPlugin.h"
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/IRReader/IRReader.h"
+
 #include "frontends/lvsl/parser.hpp"
 #include "frontends/metal/parser.hpp"
 
@@ -37,7 +46,7 @@ enum class OptimizationLevel {
     O1,
     O2,
     O3,
-    OS
+    Os
 };
 
 struct CompileOptions {
@@ -112,87 +121,133 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
     
     //Assemble and optimize
     if (irb::target == irb::Target::SPIRV) {
-        if (options.optimizationLevel == OptimizationLevel::None && options.outputAssembly) {
-            outputCode = code;
-        } else {
-            spv_target_env targetEnv;
-            //TODO: use vulkan env?
-            switch (options.spirvVersion) {
-            case irb::SPIRVVersion::_1_0:
-                targetEnv = SPV_ENV_UNIVERSAL_1_0;
-                break;
-            case irb::SPIRVVersion::_1_1:
-                targetEnv = SPV_ENV_UNIVERSAL_1_1;
-                break;
-            case irb::SPIRVVersion::_1_2:
-                targetEnv = SPV_ENV_UNIVERSAL_1_2;
-                break;
-            case irb::SPIRVVersion::_1_3:
-                targetEnv = SPV_ENV_UNIVERSAL_1_3;
-                break;
-            case irb::SPIRVVersion::_1_4:
-                targetEnv = SPV_ENV_UNIVERSAL_1_4;
-                break;
-            case irb::SPIRVVersion::_1_5:
-                targetEnv = SPV_ENV_UNIVERSAL_1_5;
-                break;
-            case irb::SPIRVVersion::_1_6:
-                targetEnv = SPV_ENV_UNIVERSAL_1_6;
-                break;
-            default:
-                break;
-            }
-
-            spvtools::SpirvTools core(targetEnv);
-            spvtools::Optimizer opt(targetEnv);
-
-            auto printMsgToStderr = [](spv_message_level_t, const char*,
-                                        const spv_position_t&, const char* m) {
-                std::cerr << "error: " << m << std::endl;
-            };
-            core.SetMessageConsumer(printMsgToStderr);
-            opt.SetMessageConsumer(printMsgToStderr);
-
-            std::vector<uint32_t> binary;
-            if (!core.Assemble(code, &binary)) {
-                LVSLANG_ERROR("spirv assembler failed");
-                return false;
-            }
-            if (!core.Validate(binary)) {
-                LVSLANG_ERROR("spirv validator failed");
-                return false;
-            }
-
-            switch (options.optimizationLevel) {
-            case OptimizationLevel::None:
-                break;
-            //TODO: differentiate between these?
-            case OptimizationLevel::O1:
-            case OptimizationLevel::O2:
-            case OptimizationLevel::O3:
-                opt.RegisterPerformancePasses();
-                break;
-            case OptimizationLevel::OS:
-                opt.RegisterSizePasses();
-                break;
-            }
-            if (!opt.Run(binary.data(), binary.size(), &binary)) {
-                LVSLANG_ERROR("spirv optimizer failed");
-                return false;
-            }
-
-            if (options.outputAssembly) {
-                if (!core.Disassemble(binary, &outputCode, SPV_BINARY_TO_TEXT_OPTION_INDENT | SPV_BINARY_TO_TEXT_OPTION_FRIENDLY_NAMES | SPV_BINARY_TO_TEXT_OPTION_COMMENT)) {
-                    LVSLANG_ERROR("spirv disassembler failed");
-                    return false;
-                }
-            } else {
-                outputCode = std::string((const char*)binary.data(), binary.size());
-            }
+        //TODO: uncomment?
+        //if (options.optimizationLevel == OptimizationLevel::None && options.outputAssembly) {
+        //    outputCode = code;
+        //} else {
+        spv_target_env targetEnv;
+        //TODO: use vulkan env?
+        switch (options.spirvVersion) {
+        case irb::SPIRVVersion::_1_0:
+            targetEnv = SPV_ENV_UNIVERSAL_1_0;
+            break;
+        case irb::SPIRVVersion::_1_1:
+            targetEnv = SPV_ENV_UNIVERSAL_1_1;
+            break;
+        case irb::SPIRVVersion::_1_2:
+            targetEnv = SPV_ENV_UNIVERSAL_1_2;
+            break;
+        case irb::SPIRVVersion::_1_3:
+            targetEnv = SPV_ENV_UNIVERSAL_1_3;
+            break;
+        case irb::SPIRVVersion::_1_4:
+            targetEnv = SPV_ENV_UNIVERSAL_1_4;
+            break;
+        case irb::SPIRVVersion::_1_5:
+            targetEnv = SPV_ENV_UNIVERSAL_1_5;
+            break;
+        case irb::SPIRVVersion::_1_6:
+            targetEnv = SPV_ENV_UNIVERSAL_1_6;
+            break;
+        default:
+            break;
         }
+
+        spvtools::SpirvTools core(targetEnv);
+        spvtools::Optimizer opt(targetEnv);
+
+        auto printMsgToStderr = [](spv_message_level_t, const char*,
+                                    const spv_position_t&, const char* m) {
+            std::cerr << "error: " << m << std::endl;
+        };
+        core.SetMessageConsumer(printMsgToStderr);
+        opt.SetMessageConsumer(printMsgToStderr);
+
+        std::vector<uint32_t> binary;
+        if (!core.Assemble(code, &binary)) {
+            LVSLANG_ERROR("spirv assembler failed");
+            return false;
+        }
+        if (!core.Validate(binary)) {
+            LVSLANG_ERROR("spirv validator failed");
+            return false;
+        }
+
+        switch (options.optimizationLevel) {
+        case OptimizationLevel::None:
+            break;
+        //TODO: differentiate between these?
+        case OptimizationLevel::O1:
+        case OptimizationLevel::O2:
+        case OptimizationLevel::O3:
+            opt.RegisterPerformancePasses();
+            break;
+        case OptimizationLevel::Os:
+            opt.RegisterSizePasses();
+            break;
+        }
+        if (!opt.Run(binary.data(), binary.size(), &binary)) {
+            LVSLANG_ERROR("spirv optimizer failed");
+            return false;
+        }
+
+        if (options.outputAssembly) {
+            if (!core.Disassemble(binary, &outputCode, SPV_BINARY_TO_TEXT_OPTION_INDENT | SPV_BINARY_TO_TEXT_OPTION_FRIENDLY_NAMES | SPV_BINARY_TO_TEXT_OPTION_COMMENT)) {
+                LVSLANG_ERROR("spirv disassembler failed");
+                return false;
+            }
+        } else {
+            outputCode = std::string((const char*)binary.data(), binary.size());
+        }
+        //}
     } else if (irb::target == irb::Target::AIR) {
-        //TODO: assemble and optimize
-        outputCode = code;
+        //TODO: prevent LLVM from adding the "memory(argmem: read)" attribute, since xcrun metallib throws "LLVM ERROR: Invalid bitcode file!"
+        llvm::LLVMContext llvmContext;
+        std::unique_ptr<llvm::MemoryBuffer> buffer = llvm::MemoryBuffer::getMemBuffer(llvm::StringRef(code));
+        llvm::SMDiagnostic error;
+        std::unique_ptr<llvm::Module> llvmModule = llvm::parseIR(buffer->getMemBufferRef(), error, llvmContext);
+
+        llvm::LoopAnalysisManager LAM;
+        llvm::FunctionAnalysisManager FAM;
+        llvm::CGSCCAnalysisManager CGAM;
+        llvm::ModuleAnalysisManager MAM;
+
+        llvm::PassBuilder PB;
+
+        //Register passes
+        PB.registerModuleAnalyses(MAM);
+        PB.registerCGSCCAnalyses(CGAM);
+        PB.registerFunctionAnalyses(FAM);
+        PB.registerLoopAnalyses(LAM);
+        PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+        //CreatePassManager
+        llvm::OptimizationLevel optLevel;
+        switch (options.optimizationLevel) {
+        case OptimizationLevel::None:
+            optLevel = llvm::OptimizationLevel::O0;
+            break;
+        case OptimizationLevel::O1:
+            optLevel = llvm::OptimizationLevel::O1;
+            break;
+        case OptimizationLevel::O2:
+            optLevel = llvm::OptimizationLevel::O2;
+            break;
+        case OptimizationLevel::O3:
+            optLevel = llvm::OptimizationLevel::O3;
+            break;
+        case OptimizationLevel::Os:
+            optLevel = llvm::OptimizationLevel::Os;
+            break;
+        }
+        llvm::ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(optLevel);
+
+        //Run optimizations
+        MPM.run(*llvmModule, MAM);
+
+        llvm::raw_string_ostream stream(outputCode);
+        stream << *llvmModule;
+        stream.flush();
     } else {
         outputCode = code;
     }
