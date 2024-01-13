@@ -186,6 +186,8 @@ protected:
     std::string nameEnd = "";
     std::string code;
 
+    std::string attributesStr;
+
 public:
     Type(Context& aContext, TypeID aTypeID = TypeID::None) : context(aContext), typeID(aTypeID) {}
 
@@ -230,8 +232,13 @@ public:
         return "Unknown";
     }
 
-    virtual std::string getAttributes() {
-        return " noundef";
+    inline std::string getAttributes() const {
+        return attributesStr;
+    }
+
+    inline void addAttribute(const std::string& attr) {
+        if (target == Target::AIR)
+            attributesStr += attr;
     }
 
     virtual bool isScalar() {
@@ -386,6 +393,7 @@ public:
         default:
             break;
         }
+        //TODO: add " noundef" attribute by default?
     }
 
     ~ScalarType() = default;
@@ -604,10 +612,6 @@ public:
 
     //TODO: override @ref getOpPrefix
 
-    std::string getAttributes() override {
-        return attributesStr + _baseType->getAttributes();
-    }
-
     bool isPointer() override {
         return true;
     }
@@ -634,11 +638,6 @@ public:
         addressSpace = aAddressSpace;
         if (target == Target::AIR && addressSpace != -1)
             nameBegin = "ptr addrspace(" + std::to_string(addressSpace) + ")";
-    }
-
-    inline void setIsBuffer() {
-        if (target == Target::AIR)
-            attributesStr += " \"air-buffer-no-alias\"";
     }
 };
 
@@ -955,10 +954,6 @@ public:
         return type;
     }
 
-    std::string getAttributes() override {
-        return "";
-    }
-
     bool isTexture() override {
         return true;
     }
@@ -1004,10 +999,6 @@ public:
 
     uint32_t getBitCount(bool align = false) override {
         return 64; //TODO: check if this is correct
-    }
-
-    std::string getAttributes() override {
-        return "";
     }
 
     bool isSampler() override {

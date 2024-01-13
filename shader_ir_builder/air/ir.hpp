@@ -75,7 +75,7 @@ public:
         for (uint32_t i = 0; i < functionType->getArguments().size(); i++) {
             if (i != 0)
                 code += ", ";
-            code += functionType->getArguments()[i]->getName();
+            code += functionType->getArguments()[i]->getName() + functionType->getArguments()[i]->getAttributes();
         }
         code += ");\n\n";
 
@@ -185,8 +185,7 @@ public:
         for (uint32_t i = 0; i < arguments.size(); i++) {
             if (i != 0)
                 code += ", ";
-            //TODO: add attributes from function definition
-            code += arguments[i]->getNameWithType();
+            code += arguments[i]->getType()->getName() + type->getArguments()[i]->getAttributes() + " " + arguments[i]->getName();
         }
         code += ")";
         getAIRInsertBlock()->addCode(code, (type->getReturnType()->getTypeID() == TypeID::Void ? nullptr : value));
@@ -376,7 +375,20 @@ public:
         Value* argument8 = new ConstantFloat(context, 0.0f, 32);
         Value* argument9 = new ConstantInt(context, 0, 32, true);
 
-        FunctionType* type = new FunctionType(context, new VectorType(context, texture->getType()->getElementType()->getBaseType(), 4), {texture->getType(), sampler->getType(), coords->getType(), argument4->getType(), argument5->getType(), argument6->getType(), argument7->getType(), argument8->getType(), argument9->getType()});
+        irb::PointerType* textureType = dynamic_cast<irb::PointerType*>(texture->getType());
+        if (!textureType) {
+            IRB_INVALID_ARGUMENT_WITH_REASON("texture", "texture must have pointer type");
+            return nullptr;
+        }
+        textureType->addAttribute(" nocapture readonly");
+        irb::PointerType* samplerType = dynamic_cast<irb::PointerType*>(sampler->getType());
+        if (!samplerType) {
+            IRB_INVALID_ARGUMENT_WITH_REASON("sampler", "sampler must have pointer type");
+            return nullptr;
+        }
+        samplerType->addAttribute(" nocapture readonly");
+
+        FunctionType* type = new FunctionType(context, new VectorType(context, texture->getType()->getElementType()->getBaseType(), 4), {textureType, samplerType, coords->getType(), argument4->getType(), argument5->getType(), argument6->getType(), argument7->getType(), argument8->getType(), argument9->getType()});
 
         //TODO: remove the hardoced types in the name
         return opSTDFunctionCall_EXT("sample_texture_2d.v4f32", type, {texture, sampler, coords, argument4, argument5, argument6, argument7, argument8, argument9});

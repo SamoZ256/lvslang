@@ -34,8 +34,12 @@ inline void addStandardFuncion(const std::string& name, irb::Type* type, const s
     StandardFunction standardFunction = {type, arguments};
     std::vector<irb::Type*> argumentTypes;
     argumentTypes.resize((arguments.size()));
-    for (uint32_t i = 0; i < argumentTypes.size(); i++)
+    for (uint32_t i = 0; i < argumentTypes.size(); i++) {
         argumentTypes[i] = new irb::PointerType(context, arguments[i].type, irb::StorageClass::Function);
+        //if (arguments[i].type->isTexture() || arguments[i].type->isSampler())
+        //    pointerType->addAttribute(" nocapture readonly");
+        //argumentTypes[i] = pointerType;
+    }
     standardFunction.functionType = new irb::FunctionType(context, type, argumentTypes);
     standardFunctions[name] = standardFunction;
 }
@@ -604,7 +608,7 @@ public:
                     attr.bindings.buffer = bufferBinding++;
                     if ((irb::target == irb::Target::SPIRV || irb::target == irb::Target::GLSL || irb::target == irb::Target::HLSL) && functionRole != irb::FunctionRole::Normal)
                         arg.type = arg.type->getElementType();
-                    pointerType->setIsBuffer();
+                    pointerType->addAttribute(" \"air-buffer-no-alias\"");
                 }
             }
         }
