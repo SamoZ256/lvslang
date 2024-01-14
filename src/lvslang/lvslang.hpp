@@ -12,6 +12,7 @@
 #include "llvm/Passes/PassPlugin.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/IRReader/IRReader.h"
+#include "llvm/Bitcode/BitcodeWriter.h"
 
 #include "frontends/lvsl/parser.hpp"
 #include "frontends/metal/parser.hpp"
@@ -246,8 +247,12 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
         MPM.run(*llvmModule, MAM);
 
         llvm::raw_string_ostream stream(outputCode);
-        stream << *llvmModule;
-        stream.flush();
+        if (options.outputAssembly) {
+            stream << *llvmModule;
+            stream.flush();
+        } else {
+            llvm::WriteBitcodeToFile(*llvmModule, stream);
+        }
     } else {
         outputCode = code;
     }
