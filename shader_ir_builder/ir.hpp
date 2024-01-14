@@ -47,8 +47,10 @@ public:
      * Defines an entry point.
      * 
      * @param[in] entryPoint the id of the entry point function
-     * @param[in] executionModel the shader stage of the entry point. Can be either "Vertex", "Fragment" or "Kernel"
+     * @param[in] functionRole the shader stage of the entry point. Can be either "Vertex", "Fragment" or "Kernel"
      * @param[in] name the name of the entry point in the original code, only for debugging purposes
+     * @param[in] returnType return type of the entry point
+     * @param[in] arguments entry point arguments
      */
     virtual void opEntryPoint(Value* entryPoint, FunctionRole functionRole, const std::string& name, Type* returnType, const std::vector<Argument>& arguments) = 0;
 
@@ -106,7 +108,7 @@ public:
 
     virtual void opBranchCond(Value* cond, Block* blockTrue, Block* blockFalse) = 0;
 
-    virtual void opBlockMerge(Block* block) = 0; //TODO: rename
+    virtual void opBlockMerge(Block* block) = 0;
 
     virtual void opLoopMerge(Block* block1, Block* block2) = 0;
 

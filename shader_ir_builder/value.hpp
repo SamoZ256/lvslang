@@ -21,7 +21,7 @@ enum class TypeID {
     Integer,
     Float,
 
-    //TODO: find a suitable name
+    //Container
     Pointer,
     Array,
 
@@ -112,7 +112,7 @@ inline std::string getTypeName(TypeID typeID, uint32_t bitCount, bool isSigned) 
         case TypeID::Float:
             switch (bitCount) {
             case 16:
-                return "min16float"; //TODO: check if this is correct
+                return "min16float";
             case 32:
                 return "float";
             default:
@@ -269,7 +269,7 @@ public:
         return false;
     }
 
-    virtual bool isOperatorFriendly() { //TODO: rename?
+    virtual bool isOperatorFriendly() {
         return false;
     }
 
@@ -456,7 +456,6 @@ public:
     }
 
     std::string getBuiltinFunctionTypeName() override {
-        //TODO: check if all of this is correct
         switch (typeID) {
         case TypeID::Bool:
         case TypeID::Integer:
@@ -663,7 +662,6 @@ public:
     }
 
     bool equals(Type* other) override {
-        //TODO: compare size instead of bit count
         return (other->isArray() && other->getBitCount() == getBitCount() && arrayType->equals(other->getElementType()));
     }
 

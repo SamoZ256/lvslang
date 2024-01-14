@@ -19,29 +19,6 @@
 
 namespace lvslang {
 
-std::string readFile(const std::string& filename) {
-    std::string content;
-    std::ifstream file;
-    // ensure ifstream objects can throw exceptions:
-    file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    try {
-        // open files
-        file.open(filename);
-        std::stringstream stream;
-        // read file's buffer contents into streams
-        stream << file.rdbuf();
-        // close file handlers
-        file.close();
-        // convert stream into string
-        content = stream.str();
-    } catch (std::ifstream::failure e) {
-        std::cout << "Error: could not open file '" << filename << "'" << std::endl;
-        throw std::runtime_error("");
-    }
-
-    return content;
-}
-
 enum class OptimizationLevel {
     None,
     O1,
@@ -51,6 +28,7 @@ enum class OptimizationLevel {
 };
 
 struct CompileOptions {
+    std::string source;
     std::string inputName;
     std::string outputName;
     irb::Target target = irb::Target::None;
@@ -65,7 +43,7 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
     irb::spirvVersion = options.spirvVersion;
     lvslang::glslVersion = options.glslVersion;
 
-    setSource(readFile(options.inputName));
+    setSource(options.source);
 
     switch (irb::target) {
     case irb::Target::None:
