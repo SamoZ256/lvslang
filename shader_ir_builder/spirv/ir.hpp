@@ -87,7 +87,7 @@ public:
         std::string code = "OpEntryPoint " + functionRoleStr + " " + entryPointFunction->getName() + " \"" + name + "\"";
         //TODO: support other origins as well
         if (functionRole == FunctionRole::Fragment)
-            blockHeader->addCode("OpExecutionMode " + entryPointFunction->getName() + " OriginLowerLeft");
+            blockHeader->addCode("OpExecutionMode " + entryPointFunction->getName() + " OriginUpperLeft");
         //blockHeader->addCode("OpSource GLSL 450");
         //blockHeader->addCode("OpSourceExtension \"GL_GOOGLE_cpp_style_line_directive\"");
         //blockHeader->addCode("OpSourceExtension \"GL_GOOGLE_include_directive\"");
