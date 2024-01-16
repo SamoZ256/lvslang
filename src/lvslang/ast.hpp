@@ -1743,7 +1743,7 @@ public:
                 for (uint8_t j = 0; j < vectorType->getComponentCount(); j++) {
                     irb::Value* vectorComponent;
                     if (TARGET_IS_IR(irb::target))
-                        vectorComponent = builder->opVectorExtract(component, new irb::ConstantInt(context, j, 32, true));
+                        vectorComponent = builder->opCast(builder->opVectorExtract(component, new irb::ConstantInt(context, j, 32, true)), type->getBaseType());
                     else
                         vectorComponent = new irb::Value(context, vectorType->getBaseType(), component->getRawName() + "[" + std::to_string(j) + "]");
                     components.insert(components.begin() + i + j, vectorComponent);
