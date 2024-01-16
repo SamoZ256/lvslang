@@ -4,6 +4,7 @@
 #include "spirv-tools/libspirv.hpp"
 #include "spirv-tools/optimizer.hpp"
 
+#ifdef LVSLANG_USE_LLVM
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Verifier.h"
@@ -13,6 +14,7 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/Bitcode/BitcodeWriter.h"
+#endif
 
 #include "frontends/lvsl/parser.hpp"
 #include "frontends/metal/parser.hpp"
@@ -179,6 +181,7 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
         }
         //}
     } else if (irb::target == irb::Target::AIR) {
+#ifdef LVSLANG_USE_LLVM
         //TODO: prevent LLVM from adding the "memory(argmem: read)" attribute, since xcrun metallib throws "LLVM ERROR: Invalid bitcode file!"
         llvm::LLVMContext llvmContext;
         std::unique_ptr<llvm::MemoryBuffer> buffer = llvm::MemoryBuffer::getMemBuffer(llvm::StringRef(code));
@@ -230,6 +233,16 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
         } else {
             llvm::WriteBitcodeToFile(*llvmModule, stream);
         }
+#else
+        if (!options.outputAssembly) {
+            LVSLANG_ERROR("cannot output LLVM binary when lvslang wasn't build with LLVM enabled");
+            return false;
+        }
+        if (options.optimizationLevel != OptimizationLevel::None) {
+            LVSLANG_WARN("cannot optimize LLVM binary when lvslang wasn't build with LLVM enabled");
+        }
+        outputCode = code;
+#endif
     } else {
         outputCode = code;
     }
