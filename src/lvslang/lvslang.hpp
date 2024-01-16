@@ -135,9 +135,8 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
         spvtools::SpirvTools core(targetEnv);
         spvtools::Optimizer opt(targetEnv);
 
-        auto printMsgToStderr = [](spv_message_level_t, const char*,
-                                    const spv_position_t&, const char* m) {
-            std::cerr << "error: " << m << std::endl;
+        auto printMsgToStderr = [](spv_message_level_t, const char*, const spv_position_t& pos, const char* m) {
+            std::cerr << pos.line << ":" << pos.column << ": error: " << m << std::endl;
         };
         core.SetMessageConsumer(printMsgToStderr);
         opt.SetMessageConsumer(printMsgToStderr);
@@ -176,7 +175,7 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
                 return false;
             }
         } else {
-            outputCode = std::string((const char*)binary.data(), binary.size());
+            outputCode = std::string((const char*)binary.data(), binary.size() * sizeof(binary[0]) / sizeof(char));
         }
         //}
     } else if (irb::target == irb::Target::AIR) {
