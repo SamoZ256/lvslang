@@ -182,7 +182,6 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
         //}
     } else if (irb::target == irb::Target::AIR) {
 #ifdef LVSLANG_USE_LLVM
-        //TODO: prevent LLVM from adding the "memory(argmem: read)" attribute, since xcrun metallib throws "LLVM ERROR: Invalid bitcode file!"
         llvm::LLVMContext llvmContext;
         std::unique_ptr<llvm::MemoryBuffer> buffer = llvm::MemoryBuffer::getMemBuffer(llvm::StringRef(code));
         llvm::SMDiagnostic error;
@@ -225,6 +224,11 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
 
         //Run optimizations
         MPM.run(*llvmModule, MAM);
+
+        //Remove the "memory(argmem: read)" attribute, since xcrun metallib would throw "LLVM ERROR: Invalid bitcode file!"
+        for (auto &function : *llvmModule) {
+            function.removeFnAttr(llvm::Attribute::AttrKind::Memory);
+        }
 
         llvm::raw_string_ostream stream(outputCode);
         if (options.outputAssembly) {
