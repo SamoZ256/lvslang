@@ -907,20 +907,13 @@ private:
 
 public:
     TextureType(Context& aContext, TextureViewType aViewType, ScalarType* aType) : Type(aContext, TypeID::Texture), viewType(aViewType), type(aType) {
+        GET_TEXTURE_NAME(viewType);
+        nameBegin = viewTypeStr;
         if (target == Target::Metal) {
-            std::string viewName = "2d"; //TODO: use actual view name
-            nameBegin = "texture" + viewName + "<" + type->getName() + ">";
+            nameBegin += "<" + type->getName() + ">";
         } else if (target == Target::HLSL) {
-            std::string viewName = "2D"; //TODO: use actual view name
-            nameBegin = "Texture" + viewName;
             if (type->getTypeID() != TypeID::Float || type->getBitCount() != 32)
                 nameBegin += "<" + type->getName() + ">"; //TODO: check if this is correct
-        } else if (target == Target::GLSL) {
-            std::string viewName = "2D";
-            nameBegin = "texture" + viewName; //TODO: use prefix based on type
-        } else if (target == Target::AIR) {
-            std::string viewName = "2d"; //TODO: use actual view name
-            nameBegin = "%\"struct.metal::texture" + viewName + "\"";
         }
     }
 

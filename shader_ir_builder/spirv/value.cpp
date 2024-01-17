@@ -93,10 +93,10 @@ Value* VectorType::getValue(IRBuilder* builder, bool decorate) {
 }
 
 Value* TextureType::getValue(IRBuilder* builder, bool decorate) {
-    std::string viewName = "2D"; //TODO: set this based on view type
+    GET_TEXTURE_NAME(viewType);
 
     Value* scalarValue = type->getValue(builder);
-    std::string code = "OpTypeImage " + scalarValue->getName() + " " + viewName + " 0 0 0 1 Unknown";
+    std::string code = "OpTypeImage " + scalarValue->getName() + " " + viewTypeStr + " 0 0 0 1 Unknown";
     
     return static_cast<SPIRVBuilder*>(builder)->_addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), "image"); //TODO: use different comment
 }

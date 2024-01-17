@@ -48,6 +48,60 @@ inline void error(const std::string& msg, const std::string& funcName) {
     std::cout << "[IRB:error]::" << funcName << ": " << msg << std::endl;
 }
 
+enum class Target {
+    None,
+    Metal,
+    HLSL,
+    GLSL,
+    SPIRV,
+    AIR,
+
+    MaxEnum
+};
+
+#define CASE_TARGET_CODE Target::Metal ... Target::GLSL
+#define CASE_TARGET_IR Target::SPIRV ... Target::SPIRV
+
+#define TARGET_IS_CODE(target) ((int)target >= (int)irb::Target::Metal && (int)target <= (int)irb::Target::GLSL)
+#define TARGET_IS_IR(target) ((int)target >= (int)irb::Target::SPIRV && (int)target <= (int)irb::Target::AIR)
+
+enum class SPIRVVersion {
+    //1.x
+    _1_0,
+    _1_1,
+    _1_2,
+    _1_3,
+    _1_4,
+    _1_5,
+    _1_6,
+
+    MaxEnum
+};
+
+static SPIRVVersion spirvVersion;
+
+extern std::map<SPIRVVersion, std::string> spirvVersionMap;
+
+inline bool spirvVersionIsLessThanOrEqual(SPIRVVersion lessThanOrEqual) {
+    return ((int)spirvVersion <= (int)lessThanOrEqual);
+}
+
+inline bool spirvVersionIsGreaterThanOrEqual(SPIRVVersion greaterThanOrEqual) {
+    return ((int)spirvVersion >= (int)greaterThanOrEqual);
+}
+
+enum class Extension {
+    _8bit_storage,
+    _16bit_storage,
+    explicit_arithmetic_types,
+
+    MaxEnum
+};
+
+//TODO: move the GLSL part to @ref ast.hpp
+//is enabled, glsl name, spirv name
+extern std::tuple<bool, std::string, std::string> extensions[(int)Extension::MaxEnum];
+
 //Enums
 enum class StorageClass {
     UniformConstant,
@@ -156,59 +210,85 @@ enum class TextureViewType {
     MaxEnum
 };
 
-enum class Target {
-    None,
-    Metal,
-    HLSL,
-    GLSL,
-    SPIRV,
-    AIR,
-
-    MaxEnum
+//TODO: support texture buffer?
+const std::string textureViewTypeLUT_Metal[] = {
+    "1d",
+    "2d",
+    "3d",
+    "1d_array",
+    "2d_array",
+    "cube",
+    "cube_array",
+    "UNSUPPORTED"
 };
 
-#define CASE_TARGET_CODE Target::Metal ... Target::GLSL
-#define CASE_TARGET_IR Target::SPIRV ... Target::SPIRV
-
-#define TARGET_IS_CODE(target) ((int)target >= (int)irb::Target::Metal && (int)target <= (int)irb::Target::GLSL)
-#define TARGET_IS_IR(target) ((int)target >= (int)irb::Target::SPIRV && (int)target <= (int)irb::Target::AIR)
-
-enum class SPIRVVersion {
-    //1.x
-    _1_0,
-    _1_1,
-    _1_2,
-    _1_3,
-    _1_4,
-    _1_5,
-    _1_6,
-
-    MaxEnum
+const std::string textureViewTypeLUT_HLSL[] = {
+    "1D",
+    "2D",
+    "3D",
+    "1DArray",
+    "2DArray",
+    "Cube",
+    "CubeArray",
+    "Buffer"
 };
 
-static SPIRVVersion spirvVersion;
+const std::string textureViewTypeLUT_GLSL[] = {
+    "1D",
+    "2D",
+    "3D",
+    "1DArray",
+    "2DArray",
+    "Cube",
+    "CubeArray",
+    "Buffer"
+};
 
-extern std::map<SPIRVVersion, std::string> spirvVersionMap;
+const std::string textureViewTypeLUT_SPIRV[] = {
+    "1D",
+    "2D",
+    "3D",
+    "1DArray",
+    "2DArray",
+    "Cube",
+    "CubeArray",
+    "Buffer"
+};
 
-inline bool spirvVersionIsLessThanOrEqual(SPIRVVersion lessThanOrEqual) {
-    return ((int)spirvVersion <= (int)lessThanOrEqual);
+//TODO: support texture buffer?
+const std::string textureViewTypeLUT_AIR[] = {
+    "1d",
+    "2d",
+    "3d",
+    "1d_array",
+    "2d_array",
+    "cube",
+    "cube_array",
+    "UNSUPPORTED"
+};
+
+#define GET_TEXTURE_NAME(viewType) \
+IRB_VALIDATE_ENUM_ARGUMENT(TextureViewType, viewType); \
+std::string viewType##Str; \
+switch (target) { \
+case Target::Metal: \
+    viewType##Str = "texture" + textureViewTypeLUT_Metal[(int)viewType]; \
+    break; \
+case Target::HLSL: \
+    viewType##Str = "Texture" + textureViewTypeLUT_HLSL[(int)viewType]; \
+    break; \
+case Target::GLSL: \
+    viewType##Str = "texture" + textureViewTypeLUT_GLSL[(int)viewType]; \
+    break; \
+case Target::SPIRV: \
+    viewType##Str = textureViewTypeLUT_SPIRV[(int)viewType]; \
+    break; \
+case Target::AIR: \
+    viewType##Str = "%\"struct.metal::texture" + textureViewTypeLUT_AIR[(int)viewType] + "\""; \
+    break; \
+default: \
+    break; \
 }
-
-inline bool spirvVersionIsGreaterThanOrEqual(SPIRVVersion greaterThanOrEqual) {
-    return ((int)spirvVersion >= (int)greaterThanOrEqual);
-}
-
-enum class Extension {
-    _8bit_storage,
-    _16bit_storage,
-    explicit_arithmetic_types,
-
-    MaxEnum
-};
-
-//TODO: move the GLSL part to @ref ast.hpp
-//is enabled, glsl name, spirv name
-extern std::tuple<bool, std::string, std::string> extensions[(int)Extension::MaxEnum];
 
 enum class Operation {
     //Binary
