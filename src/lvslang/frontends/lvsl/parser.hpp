@@ -174,18 +174,8 @@ irb::Type* _parseTypeExpression() {
             }
 
             type = new irb::TextureType(context, viewType, scalarType);
-            if (irb::target == irb::Target::AIR) {
-                irb::PointerType* pointerType = new irb::PointerType(context, type, irb::StorageClass::Function);
-                pointerType->setAddressSpace(1);
-                type = pointerType;
-            }
         } else if (crntToken == TOKEN_TYPE_SAMPLER) {
             type = new irb::SamplerType(context);
-            if (irb::target == irb::Target::AIR) {
-                irb::PointerType* pointerType = new irb::PointerType(context, type, irb::StorageClass::Function);
-                pointerType->setAddressSpace(2);
-                type = pointerType;
-            }
         } /* else if (typeIsBuiltin) {
             getNextToken(); //Type
             Type* bufferType;
