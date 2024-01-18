@@ -255,7 +255,7 @@ const std::string textureViewTypeLUT_SPIRV[] = {
     "Buffer"
 };
 
-//TODO: support texture buffer?
+/*
 const std::string textureViewTypeLUT_AIR[] = {
     "1d",
     "2d",
@@ -266,6 +266,7 @@ const std::string textureViewTypeLUT_AIR[] = {
     "cube_array",
     "UNSUPPORTED"
 };
+*/
 
 #define GET_TEXTURE_NAME(viewType) \
 IRB_VALIDATE_ENUM_ARGUMENT(TextureViewType, viewType); \
@@ -284,7 +285,7 @@ case Target::SPIRV: \
     viewType##Str = textureViewTypeLUT_SPIRV[(int)viewType]; \
     break; \
 case Target::AIR: \
-    viewType##Str = "%\"struct.metal::texture" + textureViewTypeLUT_AIR[(int)viewType] + "\""; \
+    viewType##Str = "ptr addrspace(2)";/*"%\"struct.metal::texture" + textureViewTypeLUT_AIR[(int)viewType] + "\"";*/ \
     break; \
 default: \
     break; \

@@ -914,6 +914,8 @@ public:
         } else if (target == Target::HLSL) {
             if (type->getTypeID() != TypeID::Float || type->getBitCount() != 32)
                 nameBegin += "<" + type->getName() + ">"; //TODO: check if this is correct
+        } else if (target == Target::AIR) {
+            attributesStr = " nocapture readonly";
         }
     }
 
@@ -960,7 +962,8 @@ public:
     SamplerType(Context& aContext) : Type(aContext, TypeID::Sampler) {
         //TODO: add template addguments
         if (TARGET_IS_IR(target)) {
-            nameBegin = "%\"struct.metal::sampler\"";
+            nameBegin = "ptr addrspace(2)";//"%\"struct.metal::sampler\"";
+            attributesStr = " nocapture readonly";
         } else if (target == Target::HLSL) {
             nameBegin = "SamplerState";
         } else {

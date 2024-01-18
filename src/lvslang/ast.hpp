@@ -592,10 +592,10 @@ public:
             }
             if (functionRole != irb::FunctionRole::Normal) {
                 //TDOO: save the bindings for reflection
-                if (arg.type->isTexture() || (arg.type->isPointer() && arg.type->getElementType()->isTexture())) {
+                if (arg.type->isTexture()) {
                     attr.isTexture = true;
                     attr.bindings.texture = textureBinding++;
-                } else if (arg.type->isSampler() || (arg.type->isPointer() && arg.type->getElementType()->isSampler())) {
+                } else if (arg.type->isSampler()) {
                     attr.isSampler = true;
                     attr.bindings.sampler = samplerBinding++;
                 } else if (!attr.isInput) {
@@ -1014,6 +1014,12 @@ public:
             for (uint32_t i = 0; i < arguments.size(); i++) {
                 ExpressionAST* arg = arguments[i];
                 argVs[i] = arg->codegen(declaration->arguments()[i].type);
+                if (!argVs[i])
+                    return nullptr;
+                if (!argVs[i]->getType()->equals(declaration->arguments()[i].type)) {
+                    logError(("Argument " + std::to_string(i + 1) + " of function '" + callee + "' has type '" + declaration->arguments()[i].type->getName() + "', got '" + argVs[i]->getType()->getName() + "' instead").c_str());
+                    return nullptr;
+                }
                 if (TARGET_IS_IR(irb::target) && !arg->isVariable()) {
                     irb::Value* paramV = argVs[i];
                     context.pushRegisterName("param");
@@ -1027,7 +1033,6 @@ public:
 
             if (declaration->arguments().size() != arguments.size()) {
                 logError(("Expected " + std::to_string(declaration->arguments().size()) + " arguments, got " + std::to_string(arguments.size()) + " instead").c_str());
-
                 return nullptr;
             }
 
@@ -1045,6 +1050,12 @@ public:
             for (uint32_t i = 0; i < arguments.size(); i++) {
                 ExpressionAST* arg = arguments[i];
                 argVs[i] = arg->codegen(standardFunction.arguments[i].type);
+                if (!argVs[i])
+                    return nullptr;
+                if (!argVs[i]->getType()->equals(standardFunction.arguments[i].type)) {
+                    logError(("Argument " + std::to_string(i + 1) + " of function '" + callee + "' has type '" + standardFunction.arguments[i].type->getName() + "', got '" + argVs[i]->getType()->getName() + "' instead").c_str());
+                    return nullptr;
+                }
                 if (i != 0)
                     argsStr += ", ";
                 argsStr += argVs[i]->getRawName();
@@ -1090,7 +1101,6 @@ public:
             }
         } else {
             logError(("Use of undeclared function '" + callee + "'").c_str());
-
             return nullptr;
         }
     }
