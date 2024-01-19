@@ -205,6 +205,7 @@ public:
         if (!functionDecl) {
             context.pushRegisterName(funcName);
             functionDecl = opFunctionDeclaration(type);
+            builtinFunctionDeclarations[funcName] = functionDecl;
         }
         context.pushRegisterName(registerName);
 
@@ -301,63 +302,10 @@ public:
         if (type->isScalar() && castFromType->isScalar()) {
             FunctionType* functionType = new FunctionType(context, type, {castFromType});
 
-            bool needsSTDCall = false;
-            std::string opName;
-            switch (castFromType->getTypeID()) {
-            case TypeID::Bool:
-            case TypeID::Integer:
-                switch (type->getTypeID()) {
-                case TypeID::Bool:
-                case TypeID::Integer:
-                    if (castFromType->getBitCount() > type->getBitCount()) {
-                        opName = "trunc";
-                    } else if (castFromType->getBitCount() < type->getBitCount()) {
-                        opName = "zext";
-                        //TODO: uncomment?
-                        //if (!castFromType->getIsSigned())
-                        //    opName += " nneg";
-                    } else {
-                        context.popRegisterName();
+            //TODO: move the function selection based on type to @ref opSTDFunctionCall_EXT
+            std::string functionName = "convert." + type->getBuiltinFunctionTypeName() + "." + castFromType->getBuiltinFunctionTypeName();
 
-                        return val;
-                    }
-                    break;
-                case TypeID::Float:
-                    needsSTDCall = true;
-                    break;
-                default:
-                    break;
-                }
-                break;
-            case TypeID::Float:
-                switch (type->getTypeID()) {
-                case TypeID::Bool:
-                case TypeID::Integer:
-                    needsSTDCall = true;
-                    break;
-                case TypeID::Float:
-                    if (castFromType->getBitCount() > type->getBitCount())
-                        opName = "fptrunc";
-                    else
-                        opName = "fpext";
-                    break;
-                default:
-                    break;
-                }
-                break;
-            default:
-                break;
-            }
-
-            if (needsSTDCall) {
-                //TODO: move the function selection based on type to @ref opSTDFunctionCall_EXT
-                std::string functionName = "convert." + type->getBuiltinFunctionTypeName() + "." + castFromType->getBuiltinFunctionTypeName();
-                return opSTDFunctionCall_EXT(functionName, functionType, {val});
-            } else {
-                Value* value = new Value(context, type, context.popRegisterName());
-                getAIRInsertBlock()->addCode(opName + " " + val->getNameWithType() + " to " + type->getName(), value);
-
-            }
+            return opSTDFunctionCall_EXT(functionName, functionType, {val});
         } else if (val->getType()->isScalar() && type->isVector()) {
             return opVectorConstruct(static_cast<VectorType*>(type), std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount(), val));
         }

@@ -14,6 +14,7 @@ inline Target target = Target::None;
 
 enum class TypeID {
     None,
+    All,
 
     //Scalar
     Void,
@@ -195,7 +196,14 @@ public:
 
     virtual Type* copy() = 0;
 
-    virtual bool equals(Type* other) {
+    bool equals(Type* other) {
+        if (other->getTypeID() == TypeID::All)
+            return true;
+
+        return _equals(other);
+    }
+
+    virtual bool _equals(Type* other) {
         return false;
     }
 
@@ -402,7 +410,7 @@ public:
         return new ScalarType(*this);
     }
 
-    bool equals(Type* other) override {
+    bool _equals(Type* other) override {
         if (!other->isScalar() || other->getTypeID() != typeID)
             return false;
         ScalarType* otherScalar = static_cast<ScalarType*>(other);
@@ -590,7 +598,7 @@ public:
         return new PointerType(*this);
     }
 
-    bool equals(Type* other) override {
+    bool _equals(Type* other) override {
         return (other->isPointer() && _baseType == other->getElementType());
     }
 
@@ -661,7 +669,7 @@ public:
         return new ArrayType(*this);
     }
 
-    bool equals(Type* other) override {
+    bool _equals(Type* other) override {
         return (other->isArray() && other->getBitCount() == getBitCount() && arrayType->equals(other->getElementType()));
     }
 
@@ -717,7 +725,7 @@ public:
         return new StructureType(*this);
     }
 
-    bool equals(Type* other) override {
+    bool _equals(Type* other) override {
         if (!other->isStructure())
             return false;
         StructureType* otherStruct = static_cast<StructureType*>(other);
@@ -843,7 +851,7 @@ public:
         return new VectorType(*this);
     }
 
-    bool equals(Type* other) override {
+    bool _equals(Type* other) override {
         if (!other->isVector())
             return false;
         VectorType* otherVector = static_cast<VectorType*>(other);
@@ -903,10 +911,10 @@ public:
 class TextureType : public Type {
 private:
     TextureViewType viewType;
-    ScalarType* type;
+    Type* type;
 
 public:
-    TextureType(Context& aContext, TextureViewType aViewType, ScalarType* aType) : Type(aContext, TypeID::Texture), viewType(aViewType), type(aType) {
+    TextureType(Context& aContext, TextureViewType aViewType, Type* aType) : Type(aContext, TypeID::Texture), viewType(aViewType), type(aType) {
         GET_TEXTURE_NAME(viewType);
         nameBegin = viewTypeStr;
         if (target == Target::Metal) {
@@ -925,7 +933,7 @@ public:
         return new TextureType(*this);
     }
 
-    bool equals(Type* other) override {
+    bool _equals(Type* other) override {
         if (!other->isTexture())
             return false;
         TextureType* otherTexture = static_cast<TextureType*>(other);
@@ -977,7 +985,7 @@ public:
         return new SamplerType(*this);
     }
 
-    bool equals(Type* other) override {
+    bool _equals(Type* other) override {
         if (!other->isSampler())
             return false;
         SamplerType* otherSampler = static_cast<SamplerType*>(other);

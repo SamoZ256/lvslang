@@ -1129,7 +1129,7 @@ void compile() {
 
     //Standard library
     addStandardFuncion("sin", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
-    addStandardFuncion("sample", new irb::VectorType(context, createScalarType(TOKEN_TYPE_FLOAT), 4), {{.type = new irb::TextureType(context, irb::TextureViewType::_2D, createScalarType(TOKEN_TYPE_FLOAT))}, {.type = new irb::SamplerType(context)}, {.type = new irb::VectorType(context, createScalarType(TOKEN_TYPE_FLOAT), 2)}}); //TODO: overload this function?
+    addStandardFuncion("sample", new irb::VectorType(context, new TemplateType(context), 4), {{.type = new irb::TextureType(context, irb::TextureViewType::_2D, new TemplateType(context))}, {.type = new irb::SamplerType(context)}, {.type = new irb::VectorType(context, new TemplateType(context), 2)}}); //TODO: overload this function?
 
     mainLoop();
 }

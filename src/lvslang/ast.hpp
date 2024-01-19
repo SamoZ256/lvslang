@@ -88,16 +88,65 @@ public:
         uint16_t numBits = std::max(getFirstGreaterOrEqualPow2(-minValue - 1), getFirstGreaterOrEqualPow2(maxValue));
         if (minValue != 0)
             numBits *= 2;
-        //std::cout << "Num bits before: " << (int)numBits << std::endl;
         for (uint8_t possibleBits = 8; possibleBits <= 32; possibleBits *= 2) {
             if (numBits <= possibleBits) {
                 numBits = possibleBits;
                 break;
             }
         }
-        //std::cout << "Num bits: " << (int)numBits << std::endl;
 
         type = new irb::ScalarType(context, irb::TypeID::Integer, numBits, (minValue != 0));
+    }
+};
+
+class TemplateType : public irb::Type {
+public:
+    TemplateType(irb::Context& aContext) : irb::Type(aContext, irb::TypeID::All) {}
+
+    ~TemplateType() = default;
+
+    Type* copy() override {
+        return new TemplateType(*this);
+    }
+
+    bool _equals(Type* other) override {
+        return true;
+    }
+
+    irb::Value* getValue(irb::IRBuilder* builder, bool decorate = false) override {
+        return nullptr;
+    }
+
+    std::string getNameForRegister() override {
+        return "none";
+    }
+
+    bool isScalar() override {
+        return true;
+    }
+
+    bool isPointer() override {
+        return true;
+    }
+
+    bool isArray() override {
+        return true;
+    }
+
+    bool isStructure() override {
+        return true;
+    }
+
+    bool isVector() override {
+        return true;
+    }
+
+    bool isTexture() override {
+        return true;
+    }
+
+    bool isSampler() override {
+        return true;
     }
 };
 
@@ -159,7 +208,7 @@ public:
         return new EnumType(*this);
     }
 
-    bool equals(Type* other) override {
+    bool _equals(Type* other) override {
         EnumType* otherEnum = dynamic_cast<EnumType*>(other);
         if (!otherEnum)
             return false;
@@ -1729,6 +1778,7 @@ public:
 };
 
 //TODO: support other initializer lists as well (for instance sampler)
+//TODO: support vector to vector conversion in HLSL
 class InitializerListExpressionAST : public ExpressionAST {
 private:
     irb::Type* type;
