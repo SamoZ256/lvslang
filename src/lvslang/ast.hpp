@@ -35,7 +35,7 @@ inline void addStandardFuncion(const std::string& name, irb::Type* type, const s
     std::vector<irb::Type*> argumentTypes;
     argumentTypes.resize((arguments.size()));
     for (uint32_t i = 0; i < argumentTypes.size(); i++) {
-        argumentTypes[i] = new irb::PointerType(context, arguments[i].type, irb::StorageClass::Function);
+        argumentTypes[i] = arguments[i].type;
         //if (arguments[i].type->isTexture() || arguments[i].type->isSampler())
         //    pointerType->addAttribute(" nocapture readonly");
         //argumentTypes[i] = pointerType;
@@ -96,57 +96,6 @@ public:
         }
 
         type = new irb::ScalarType(context, irb::TypeID::Integer, numBits, (minValue != 0));
-    }
-};
-
-class TemplateType : public irb::Type {
-public:
-    TemplateType(irb::Context& aContext) : irb::Type(aContext, irb::TypeID::All) {}
-
-    ~TemplateType() = default;
-
-    Type* copy() override {
-        return new TemplateType(*this);
-    }
-
-    bool _equals(Type* other) override {
-        return true;
-    }
-
-    irb::Value* getValue(irb::IRBuilder* builder, bool decorate = false) override {
-        return nullptr;
-    }
-
-    std::string getNameForRegister() override {
-        return "none";
-    }
-
-    bool isScalar() override {
-        return true;
-    }
-
-    bool isPointer() override {
-        return true;
-    }
-
-    bool isArray() override {
-        return true;
-    }
-
-    bool isStructure() override {
-        return true;
-    }
-
-    bool isVector() override {
-        return true;
-    }
-
-    bool isTexture() override {
-        return true;
-    }
-
-    bool isSampler() override {
-        return true;
     }
 };
 
@@ -475,7 +424,14 @@ public:
             lhs->setLoadOnCodegen(false);
         
         irb::Value* l = lhs->codegen();
-        irb::Value* r = rhs->codegen((op == "=" ? l->getType()->getElementType() : l->getType()));
+        irb::Type* lType = l->getType();
+        if (op == "=") {
+            if (auto* unloadedVector = dynamic_cast<UnloadedSwizzledVectorValue*>(l))
+                lType = unloadedVector->getUnloadedVector()->getType()->getElementType()->getBaseType();
+            else
+                lType = lType->getElementType();
+        }
+        irb::Value* r = rhs->codegen(lType);
         if (!l || !r)
             return nullptr;
 
@@ -485,7 +441,7 @@ public:
                     irb::Value* loadedVector = builder->opLoad(unloadedVector->getUnloadedVector());
                     if (r->getType()->isScalar()) {
                         for (auto index : unloadedVector->getIndices())
-                            builder->opVectorInsert(loadedVector, r, new irb::ConstantInt(context, index, 32, true)); //TODO: should it be signed?
+                            loadedVector = builder->opVectorInsert(loadedVector, r, new irb::ConstantInt(context, index, 32, true)); //TODO: should it be signed?
                     } else if (r->getType()->isVector()) {
                         //TODO: check if component count matches and if we are not accessing out of bounds
                         for (uint8_t i = 0; i < unloadedVector->getIndices().size(); i++)
@@ -1114,22 +1070,28 @@ public:
                 std::string code;
                 switch (irb::target) {
                 case irb::Target::Metal:
-                    if (callee == "sample")
-                        code = argVs[0]->getRawName() + ".sample(" + argVs[1]->getRawName() + ", " + argVs[2]->getRawName() + ")";
+                    if (callee == "abs")
+                        code += "abs(" + argVs[0]->getRawName() + ")";
                     else if (callee == "sin")
                         code = "sin(" + argVs[0]->getRawName() + ")";
+                    else if (callee == "sample")
+                        code = argVs[0]->getRawName() + ".sample(" + argVs[1]->getRawName() + ", " + argVs[2]->getRawName() + ")";
                     break;
                 case irb::Target::HLSL:
-                    if (callee == "sample")
-                        code = argVs[0]->getRawName() + ".SampleLevel(" + argVs[1]->getRawName() + ", " + argVs[2]->getRawName() + ", 0.0f)";
+                    if (callee == "abs")
+                        code += "abs(" + argVs[0]->getRawName() + ")";
                     else if (callee == "sin")
                         code = "sin(" + argVs[0]->getRawName() + ")";
+                    else if (callee == "sample")
+                        code = argVs[0]->getRawName() + ".SampleLevel(" + argVs[1]->getRawName() + ", " + argVs[2]->getRawName() + ", 0.0f)";
                     break;
                 case irb::Target::GLSL:
-                    if (callee == "sample")
-                        code = "texture(sampler2D(" + argVs[0]->getRawName() + ", " + argVs[1]->getRawName() + "), " + argVs[2]->getRawName() + ")"; //TODO: support other samplers + textures as well
+                    if (callee == "abs")
+                        code += "abs(" + argVs[0]->getRawName() + ")";
                     else if (callee == "sin")
                         code = "sin(" + argVs[0]->getRawName() + ")";
+                    else if (callee == "sample")
+                        code = "texture(sampler2D(" + argVs[0]->getRawName() + ", " + argVs[1]->getRawName() + "), " + argVs[2]->getRawName() + ")"; //TODO: support other samplers + textures as well
                     break;
                 default:
                     break;
@@ -1143,10 +1105,24 @@ public:
                     regName = "import " + regName;
                     standardFunction.value = new irb::Value(context, nullptr, regName);
                 }
+                std::vector<irb::Type*> argTypes(argVs.size());
+                for (uint32_t i = 0; i < argTypes.size(); i++)
+                    argTypes[i] = argVs[i]->getType();
+                //TODO: use @ref requiredType as return type in some cases?
+                irb::FunctionType* specializedFunctionType = new irb::FunctionType(context, standardFunction.functionType->getReturnType(), argTypes);
+                if (!standardFunction.functionType->getSpecializedFunctionType(specializedFunctionType)) {
+                    logError("Cannot deduce template type for function '" + callee + "'");
+                    return nullptr;
+                }
+                irb::Value* value;
                 if (callee == "sample")
-                    return builder->opSample(argVs[0], argVs[1], argVs[2]);
+                    value = builder->opSample(argVs[0], argVs[1], argVs[2]);
                 else
-                    return builder->opSTDFunctionCall_EXT(callee, standardFunction.functionType, argVs);
+                    value = builder->opSTDFunctionCall_EXT(callee, specializedFunctionType, argVs);
+                
+                if (requiredType)
+                    return builder->opCast(value, requiredType);
+                return value;
             }
         } else {
             logError(("Use of undeclared function '" + callee + "'").c_str());
@@ -1792,8 +1768,14 @@ public:
 
         std::vector<irb::Value*> components;
         components.reserve(expressions.size());
-        for (auto* expression : expressions)
-            components.push_back(expression->codegen(type->isScalar() ? type : type->getBaseType()));
+        for (auto* expression : expressions) {
+            irb::Value* component = expression->codegen();
+            if (!component)
+                return nullptr;
+            if (TARGET_IS_IR(irb::target))
+                component = builder->opCast(component, (type->isScalar() ? type : type->getBaseType()));
+            components.push_back(component);
+        }
         
         //"Unpack" the vectors
         for (uint32_t i = 0; i < components.size(); i++) {
@@ -1839,7 +1821,7 @@ public:
 
         if (TARGET_IS_IR(irb::target)) {
             if (type->isScalar())
-                return components[0];
+                return builder->opCast(components[0], type);
             if (type->isArray()) {
                 //TODO: implement this
                 logError("array initializer lists are not supported for IR backends yet");

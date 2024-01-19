@@ -240,6 +240,10 @@ public:
         return "Unknown";
     }
 
+    virtual Type* getSpecializedType(Type* other) {
+        return nullptr;
+    }
+
     inline std::string getAttributes() const {
         return attributesStr;
     }
@@ -265,6 +269,10 @@ public:
         return false;
     }
 
+    virtual bool isFunctionType() {
+        return false;
+    }
+
     virtual bool isVector() {
         return false;
     }
@@ -274,6 +282,10 @@ public:
     }
 
     virtual bool isSampler() {
+        return false;
+    }
+
+    virtual bool isTemplate() {
         return false;
     }
 
@@ -619,6 +631,10 @@ public:
 
     //TODO: override @ref getOpPrefix
 
+    Type* getSpecializedType(Type* other) override {
+        return _baseType->getSpecializedType(other->getElementType());
+    }
+
     bool isPointer() override {
         return true;
     }
@@ -689,6 +705,10 @@ public:
 
     Type* getBaseType() override {
         return arrayType;
+    }
+
+    Type* getSpecializedType(Type* other) override {
+        return arrayType->getSpecializedType(other->getBaseType());
     }
 
     bool isArray() override {
@@ -774,6 +794,23 @@ public:
         return new FunctionType(*this);
     }
 
+    bool _equals(Type* other) override {
+        if (!other->isFunctionType())
+            return false;
+
+        FunctionType* otherFunctionType = static_cast<FunctionType*>(other);
+        if (!returnType->equals(otherFunctionType->getReturnType()))
+            return false;
+        if (arguments.size() != otherFunctionType->getArguments().size())
+            return false;
+        for (uint32_t i = 0; i < arguments.size(); i++) {
+            if (!arguments[i]->equals(otherFunctionType->getArguments()[i]))
+                return false;
+        }
+
+        return true;
+    }
+
     Value* getValue(IRBuilder* builder, bool decorate = false) override;
 
     std::string getNameForRegister() override {
@@ -784,6 +821,43 @@ public:
         return registerName;
     }
 
+    Type* getSpecializedFunctionType(Type* other) {
+        if (!equals(other)) {
+            IRB_ERROR("types are not equal");
+            return nullptr;
+        }
+
+        FunctionType* otherFunctionType = static_cast<FunctionType*>(other);
+
+        Type* specializedType = nullptr;
+        for (uint32_t i = 0; i < arguments.size(); i++) {
+            Type* specializedArgType = arguments[i]->getSpecializedType(otherFunctionType->getArguments()[i]);
+            if (specializedArgType) {
+                if (!specializedType || specializedType->equals(specializedArgType))
+                    specializedType = specializedArgType;
+                else
+                    return nullptr;
+            }
+        }
+        Type* specializedReturnType = returnType->getSpecializedType(otherFunctionType->getReturnType());
+        if (specializedReturnType) {
+            if (specializedReturnType->isTemplate())
+                otherFunctionType->setReturnType(specializedType);
+            else
+                return specializedReturnType;
+        }
+
+        if (!specializedType)
+            return new ScalarType(context, TypeID::Void, 0, false);
+        
+        return specializedType;
+    }
+
+    bool isFunctionType() override {
+        return true;
+    }
+
+    //Getters
     inline Type* getReturnType() const {
         return returnType;
     }
@@ -797,6 +871,11 @@ public:
 
     inline const std::vector<Type*>& getArguments() const {
         return arguments;
+    }
+
+    //Setters
+    inline void setReturnType(Type* aReturnType) {
+        returnType = aReturnType;
     }
 };
 
@@ -891,6 +970,10 @@ public:
         return "Unknown";
     }
 
+    Type* getSpecializedType(Type* other) override {
+        return componentType->getSpecializedType(other->getBaseType());
+    }
+
     bool isVector() override {
         return true;
     }
@@ -955,6 +1038,10 @@ public:
         return type;
     }
 
+    Type* getSpecializedType(Type* other) override {
+        return type->getSpecializedType(other->getBaseType());
+    }
+
     bool isTexture() override {
         return true;
     }
@@ -1003,7 +1090,70 @@ public:
         return 64; //TODO: check if this is correct
     }
 
+    Type* getSpecializedType(Type* other) override {
+        return nullptr;
+    }
+
     bool isSampler() override {
+        return true;
+    }
+};
+
+class TemplateType : public irb::Type {
+public:
+    TemplateType(irb::Context& aContext) : irb::Type(aContext, irb::TypeID::All) {}
+
+    ~TemplateType() = default;
+
+    Type* copy() override {
+        return new TemplateType(*this);
+    }
+
+    bool _equals(Type* other) override {
+        return true;
+    }
+
+    irb::Value* getValue(irb::IRBuilder* builder, bool decorate = false) override {
+        return nullptr;
+    }
+
+    std::string getNameForRegister() override {
+        return "none";
+    }
+
+    Type* getSpecializedType(Type* other) override {
+        return other;
+    }
+
+    bool isScalar() override {
+        return true;
+    }
+
+    bool isPointer() override {
+        return true;
+    }
+
+    bool isArray() override {
+        return true;
+    }
+
+    bool isStructure() override {
+        return true;
+    }
+
+    bool isVector() override {
+        return true;
+    }
+
+    bool isTexture() override {
+        return true;
+    }
+
+    bool isSampler() override {
+        return true;
+    }
+
+    bool isTemplate() override {
         return true;
     }
 };
