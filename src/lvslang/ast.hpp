@@ -1026,10 +1026,8 @@ public:
                     return nullptr;
                 }
                 if (TARGET_IS_IR(irb::target) && !arg->isVariable()) {
-                    irb::Value* paramV = argVs[i];
                     context.pushRegisterName("param");
-                    argVs[i] = builder->opVariable(new irb::PointerType(context, paramV->getType(), irb::StorageClass::Function));
-                    builder->opStore(argVs[i], paramV);
+                    argVs[i] = builder->opVariable(new irb::PointerType(context, argVs[i]->getType(), irb::StorageClass::Function), argVs[i]);
                 }
                 if (i != 0)
                     argsStr += ", ";
