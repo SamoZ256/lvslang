@@ -1,5 +1,4 @@
-#ifndef LVSLANG_H
-#define LVSLANG_H
+#include "lvslang/lvslang.hpp"
 
 #include "spirv-tools/libspirv.hpp"
 #include "spirv-tools/optimizer.hpp"
@@ -16,29 +15,10 @@
 #include "llvm/Bitcode/BitcodeWriter.h"
 #endif
 
-#include "frontends/lvsl/parser.hpp"
-#include "frontends/metal/parser.hpp"
+#include "lvslang/frontends/lvsl/parser.hpp"
+#include "lvslang/frontends/metal/parser.hpp"
 
 namespace lvslang {
-
-enum class OptimizationLevel {
-    None,
-    O1,
-    O2,
-    O3,
-    Os
-};
-
-struct CompileOptions {
-    std::string source;
-    std::string inputName;
-    std::string outputName;
-    irb::Target target = irb::Target::None;
-    irb::SPIRVVersion spirvVersion = irb::SPIRVVersion::_1_4;
-    GLSLVersion glslVersion = GLSLVersion::_3_30;
-    bool outputAssembly = false;
-    OptimizationLevel optimizationLevel = OptimizationLevel::O2;
-};
 
 bool compile(const CompileOptions& options, std::string& outputCode) {
     irb::target = options.target;
@@ -255,5 +235,3 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
 }
 
 } //namespace lvslang
-
-#endif
