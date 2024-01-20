@@ -108,8 +108,11 @@ long numValueL;
 unsigned long numValueU;
 char numTypeStr;
 
+//TODO: support custom error callbacks
 inline void logError(const char* msg) {
-    std::cerr << source.crntDebugLine + 1 << ":" << source.crntDebugChar + 1 << ": error: " << msg << std::endl;
+    std::cerr << source.crntDebugLine + 1 << ":" << source.crntDebugChar + 1 << ": ";
+    std::cout << SET_TEXT_COLOR("31") << "error" << RESET_TEXT_COLOR();
+    std::cout << ": " << msg << std::endl;
     std::cout << source.source[source.crntDebugLine] << std::endl;
     std::string pointLine;
     for (uint32_t i = 0; i < source.crntDebugChar; i++)

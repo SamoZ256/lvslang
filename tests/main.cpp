@@ -32,20 +32,12 @@ void writeToFile(const std::string& filename, const std::string& source) {
 bool outputExpected = false;
 std::string baseDir = "../tests";
 
-#define SET_COLOR(color) std::cout << "\x1b[" color "m";
-
-#define RESET_COLOR() SET_COLOR("0")
-
-void printTestPassed(const std::string& testName) {
-    SET_COLOR("32");
-    std::cout << "Test '" << testName << "' passed" << std::endl;
-    RESET_COLOR();
+inline void printTestPassed(const std::string& testName) {
+    std::cout << SET_TEXT_COLOR("32") << "Test '" << testName << "' passed" << RESET_TEXT_COLOR() << std::endl;
 }
 
-void printTestFailed(const std::string& testName) {
-    SET_COLOR("31");
-    std::cout << "Test '" << testName << "' failed" << std::endl;
-    RESET_COLOR();
+inline void printTestFailed(const std::string& testName) {
+    std::cout << SET_TEXT_COLOR("31") << "Test '" << testName << "' failed" << RESET_TEXT_COLOR() << std::endl;
 }
 
 void _addTest(lvslang::CompileOptions& options, const std::string& testName, const std::string& filename, const std::string& expectedFilename) {

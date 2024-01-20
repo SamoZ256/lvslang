@@ -11,6 +11,10 @@
 
 namespace irb {
 
+#define SET_TEXT_COLOR(color) "\x1b[" color "m"
+
+#define RESET_TEXT_COLOR() SET_TEXT_COLOR("0")
+
 //Errors and warnings
 #define _IRB_MSG(type, msg) fprintf(stderr, "[IRB:" type "]::%s: %s\n", __FUNCTION__, msg)
 
