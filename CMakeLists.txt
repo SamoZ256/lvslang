@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.5)
 project(lvslang)
 
 option(USE_LLVM "Use LLVM to assemble and optimize the output" ON)
+#option(BUILD_TESTS "Build tests" OFF)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -22,14 +23,16 @@ if (USE_LLVM)
     add_compile_definitions(LVSLANG_USE_LLVM)
 endif()
 
-add_executable(lvslang
-    src/main.cpp
+add_library(lvslang_lib SHARED
     shader_ir_builder/common.cpp
     shader_ir_builder/spirv/value.cpp
 )
 
-target_link_libraries(lvslang PUBLIC SPIRV-Tools SPIRV-Tools-opt)
+target_link_libraries(lvslang_lib PUBLIC SPIRV-Tools SPIRV-Tools-opt)
 
 if (USE_LLVM)
-    target_link_libraries(lvslang PUBLIC ${LLVM_LIBS})
+    target_link_libraries(lvslang_lib PUBLIC ${LLVM_LIBS})
 endif()
+
+add_executable(lvslang src/main.cpp)
+target_link_libraries(lvslang PUBLIC lvslang_lib)
