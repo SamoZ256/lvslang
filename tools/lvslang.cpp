@@ -42,6 +42,7 @@ enum class Modifier {
 
 int main(int argc, char* argv[]) {
     lvslang::CompileOptions options;
+    std::string outputName;
     Modifier modifier = Modifier::None;
     std::string spirvVersionStr;
     std::string glslVersionStr;
@@ -100,7 +101,7 @@ int main(int argc, char* argv[]) {
                 options.inputName = arg;
                 break;
             case Modifier::Output: //Output
-                options.outputName = arg;
+                outputName = arg;
                 break;
             case Modifier::SPIRVVersion: //SPIRVVersion
                 spirvVersionStr = arg;
@@ -152,10 +153,10 @@ int main(int argc, char* argv[]) {
     if (!lvslang::compile(options, code))
         return 1;
 
-    if (options.outputName == "")
+    if (outputName == "")
         std::cout << code;
     else
-        writeToFile(options.outputName, code);
+        writeToFile(outputName, code);
 
     return 0;
 }

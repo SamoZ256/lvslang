@@ -255,8 +255,8 @@ protected:
 
 public:
     ExpressionAST() {
-        debugLine = crntLine;
-        debugChar = crntChar;
+        debugLine = source.crntLine;
+        debugChar = source.crntChar;
     }
 
     virtual ~ExpressionAST() = default;
@@ -277,8 +277,8 @@ public:
 
     //Debugging
     inline void setDebugInfo() {
-        crntDebugLine = debugLine;
-        crntDebugChar = debugChar;
+        source.crntDebugLine = debugLine;
+        source.crntDebugChar = debugChar;
     }
 };
 

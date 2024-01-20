@@ -1,0 +1,36 @@
+struct Model {
+    member pos: float2
+    member scale: float2
+}
+
+struct VertexIn {
+    member pos: float2 [[location(0)]]
+    member texCoord: float2 [[location(1)]]
+}
+
+struct VertexOut {
+    member pos: float4 [[position]]
+    member texCoord: float2
+}
+
+vertex vertexMain(vertexIn: struct VertexIn [[input]],
+                  model: constant struct Model* [[descriptor_set(0, 0)]]) -> struct VertexOut {
+    var vertexOut: struct VertexOut
+    vertexOut.pos = float4(model->pos + vertexIn.pos * model->scale, 0.0, 1.0)
+    vertexOut.texCoord = vertexIn.texCoord
+
+    return vertexOut
+}
+
+struct FragmentOut {
+    member outColor: float4 [[color(0)]]
+}
+
+fragment fragmentMain(fragmentIn: struct VertexOut [[input]],
+                      colorTexture: texture2D<float> [[descriptor_set(0, 1)]],
+                      colorSampler: sampler [[descriptor_set(1, 0)]]) -> struct FragmentOut {
+    var fragmentOut: struct FragmentOut
+    fragmentOut.outColor = sample(colorTexture, colorSampler, fragmentIn.texCoord)
+
+    return fragmentOut
+}

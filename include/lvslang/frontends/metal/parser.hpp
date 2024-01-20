@@ -1084,7 +1084,8 @@ void mainLoop() {
 }
 
 void compile() {
-    std::cout << "Using Metal frontend" << std::endl;
+    //Reset
+    lastChar = ' ';
 
     binopPrecedence[TOKEN_OPERATOR_LOGICAL_AND                      ] = 8;
     binopPrecedence[TOKEN_OPERATOR_LOGICAL_OR                       ] = 8;

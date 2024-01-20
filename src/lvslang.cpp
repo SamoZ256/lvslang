@@ -21,6 +21,16 @@
 namespace lvslang {
 
 bool compile(const CompileOptions& options, std::string& outputCode) {
+    //Reset
+    //TODO: move this to @ref context.reset()
+    context.crntRegisterNumber = 0;
+    context.registerNames.clear();
+    context.structures.clear();
+    context.codeHeader = "";
+    context.codeMain = "";
+    source = Source{};
+    standardFunctions.clear();
+
     irb::target = options.target;
     irb::spirvVersion = options.spirvVersion;
     lvslang::glslVersion = options.glslVersion;

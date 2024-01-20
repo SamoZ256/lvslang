@@ -249,9 +249,9 @@ int getOperatorFromString(const std::string& operatorStr) {
     return 0;
 }
 
-int _getNextToken() {
-    static int lastChar = ' ';
+static int lastChar;
 
+int _getNextToken() {
     //Whitespace
     while (isspace(lastChar))
         lastChar = getNextChar();

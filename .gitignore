@@ -1,6 +1,5 @@
 build*
 xcode
-test.*
 test-*.*
 test-*
 *test.*

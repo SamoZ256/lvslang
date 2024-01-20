@@ -14,11 +14,7 @@ namespace irb {
 //Errors and warnings
 #define _IRB_MSG(type, msg) fprintf(stderr, "[IRB:" type "]::%s: %s\n", __FUNCTION__, msg)
 
-#define IRB_ERROR(msg) \
-{ \
-_IRB_MSG("error", msg); \
-abort(); \
-}
+#define IRB_ERROR(msg) _IRB_MSG("error", msg);
 
 #define IRB_WARN(msg) _IRB_MSG("warning", msg)
 

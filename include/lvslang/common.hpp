@@ -8,11 +8,7 @@ namespace lvslang {
 //Errors and warnings
 #define _LVSLANG_MSG(type, msg) fprintf(stderr, "[LVSLANG:" type "]::%s: %s\n", __FUNCTION__, msg)
 
-#define LVSLANG_ERROR(msg) \
-{ \
-_LVSLANG_MSG("error", msg); \
-abort(); \
-}
+#define LVSLANG_ERROR(msg) _LVSLANG_MSG("error", msg);
 
 #define LVSLANG_WARN(msg) _LVSLANG_MSG("warning", msg)
 
@@ -77,43 +73,46 @@ std::map<GLSLVersion, std::string> glslVersionMap = {
     {GLSLVersion::_4_50, "450"}
 };
 
-static uint32_t stringPos = 0;
-static int crntToken;
+struct Source {
+    uint32_t stringPos = 0;
 
-static std::string identifierStr;
-static std::string operatorStr;
-static uint8_t componentCount = 0;
-//static bool typeIsBuiltin = false;
-//static TypeID builtinTypeID;
+    uint32_t crntLine = 0;
+    uint32_t crntChar = 0;
 
-static double numValueD;
-static long numValueL;
-static unsigned long numValueU;
-static char numTypeStr;
+    uint32_t crntDebugLine = 1;
+    uint32_t crntDebugChar = 1;
 
-static uint32_t crntLine = 0;
-static uint32_t crntChar = 0;
+    std::vector<std::string> source;
+};
 
-static uint32_t crntDebugLine = 1;
-static uint32_t crntDebugChar = 1;
-
-static std::vector<std::string> source;
+static Source source{};
 
 void setSource(const std::string& aSource) {
     uint32_t lineStart = 0;
     for (uint32_t i = 0; i < aSource.size(); i++) {
         if (aSource[i] == '\n' || aSource[i] == '\r') {
-            source.push_back(aSource.substr(lineStart, i - lineStart));
+            source.source.push_back(aSource.substr(lineStart, i - lineStart));
             lineStart = i + 1;
         }
     }
 }
 
+int crntToken;
+
+std::string identifierStr;
+std::string operatorStr;
+uint8_t componentCount = 0;
+
+double numValueD;
+long numValueL;
+unsigned long numValueU;
+char numTypeStr;
+
 inline void logError(const char* msg) {
-    std::cerr << crntDebugLine + 1 << ":" << crntDebugChar + 1 << ": error: " << msg << std::endl;
-    std::cout << source[crntDebugLine] << std::endl;
+    std::cerr << source.crntDebugLine + 1 << ":" << source.crntDebugChar + 1 << ": error: " << msg << std::endl;
+    std::cout << source.source[source.crntDebugLine] << std::endl;
     std::string pointLine;
-    for (uint32_t i = 0; i < crntDebugChar; i++)
+    for (uint32_t i = 0; i < source.crntDebugChar; i++)
         pointLine += " ";
     std::cout << pointLine << "^" << std::endl;
 }
@@ -149,21 +148,21 @@ bool charIsOperator(char c) {
 }
 
 char getNextChar() {
-    if (crntLine >= source.size())
+    if (source.crntLine >= source.source.size())
         return 0; //EOF
-    if (stringPos == source[crntLine].size()) {
-        stringPos = 0;
-        crntChar = 0;
-        crntDebugChar = 0;
-        crntLine++;
-        crntDebugLine = crntLine;
+    if (source.stringPos == source.source[source.crntLine].size()) {
+        source.stringPos = 0;
+        source.crntChar = 0;
+        source.crntDebugChar = 0;
+        source.crntLine++;
+        source.crntDebugLine = source.crntLine;
 
         return '\n';
     }
-    crntChar++;
-    crntDebugChar = crntChar;
+    source.crntChar++;
+    source.crntDebugChar = source.crntChar;
 
-    return source[crntLine][stringPos++];
+    return source.source[source.crntLine][source.stringPos++];
 }
 
 } //namespace lvslang
