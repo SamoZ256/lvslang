@@ -613,7 +613,7 @@ public:
                     attr.bindings.buffer = bufferBinding++;
                     if ((irb::target == irb::Target::SPIRV || irb::target == irb::Target::GLSL || irb::target == irb::Target::HLSL) && functionRole != irb::FunctionRole::Normal)
                         arg.type = arg.type->getElementType();
-                    pointerType->addAttribute(" \"air-buffer-no-alias\"");
+                    pointerType->addAttribute(" noundef \"air-buffer-no-alias\"");
                 }
             }
         }
