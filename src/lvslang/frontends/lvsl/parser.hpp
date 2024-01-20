@@ -1167,9 +1167,39 @@ void compile() {
     binopPrecedence[TOKEN_OPERATOR_FUNCTION_RETURN_TYPE             ] = 400;
 
     //Standard library
-    addStandardFuncion("abs", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}});
-    addStandardFuncion("sin", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
-    addStandardFuncion("sample", new irb::VectorType(context, new irb::TemplateType(context), 4), {{.type = new irb::TextureType(context, irb::TextureViewType::_2D, new irb::TemplateType(context))}, {.type = new irb::SamplerType(context)}, {.type = new irb::VectorType(context, createScalarType(TOKEN_TYPE_FLOAT), 2)}}); //TODO: overload this function?
+    addStandardFunction("abs", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}});
+    addStandardFunction("acos", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
+    addStandardFunction("acosh", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
+    addStandardFunction("asin", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
+    addStandardFunction("asinh", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
+    addStandardFunction("atan", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
+    addStandardFunction("atanh", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
+    //TODO: check this
+    //TODO: support vectors
+    addStandardFunction("ceil", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
+    addStandardFunction("acos", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
+    addStandardFunction("clamp", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}});
+    addStandardFunction("cos", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
+    addStandardFunction("cosh", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
+    //TODO: limit this to vectors
+    addStandardFunction("cross", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}});
+    //TODO: check this
+    addStandardFunction("degrees", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
+    //TODO: add determinant function
+    addStandardFunction("distance", createScalarType(TOKEN_TYPE_FLOAT), {{.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}});
+    //TODO: limit this to vectors
+    addStandardFunction("dot", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}});
+    addStandardFunction("exp", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}});
+    addStandardFunction("exp2", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}});
+    //TODO: check this
+    //TODO: support vectors
+    addStandardFunction("floor", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
+    //TODO: check this
+    //TODO: support vectors
+    addStandardFunction("fract", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
+    //TODO: support the rest of the builtin functions
+    addStandardFunction("sin", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
+    addStandardFunction("sample", new irb::VectorType(context, new irb::TemplateType(context), 4), {{.type = new irb::TextureType(context, irb::TextureViewType::_2D, new irb::TemplateType(context))}, {.type = new irb::SamplerType(context)}, {.type = new irb::VectorType(context, createScalarType(TOKEN_TYPE_FLOAT), 2)}}); //TODO: overload this function?
 
     mainLoop();
 }

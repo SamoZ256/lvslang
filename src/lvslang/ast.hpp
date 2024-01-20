@@ -27,7 +27,7 @@ struct StandardFunction {
 //TODO: support overloads
 std::map<std::string, StandardFunction> standardFunctions;
 
-inline void addStandardFuncion(const std::string& name, irb::Type* type, const std::vector<irb::Argument>& arguments) {
+inline void addStandardFunction(const std::string& name, irb::Type* type, const std::vector<irb::Argument>& arguments) {
     //FunctionPrototypeAST* declaration = new FunctionPrototypeAST(name, type, arguments, false, irb::FunctionRole::Normal, true);
     //functionDeclarations[name] = declaration;
     //declaration->codegen();
