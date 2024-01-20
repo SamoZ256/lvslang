@@ -194,12 +194,15 @@ public:
     }
 
     //TODO: support fast math (in function names as well)
-    Value* opSTDFunctionCall_EXT(std::string funcName, FunctionType* type, const std::vector<Value*>& arguments) override {
+    Value* opSTDFunctionCall_EXT(std::string funcName, FunctionType* type, const std::vector<Value*>& arguments, Type* specializedType) override {
         //We are going to push to register name so we need to save the value first
         std::string registerName = context.popRegisterName();
 
         //Adjust the name
         funcName = "air." + funcName;
+        //TODO: check if this is correct
+        if (specializedType->getTypeID() != TypeID::Void)
+            funcName += "." + specializedType->getTemplateName();
 
         Value* functionDecl = builtinFunctionDeclarations[funcName];
         if (!functionDecl) {
@@ -243,7 +246,7 @@ public:
                 code += components[i]->getNameWithType();
             }
             code += ">";
-            return new Value(context, type, code, "");
+            return new Value(context, type, code, "", false);
         } else {
             Value* value = new UndefinedValue(context, type);
             for (uint8_t i = 0; i < components.size(); i++) {
@@ -303,15 +306,19 @@ public:
             FunctionType* functionType = new FunctionType(context, type, {castFromType});
 
             //TODO: move the function selection based on type to @ref opSTDFunctionCall_EXT
-            std::string functionName = "convert." + type->getBuiltinFunctionTypeName() + "." + castFromType->getBuiltinFunctionTypeName();
+            std::string functionName = "convert." + type->getOpPrefix(true, false) + "." + type->getTemplateName() + "." + castFromType->getOpPrefix(true, false) + "." + castFromType->getTemplateName();
 
-            return opSTDFunctionCall_EXT(functionName, functionType, {val});
+            return opSTDFunctionCall_EXT(functionName, functionType, {val}, new ScalarType(context, TypeID::Void, 0));
         } else if (val->getType()->isScalar() && type->isVector()) {
             return opVectorConstruct(static_cast<VectorType*>(type), std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount(), val));
         }
 
         //HACK: just ignore
         return val;
+    }
+
+    Value* opDot(Value* a, Value* b) override {
+        return opSTDFunctionCall_EXT("dot", new FunctionType(context, a->getType()->getBaseType(), {a->getType(), b->getType()}), {a, b}, new ScalarType(context, TypeID::Void, 0));
     }
 
     Value* opSample(Value* texture, Value* sampler, Value* coords, Value* lod = nullptr) override {
@@ -325,8 +332,7 @@ public:
 
         FunctionType* type = new FunctionType(context, new VectorType(context, texture->getType()->getBaseType(), 4), {texture->getType(), sampler->getType(), coords->getType(), argument4->getType(), argument5->getType(), argument6->getType(), argument7->getType(), argument8->getType(), argument9->getType()});
 
-        //TODO: remove the hardoced types in the name
-        return opSTDFunctionCall_EXT("sample_texture_2d.v4f32", type, {texture, sampler, coords, argument4, argument5, argument6, argument7, argument8, argument9});
+        return opSTDFunctionCall_EXT("sample_texture_2d", type, {texture, sampler, coords, argument4, argument5, argument6, argument7, argument8, argument9}, type->getReturnType());
     }
 
     Value* opVariable(PointerType* type, Value* initializer = nullptr) override {

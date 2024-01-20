@@ -229,19 +229,23 @@ public:
     }
 
     virtual std::string getOpPrefix(bool signSensitive, bool needsOrd) {
-        return "Unknown";
+        return "";
     }
 
-    virtual std::string getBuiltinFunctionTypeName() {
+    virtual std::string getTemplateName() {
         return "none.none";
     }
 
     virtual std::string getCastOpName(Type* castFrom) {
-        return "Unknown";
+        return "";
     }
 
     virtual Type* getSpecializedType(Type* other) {
         return nullptr;
+    }
+
+    virtual Type* specialize(Type* specializedType) {
+        return this;
     }
 
     inline std::string getAttributes() const {
@@ -389,7 +393,7 @@ private:
     std::string registerName;
 
 public:
-    ScalarType(Context& aContext, TypeID aTypeID, uint32_t aBitCount, bool aIsSigned) : Type(aContext, aTypeID), bitCount(aBitCount), isSigned(aIsSigned) {
+    ScalarType(Context& aContext, TypeID aTypeID, uint32_t aBitCount, bool aIsSigned = true) : Type(aContext, aTypeID), bitCount(aBitCount), isSigned(aIsSigned) {
         nameBegin = getTypeName(typeID, bitCount, isSigned);
         switch (typeID) {
         case TypeID::Void:
@@ -455,6 +459,8 @@ public:
                     return "FOrd";
                 else
                     return "F";
+            case TypeID::Void:
+                return "";
             default:
                 return "Unknown";
             }
@@ -467,6 +473,8 @@ public:
                     return "";
             case TypeID::Float:
                 return "f";
+            case TypeID::Void:
+                return "";
             default:
                 return "Unknown";
             }
@@ -475,13 +483,13 @@ public:
         }
     }
 
-    std::string getBuiltinFunctionTypeName() override {
+    std::string getTemplateName() override {
         switch (typeID) {
         case TypeID::Bool:
         case TypeID::Integer:
-            return (isSigned ? "s." : "u.") + nameBegin;
+            return nameBegin;
         case TypeID::Float:
-            return "f.f" + std::to_string(bitCount);
+            return "f" + std::to_string(bitCount);
         default:
             return "none_scalar.none_scalar";
         }
@@ -635,6 +643,10 @@ public:
         return _baseType->getSpecializedType(other->getElementType());
     }
 
+    Type* specialize(Type* specializedType) override {
+        return new PointerType(context, _baseType->specialize(specializedType), storageClass);
+    }
+
     bool isPointer() override {
         return true;
     }
@@ -709,6 +721,10 @@ public:
 
     Type* getSpecializedType(Type* other) override {
         return arrayType->getSpecializedType(other->getBaseType());
+    }
+
+    Type* specialize(Type* specializedType) override {
+        return new ArrayType(context, arrayType->specialize(specializedType), size);
     }
 
     bool isArray() override {
@@ -842,15 +858,30 @@ public:
         Type* specializedReturnType = returnType->getSpecializedType(otherFunctionType->getReturnType());
         if (specializedReturnType) {
             if (specializedReturnType->isTemplate())
-                otherFunctionType->setReturnType(specializedType);
+                otherFunctionType->setReturnType(otherFunctionType->getReturnType()->specialize(specializedType));
             else
                 return specializedReturnType;
         }
 
         if (!specializedType)
-            return new ScalarType(context, TypeID::Void, 0, false);
+            return new ScalarType(context, TypeID::Void, 0);
         
         return specializedType;
+    }
+
+    Type* specialize(Type* specializedType) override {
+        if (!specializedType->isTemplate()) {
+            IRB_ERROR("type is not a template");
+            return nullptr;
+        }
+
+        std::vector<irb::Type*> specializedArguments(arguments.size());
+        for (uint32_t i = 0; i < arguments.size(); i++)
+            specializedArguments[i] = arguments[i]->specialize(specializedType);
+
+        FunctionType* specializedFunctionType = new FunctionType(context, returnType->specialize(specializedType), specializedArguments);
+
+        return specializedFunctionType;
     }
 
     bool isFunctionType() override {
@@ -955,6 +986,10 @@ public:
         return componentType->getOpPrefix(signSensitive, needsOrd);
     }
 
+    std::string getTemplateName() override {
+        return componentType->getTemplateName();
+    }
+
     std::string getCastOpName(Type* castFrom) override {
         if (castFrom->getTypeID() == TypeID::Vector) {
             if (componentType->equals(castFrom->getBaseType()))
@@ -972,6 +1007,10 @@ public:
 
     Type* getSpecializedType(Type* other) override {
         return componentType->getSpecializedType(other->getBaseType());
+    }
+
+    Type* specialize(Type* specializedType) override {
+        return new VectorType(context, componentType->specialize(specializedType), componentCount);
     }
 
     bool isVector() override {
@@ -1040,6 +1079,10 @@ public:
 
     Type* getSpecializedType(Type* other) override {
         return type->getSpecializedType(other->getBaseType());
+    }
+
+    Type* specialize(Type* specializedType) override {
+        return new TextureType(context, viewType, type->specialize(specializedType));
     }
 
     bool isTexture() override {
@@ -1123,6 +1166,10 @@ public:
 
     Type* getSpecializedType(Type* other) override {
         return other;
+    }
+
+    Type* specialize(Type* specializedType) override {
+        return specializedType;
     }
 
     bool isScalar() override {

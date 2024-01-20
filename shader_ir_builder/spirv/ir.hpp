@@ -365,12 +365,12 @@ public:
         return value;
     }
 
-    Value* opSTDFunctionCall_EXT(std::string funcName, FunctionType* type, const std::vector<Value*>& arguments) override {
+    Value* opSTDFunctionCall_EXT(std::string funcName, FunctionType* type, const std::vector<Value*>& arguments, Type* specializedType) override {
         type->getValue(this); //HACK: the standard library functions still don't have their returnV initialized at this point
         Value* returnV = type->getReturnV();
         Value* value = new Value(context, returnV->getType(), context.popRegisterName());
         funcName[0] = toupper(funcName[0]);
-        std::string code = "OpExtInst " + returnV->getName() + " " + importV->getName() + " " + funcName;
+        std::string code = "OpExtInst " + returnV->getName() + " " + importV->getName() + " " + specializedType->getOpPrefix(true, false) + funcName;
         for (auto* arg : arguments)
             code += " " + arg->getName();
         getSPIRVInsertBlock()->addCode(code, value);
@@ -496,6 +496,25 @@ public:
         Value* typeV = type->getValue(this);
         Value* value = new Value(context, type, context.popRegisterName());
         getSPIRVInsertBlock()->addCode("Op" + opName + " " + typeV->getName() + " " + val->getName(), value);
+
+        return value;
+    }
+
+    Value* opDot(Value* a, Value* b) override {
+        if (!a->getType()->isVector() || !b->getType()->isVector()) {
+            IRB_ERROR("cannot dot non-vector types");
+            return nullptr;
+        }
+        VectorType* aType = static_cast<VectorType*>(a->getType());
+        VectorType* bType = static_cast<VectorType*>(b->getType());
+        if (aType->getComponentCount() != bType->getComponentCount()) {
+            IRB_ERROR("cannot dot vectors with different component counts");
+            return nullptr;
+        }
+        //TODO: check if this is correct
+        Value* typeV = (new ScalarType(context, TypeID::Float, 32, true))->getValue(this);//aType->getBaseType()->getValue(this);
+        Value* value = new Value(context, aType->getBaseType(), context.popRegisterName());
+        getSPIRVInsertBlock()->addCode("OpDot " + typeV->getName() + " " + a->getName() + " " + b->getName(), value);
 
         return value;
     }

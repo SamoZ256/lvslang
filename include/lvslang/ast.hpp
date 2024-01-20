@@ -324,6 +324,7 @@ public:
                 value = new irb::ConstantInt(context, _valueU, type->getBitCount(), false);
             break;
         default:
+            std::cout << type->getNameForRegister() << std::endl;
             throw std::runtime_error("Constant value is neither int nor float");
             break;
         }
@@ -1052,7 +1053,7 @@ public:
             std::vector<irb::Value*> argVs(arguments.size());
             for (uint32_t i = 0; i < arguments.size(); i++) {
                 ExpressionAST* arg = arguments[i];
-                argVs[i] = arg->codegen(standardFunction.arguments[i].type);
+                argVs[i] = arg->codegen(standardFunction.arguments[i].type->isTemplate() ? nullptr : standardFunction.arguments[i].type);
                 if (!argVs[i])
                     return nullptr;
                 if (!argVs[i]->getType()->equals(standardFunction.arguments[i].type)) {
@@ -1064,38 +1065,43 @@ public:
                 argsStr += argVs[i]->getRawName();
             }
 
+            std::vector<irb::Type*> argTypes(argVs.size());
+            for (uint32_t i = 0; i < argTypes.size(); i++)
+                argTypes[i] = argVs[i]->getType();
+            //TODO: use @ref requiredType as return type in some cases?
+            irb::FunctionType* specializedFunctionType = new irb::FunctionType(context, standardFunction.type, argTypes);
+            irb::Type* specializedType = standardFunction.functionType->getSpecializedFunctionType(specializedFunctionType);
+            if (!specializedType) {
+                logError("Cannot deduce template type for function '" + callee + "'");
+                return nullptr;
+            }
+
             if (TARGET_IS_CODE(irb::target)) {
                 std::string code;
                 switch (irb::target) {
                 case irb::Target::Metal:
-                    if (callee == "abs")
-                        code += "abs(" + argVs[0]->getRawName() + ")";
-                    else if (callee == "sin")
-                        code = "sin(" + argVs[0]->getRawName() + ")";
-                    else if (callee == "sample")
+                    if (callee == "sample")
                         code = argVs[0]->getRawName() + ".sample(" + argVs[1]->getRawName() + ", " + argVs[2]->getRawName() + ")";
+                    else
+                        code = callee + "(" + argsStr + ")";
                     break;
                 case irb::Target::HLSL:
-                    if (callee == "abs")
-                        code += "abs(" + argVs[0]->getRawName() + ")";
-                    else if (callee == "sin")
-                        code = "sin(" + argVs[0]->getRawName() + ")";
-                    else if (callee == "sample")
+                    if (callee == "sample")
                         code = argVs[0]->getRawName() + ".SampleLevel(" + argVs[1]->getRawName() + ", " + argVs[2]->getRawName() + ", 0.0f)";
+                    else
+                        code = callee + "(" + argsStr + ")";
                     break;
                 case irb::Target::GLSL:
-                    if (callee == "abs")
-                        code += "abs(" + argVs[0]->getRawName() + ")";
-                    else if (callee == "sin")
-                        code = "sin(" + argVs[0]->getRawName() + ")";
-                    else if (callee == "sample")
+                    if (callee == "sample")
                         code = "texture(sampler2D(" + argVs[0]->getRawName() + ", " + argVs[1]->getRawName() + "), " + argVs[2]->getRawName() + ")"; //TODO: support other samplers + textures as well
+                    else
+                        code = callee + "(" + argsStr + ")";
                     break;
                 default:
                     break;
                 }
 
-                return new irb::Value(context, standardFunction.type, code);
+                return new irb::Value(context, specializedFunctionType->getReturnType(), code);
             } else {
                 if (!standardFunction.value) {
                     std::string regName = callee;
@@ -1103,20 +1109,13 @@ public:
                     regName = "import " + regName;
                     standardFunction.value = new irb::Value(context, nullptr, regName);
                 }
-                std::vector<irb::Type*> argTypes(argVs.size());
-                for (uint32_t i = 0; i < argTypes.size(); i++)
-                    argTypes[i] = argVs[i]->getType();
-                //TODO: use @ref requiredType as return type in some cases?
-                irb::FunctionType* specializedFunctionType = new irb::FunctionType(context, standardFunction.functionType->getReturnType(), argTypes);
-                if (!standardFunction.functionType->getSpecializedFunctionType(specializedFunctionType)) {
-                    logError("Cannot deduce template type for function '" + callee + "'");
-                    return nullptr;
-                }
                 irb::Value* value;
-                if (callee == "sample")
+                if (callee == "dot")
+                    value = builder->opDot(argVs[0], argVs[1]);
+                else if (callee == "sample")
                     value = builder->opSample(argVs[0], argVs[1], argVs[2]);
                 else
-                    value = builder->opSTDFunctionCall_EXT(callee, specializedFunctionType, argVs);
+                    value = builder->opSTDFunctionCall_EXT(callee, specializedFunctionType, argVs, specializedType);
                 
                 if (requiredType)
                     return builder->opCast(value, requiredType);

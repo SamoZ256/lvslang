@@ -92,6 +92,7 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
     
     //Assemble and optimize
     if (irb::target == irb::Target::SPIRV) {
+        //std::cout << code << std::endl;
         //TODO: uncomment?
         //if (options.optimizationLevel == OptimizationLevel::None && options.outputAssembly) {
         //    outputCode = code;

@@ -23,11 +23,11 @@ define %VertexOut @vertexMain(%VertexIn %vertexIn, ptr addrspace(2) nocapture no
   ret %VertexOut %_23.fca.1.insert
 }
 
-declare <4 x float> @air.sample_texture_2d.v4f32(ptr addrspace(2) nocapture readonly, ptr addrspace(2) nocapture readonly, <2 x float>, i1, <2 x i32>, i1, float, float, i32) local_unnamed_addr
+declare <4 x float> @air.sample_texture_2d.f32(ptr addrspace(2) nocapture readonly, ptr addrspace(2) nocapture readonly, <2 x float>, i1, <2 x i32>, i1, float, float, i32) local_unnamed_addr
 
 define %FragmentOut @fragmentMain(%VertexOut %fragmentIn, ptr addrspace(2) nocapture readonly %colorTexture, ptr addrspace(2) nocapture readonly %colorSampler) local_unnamed_addr {
   %fragmentIn.fca.1.extract = extractvalue %VertexOut %fragmentIn, 1
-  %_35 = tail call <4 x float> @air.sample_texture_2d.v4f32(ptr addrspace(2) nocapture readonly %colorTexture, ptr addrspace(2) nocapture readonly %colorSampler, <2 x float> %fragmentIn.fca.1.extract, i1 true, <2 x i32> zeroinitializer, i1 false, float 0.000000e+00, float 0.000000e+00, i32 0)
+  %_35 = tail call <4 x float> @air.sample_texture_2d.f32(ptr addrspace(2) nocapture readonly %colorTexture, ptr addrspace(2) nocapture readonly %colorSampler, <2 x float> %fragmentIn.fca.1.extract, i1 true, <2 x i32> zeroinitializer, i1 false, float 0.000000e+00, float 0.000000e+00, i32 0)
   %_36.fca.0.insert = insertvalue %FragmentOut poison, <4 x float> %_35, 0
   ret %FragmentOut %_36.fca.0.insert
 }

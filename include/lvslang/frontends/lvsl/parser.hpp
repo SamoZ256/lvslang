@@ -1178,20 +1178,24 @@ void compile() {
     //TODO: check this
     //TODO: support vectors
     addStandardFunction("ceil", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
-    addStandardFunction("acos", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
     addStandardFunction("clamp", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}});
     addStandardFunction("cos", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
     addStandardFunction("cosh", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
-    //TODO: limit this to vectors
-    addStandardFunction("cross", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}});
+    //TODO: support other vector sizes as well
+    //TODO: support half?
+    addStandardFunction("cross", new irb::VectorType(context, createScalarType(TOKEN_TYPE_FLOAT), 3), {{.type = new irb::VectorType(context, createScalarType(TOKEN_TYPE_FLOAT), 3)}, {.type = new irb::VectorType(context, createScalarType(TOKEN_TYPE_FLOAT), 3)}});
     //TODO: check this
     addStandardFunction("degrees", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
     //TODO: add determinant function
-    addStandardFunction("distance", createScalarType(TOKEN_TYPE_FLOAT), {{.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}});
-    //TODO: limit this to vectors
-    addStandardFunction("dot", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}});
-    addStandardFunction("exp", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}});
-    addStandardFunction("exp2", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}});
+    //TODO: support half?
+    addStandardFunction("distance", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}, {.type = createScalarType(TOKEN_TYPE_FLOAT)}});
+    //TODO: support other vector sizes as well
+    //TODO: support half?
+    addStandardFunction("dot", createScalarType(TOKEN_TYPE_FLOAT), {{.type = new irb::VectorType(context, createScalarType(TOKEN_TYPE_FLOAT), 3)}, {.type = new irb::VectorType(context, createScalarType(TOKEN_TYPE_FLOAT), 3)}});
+    //TODO: support half?
+    addStandardFunction("exp", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
+    //TODO: support half?
+    addStandardFunction("exp2", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
     //TODO: check this
     //TODO: support vectors
     addStandardFunction("floor", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});

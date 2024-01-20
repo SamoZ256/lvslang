@@ -122,6 +122,7 @@ int main(int argc, char* argv[]) {
     }
 
     addTest("basic");
+    addTest("standard_functions");
 
     return 0;
 }
