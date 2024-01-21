@@ -40,7 +40,7 @@ inline void printTestFailed(const std::string& testName) {
     std::cout << SET_TEXT_COLOR("31") << "Test '" << testName << "' failed" << RESET_TEXT_COLOR() << std::endl;
 }
 
-void _addTest(lvslang::CompileOptions& options, const std::string& testName, const std::string& filename, const std::string& expectedFilename) {
+bool _addTest(lvslang::CompileOptions& options, const std::string& testName, const std::string& filename, const std::string& expectedFilename) {
     std::cout << "Testing '" << testName << "' ..." << std::endl;
     options.inputName = std::filesystem::absolute(filename).string();
     options.source = readFile(filename);
@@ -68,7 +68,7 @@ void _addTest(lvslang::CompileOptions& options, const std::string& testName, con
                 while (true) {
                     pos = code.find("\n", pos + 1);
                     pos2 = expected.find("\n", pos2 + 1);
-                    if (pos == std::string::npos && pos2 == std::string::npos)
+                    if (pos == std::string::npos || pos2 == std::string::npos)
                         break;
                     std::string expectedLine = expected.substr(oldPos2, pos2 - oldPos2);
                     std::string actualLine = code.substr(oldPos, pos - oldPos);
@@ -79,28 +79,43 @@ void _addTest(lvslang::CompileOptions& options, const std::string& testName, con
                     oldPos = pos;
                     oldPos2 = pos2;
                 }
+
+                return false;
             }
         }
     } else {
         printTestFailed(testName);
         //std::cout << "Error:" << std::endl;
         //std::cout << result.error << std::endl;
+
+        return false;
     }
+
+    return true;
 }
+
+static const irb::Target targets[] = {irb::Target::AIR, irb::Target::SPIRV, irb::Target::Metal, irb::Target::HLSL, irb::Target::GLSL};
+static const std::string targetNames[] = {"AIR", "SPIRV", "Metal", "HLSL", "GLSL"};
+static const std::string targetExtensions[] = {"ll", "spvasm", "metal", "hlsl", "glsl"};
+
+static const std::string frontendNames[] = {"Metal", "LVSL"};
+static const std::string frontendExtensions[] = {"metal", "lvsl"};
 
 void addTest(const std::string& testName) {
     lvslang::CompileOptions options;
     options.spirvVersion = irb::SPIRVVersion::_1_6;
     options.glslVersion = lvslang::GLSLVersion::_4_50;
     options.outputAssembly = true;
-    options.target = irb::Target::AIR;
-    _addTest(options, testName + " [Metal frontend, AIR backend]", baseDir + "/" + testName + ".metal", baseDir + "/" + testName + ".expected.ll");
-    if (!outputExpected)
-        _addTest(options, testName + " [LVSL frontend, AIR backend]", baseDir + "/" + testName + ".lvsl", baseDir + "/" + testName + ".expected.ll");
-    options.target = irb::Target::SPIRV;
-    _addTest(options, testName + " [Metal frontend, SPIRV backend]", baseDir + "/" + testName + ".metal", baseDir + "/" + testName + ".expected.spvasm");
-    if (!outputExpected)
-        _addTest(options, testName + " [LVSL frontend, SPIRV backend]", baseDir + "/" + testName + ".lvsl", baseDir + "/" + testName + ".expected.spvasm");
+    for (uint32_t i = 0; i < sizeof(frontendNames) / sizeof(std::string); i++) {
+        if (!outputExpected || i == 0) {
+            for (uint32_t j = 0; j < sizeof(targets) / sizeof(irb::Target); j++) {
+                options.target = targets[j];
+                bool success = _addTest(options, testName + " [" + frontendNames[i] + " frontend, " + targetNames[j] + " backend]", baseDir + "/" + testName + "." + frontendExtensions[i], baseDir + "/" + testName + ".expected." + targetExtensions[j]);
+                if (!success)
+                    return;
+            }
+        }
+    }
 }
 
 int main(int argc, char* argv[]) {
