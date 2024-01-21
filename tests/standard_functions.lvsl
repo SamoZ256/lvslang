@@ -3,27 +3,27 @@ struct FragmentOut {
 }
 
 fragment testStandardFunctions(testTexture: texture2D<float>, testSampler: sampler) -> struct FragmentOut {
-    abs(0);
-    acos(0.0);
-    acosh(0.0);
-    asin(0.0);
-    asinh(0.0);
-    atan(0.0);
-    atanh(0.0);
-    ceil(0.0);
-    clamp(0.0, 0.0, 0.0);
-    cos(0.0);
-    cosh(0.0);
-    cross(float3(0.0), float3(0.0));
-    degrees(0.0);
-    distance(0.0, 0.0);
-    dot(float3(0.0), float3(0.0));
-    exp(0.0);
-    exp2(0.0);
-    floor(0.0);
-    fract(0.0);
-    sin(0.0);
-    sample(testTexture, testSampler, float2(0.0));
+    var absTest = abs(0);
+    var acosTest = acos(0.0);
+    var acoshTest = acosh(0.0);
+    var asinTest = asin(0.0);
+    var asinhTest = asinh(0.0);
+    var atanTest = atan(0.0);
+    var atanhTest = atanh(0.0);
+    var ceilTest = ceil(0.0);
+    var clampTest = clamp(0.0, 0.0, 0.0);
+    var cosTest = cos(0.0);
+    var coshTest = cosh(0.0);
+    var crossTest = cross(float3(0.0), float3(0.0));
+    var degreesTest = degrees(0.0);
+    var distanceTest = distance(float3(0.0), float3(0.0));
+    var dotTest = dot(float3(0.0), float3(0.0));
+    var expTest = exp(0.0);
+    var exp2Test = exp2(0.0);
+    var floorTest = floor(0.0);
+    var fractTest = fract(0.0);
+    var sinTest = sin(0.0);
+    var sampleTest = sample(testTexture, testSampler, float2(0.0));
 
     var fragmentOut: struct FragmentOut
     fragmentOut.outColor = float4(0.0, 0.0, 0.0, 1.0)

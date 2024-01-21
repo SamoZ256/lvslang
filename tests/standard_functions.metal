@@ -3,27 +3,27 @@ struct FragmentOut {
 };
 
 fragment struct FragmentOut testStandardFunctions(texture2d<float> testTexture, sampler testSampler) {
-    abs(0);
-    acos(0.0);
-    acosh(0.0);
-    asin(0.0);
-    asinh(0.0);
-    atan(0.0);
-    atanh(0.0);
-    ceil(0.0);
-    clamp(0.0, 0.0, 0.0);
-    cos(0.0);
-    cosh(0.0);
-    cross(float3(0.0), float3(0.0));
-    degrees(0.0);
-    distance(0.0, 0.0);
-    dot(float3(0.0), float3(0.0));
-    exp(0.0);
-    exp2(0.0);
-    floor(0.0);
-    fract(0.0);
-    sin(0.0);
-    sample(testTexture, testSampler, float2(0.0));
+    int absTest = abs(0);
+    float acosTest = acos(0.0);
+    float acoshTest = acosh(0.0);
+    float asinTest = asin(0.0);
+    float asinhTest = asinh(0.0);
+    float atanTest = atan(0.0);
+    float atanhTest = atanh(0.0);
+    float ceilTest = ceil(0.0);
+    float clampTest = clamp(0.0, 0.0, 0.0);
+    float cosTest = cos(0.0);
+    float coshTest = cosh(0.0);
+    float3 crossTest = cross(float3(0.0), float3(0.0));
+    float degreesTest = degrees(0.0);
+    float distanceTest = distance(float3(0.0), float3(0.0));
+    float dotTest = dot(float3(0.0), float3(0.0));
+    float expTest = exp(0.0);
+    float exp2Test = exp2(0.0);
+    float floorTest = floor(0.0);
+    float fractTest = fract(0.0);
+    float sinTest = sin(0.0);
+    float4 sampleTest = sample(testTexture, testSampler, float2(0.0));
 
     struct FragmentOut fragmentOut;
     fragmentOut.outColor = float4(0.0, 0.0, 0.0, 1.0);

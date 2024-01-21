@@ -134,6 +134,12 @@ public:
 
     virtual Value* opCast(Value* val, Type* type) = 0;
 
+    //TODO: merge all the following functions into @ref opSTDFunctionCall_EXT
+
+    //TODO: create separate function for cross?
+
+    //TODO: create separate function for distance?
+
     virtual Value* opDot(Value* a, Value* b) = 0;
 
     virtual Value* opSample(Value* texture, Value* sampler, Value* coords, Value* lod = nullptr) = 0;
