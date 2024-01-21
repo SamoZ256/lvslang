@@ -384,6 +384,15 @@ irb::Type* _parseTypeWithAttributesExpression(irb::Attributes* attributes = null
     return type;
 }
 
+void _consumeSemicolons(ExpressionAST* lastExpression) {
+    if (!dynamic_cast<IfExpressionAST*>(lastExpression) && !dynamic_cast<WhileExpressionAST*>(lastExpression) && !dynamic_cast<BlockExpressionAST*>(lastExpression) && crntToken != TOKEN_SKIP) {
+        logError("expected ';' after expression");
+        return;
+    }
+    while (crntToken == TOKEN_SKIP)
+        getNextToken();
+}
+
 //Number
 NumberExpressionAST* parseNumberExpression() {
     NumberExpressionAST* result = new NumberExpressionAST(numValueD, numValueL, numValueU, createScalarType(getIntTypeFromNumStr(numTypeStr)));
@@ -428,12 +437,7 @@ BlockExpressionAST* parseBracesExpression() {
             return nullptr;
 
         //Get rid of semicolons
-        if (crntToken != TOKEN_SKIP) {
-            logError("expected ';' after expression");
-            return nullptr;
-        }
-        while (crntToken == TOKEN_SKIP)
-            getNextToken();
+        _consumeSemicolons(expr);
         
         expressions.push_back(expr);
     }
@@ -548,6 +552,7 @@ IfThenBlock* _parseIfThenBlock() {
     ifThenBlock->block = parseExpression();
     if (!ifThenBlock->block)
         return nullptr;
+    _consumeSemicolons(ifThenBlock->block);
 
     return ifThenBlock;
 }
@@ -597,6 +602,7 @@ ExpressionAST* parseWhileExpression() {
     ExpressionAST* block = parseExpression();
     if (!block)
         return nullptr;
+    _consumeSemicolons(block);
 
     return new WhileExpressionAST(condition, block, false);
 }
@@ -1020,17 +1026,18 @@ ExpressionAST* parseTopLevelTypeExpression() {
 }
 
 //Main loop
-void mainLoop() {
+bool mainLoop() {
     getNextToken();
+    bool success = true;
     while (true) {
         ExpressionAST* expression = nullptr;
-        bool skipUntillBlockEnd = true;
+        bool skipUntilBlockEnd = true;
         switch (crntToken) {
         case TOKEN_EOF:
-            return;
+            return success;
         case TOKEN_SKIP:
             getNextToken(); // ';'
-            skipUntillBlockEnd = false;
+            skipUntilBlockEnd = false;
             break;
         case TOKEN_VERTEX:
             getNextToken(); // 'vertex'
@@ -1060,8 +1067,6 @@ void mainLoop() {
             break;
         default:
             logError("unknown top level token '" + std::to_string(crntToken) + "'");
-            getNextToken(); //For recovery
-            skipUntillBlockEnd = false;
             break;
         }
 
@@ -1069,21 +1074,29 @@ void mainLoop() {
             if (auto* value = expression->codegen()) {
                 context.codeMain += value->getRawName() + "\n\n";
             }
-        } else if (skipUntillBlockEnd) {
+        } else if (skipUntilBlockEnd) {
+            int blocksToSkip = 1;
             while (true) {
                 getNextToken();
                 if (crntToken == TOKEN_EOF)
-                    return;
-                if (crntToken == '}') {
-                    getNextToken(); // '}'
+                    return false;
+                if (crntToken == '{')
+                    blocksToSkip++;
+                else if (crntToken == '}')
+                    blocksToSkip--;
+                if (blocksToSkip == 0) {
+                    getNextToken();
                     break;
                 }
             }
+            success = false;
         }
     }
+
+    return success;
 }
 
-void compile() {
+bool compile() {
     //Reset
     lastChar = ' ';
 
@@ -1167,7 +1180,7 @@ void compile() {
     addStandardFunction("sin", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
     addStandardFunction("sample", new irb::VectorType(context, new irb::TemplateType(context), 4), {{.type = new irb::TextureType(context, irb::TextureViewType::_2D, new irb::TemplateType(context))}, {.type = new irb::SamplerType(context)}, {.type = new irb::VectorType(context, createScalarType(TOKEN_TYPE_FLOAT), 2)}}); //TODO: overload this function?
 
-    mainLoop();
+    return mainLoop();
 }
 
 } //namespace lvsl

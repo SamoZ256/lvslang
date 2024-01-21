@@ -231,7 +231,13 @@ public:
     Value* opConstant(ConstantValue* val) override {
         Value* typeV = val->getType()->getValue(this);
 
-        return _addCodeToTypesVariablesConstantsBlock(typeV->getType(), "OpConstant " + typeV->getName() + " " + val->getName(), context.popRegisterName());
+        std::string str;
+        if (val->getType()->getTypeID() == TypeID::Bool)
+            str = "OpConstant" + std::string(val->getName() == "1" ? "True " : "False ") + typeV->getName();
+        else
+            str = "OpConstant " + typeV->getName() + " " + val->getName();
+
+        return _addCodeToTypesVariablesConstantsBlock(typeV->getType(), str, context.popRegisterName());
     }
 
     Value* opStructureDefinition(StructureType* structureType) override {

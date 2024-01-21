@@ -25,7 +25,7 @@ public:
         code += ") {";
         for (uint32_t i = 0; i < blocks.size(); i++) {
             if (i >= 2)
-                code += "\n_" + blocks[i]->getRawName() + ":"; //HACK: add the "_"
+                code += "\n" + blocks[i]->getRawName() + ":";
             code += static_cast<AIRBlock*>(blocks[i])->getCode();
         }
         code += "}";

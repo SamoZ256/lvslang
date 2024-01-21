@@ -583,7 +583,7 @@ public:
 
 class ConstantBool : public ConstantValue {
 public:
-    ConstantBool(Context& aContext, bool value) : ConstantValue(aContext, new ScalarType(aContext, TypeID::Bool, 8, false), std::to_string(value)) {}
+    ConstantBool(Context& aContext, bool value) : ConstantValue(aContext, new ScalarType(aContext, TypeID::Bool, 8, false), TARGET_IS_IR(target) ? std::to_string(value) : (value ? "true" : "false")) {}
 };
 
 class ConstantInt : public ConstantValue {

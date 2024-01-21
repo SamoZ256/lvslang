@@ -79,12 +79,16 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
     }
 
     std::string extension = options.inputName.substr(options.inputName.find_last_of('.'));
+    bool success;
     if (extension == ".lvsl")
-        lvsl::compile();
+        success = lvsl::compile();
     else if (extension == ".metal")
-        metal::compile();
+        success = metal::compile();
     else
         throw std::runtime_error("unsupported output file extension '" + extension + "'");
+    
+    if (!success)
+        return false;
 
     if (irb::target == irb::Target::AIR)
         static_cast<irb::AIRBuilder*>(builder)->createMetadata();

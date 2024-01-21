@@ -1060,17 +1060,18 @@ ExpressionAST* parseExpression(int expressionPrecedence) {
 }
 
 //Main loop
-void mainLoop() {
+bool mainLoop() {
     getNextToken();
+    bool success = true;
     while (true) {
         ExpressionAST* expression = nullptr;
-        bool skipUntillBlockEnd = true;
+        bool skipUntilBlockEnd = true;
         switch (crntToken) {
         case TOKEN_EOF:
-            return;
+            return success;
         case TOKEN_SKIP:
             getNextToken(); // ';'
-            skipUntillBlockEnd = false;
+            skipUntilBlockEnd = false;
             break;
         case TOKEN_FUNC:
             expression = parseFunctionDefinition();
@@ -1099,8 +1100,6 @@ void mainLoop() {
             break;
         default:
             logError("unknown top level token '" + std::to_string(crntToken) + "'");
-            getNextToken(); //For recovery
-            skipUntillBlockEnd = false;
             break;
         }
 
@@ -1108,21 +1107,29 @@ void mainLoop() {
             if (auto* value = expression->codegen()) {
                 context.codeMain += value->getRawName() + "\n\n";
             }
-        } else if (skipUntillBlockEnd) {
+        } else if (skipUntilBlockEnd) {
+            int blocksToSkip = 1;
             while (true) {
                 getNextToken();
                 if (crntToken == TOKEN_EOF)
-                    return;
-                if (crntToken == '}') {
-                    getNextToken(); // '}'
+                    return false;
+                if (crntToken == '{')
+                    blocksToSkip++;
+                else if (crntToken == '}')
+                    blocksToSkip--;
+                if (blocksToSkip == 0) {
+                    getNextToken();
                     break;
                 }
             }
+            success = false;
         }
     }
+
+    return success;
 }
 
-void compile() {
+bool compile() {
     //Reset
     lastChar = ' ';
 
@@ -1206,7 +1213,7 @@ void compile() {
     addStandardFunction("sin", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
     addStandardFunction("sample", new irb::VectorType(context, new irb::TemplateType(context), 4), {{.type = new irb::TextureType(context, irb::TextureViewType::_2D, new irb::TemplateType(context))}, {.type = new irb::SamplerType(context)}, {.type = new irb::VectorType(context, createScalarType(TOKEN_TYPE_FLOAT), 2)}}); //TODO: overload this function?
 
-    mainLoop();
+    return mainLoop();
 }
 
 } //namespace lvsl

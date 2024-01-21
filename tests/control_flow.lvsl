@@ -1,0 +1,36 @@
+struct MyBuffer {
+    member a: float
+}
+
+struct FragmentOut {
+    member outColor: float4 [[color(0)]]
+}
+
+fragment testControlFlow(myBuffer: constant struct MyBuffer* [[descriptor_set(0, 0)]]) -> struct FragmentOut {
+    var outColor: float4
+
+    if (myBuffer->a > 0.0)
+        outColor = float4(1.0, 0.0, 0.0, 1.0)
+    else if (myBuffer->a < 0.0)
+        outColor = float4(0.0, 1.0, 0.0, 1.0)
+    else
+        outColor = float4(0.0, 0.0, 1.0, 1.0)
+    var i = 0;
+    while (i < 10)
+        i = i + 1;
+
+    if (myBuffer->a > 0.0) {
+        outColor = float4(1.0, 0.0, 0.0, 1.0)
+    } else if (myBuffer->a < 0.0) {
+        outColor = float4(0.0, 1.0, 0.0, 1.0)
+    } else {
+        outColor = float4(0.0, 0.0, 1.0, 1.0)
+    } while (i < 10) {
+        i = i + 1;
+    }
+
+    var fragmentOut: struct FragmentOut
+    fragmentOut.outColor = outColor
+
+    return fragmentOut
+}

@@ -115,6 +115,7 @@ int main(int argc, char* argv[]) {
 
     addTest("basic");
     addTest("standard_functions");
+    addTest("control_flow");
 
     return 0;
 }

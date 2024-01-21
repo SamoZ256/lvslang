@@ -310,23 +310,21 @@ public:
 
         irb::Value* value;
         switch (type->getTypeID()) {
-        //case TOKEN_TYPE_FLOAT64:
-        //default:
-        //    return GET_CONSTANT_NUMBER_CODE(std::to_string(_valueD));
-        case irb::TypeID::Float:
-            value = new irb::ConstantFloat(context, _valueD, type->getBitCount());
+        case irb::TypeID::Bool:
+            value = new irb::ConstantBool(context, _valueU);
             break;
-        //case TOKEN_TYPE_INT64:
         case irb::TypeID::Integer:
             if (type->getIsSigned())
                 value = new irb::ConstantInt(context, _valueL, type->getBitCount(), true);
             else
                 value = new irb::ConstantInt(context, _valueU, type->getBitCount(), false);
             break;
-        default:
-            std::cout << type->getNameForRegister() << std::endl;
-            throw std::runtime_error("Constant value is neither int nor float");
+        case irb::TypeID::Float:
+            value = new irb::ConstantFloat(context, _valueD, type->getBitCount());
             break;
+        default:
+            logError("constant value is not bool, int or float");
+            return nullptr;
         }
         
         if (TARGET_IS_IR(irb::target)) {
@@ -1174,7 +1172,7 @@ public:
                 if (i != 0)
                     codeStr += " else ";
                 codeStr += "if (";
-                irb::Value* condV = ifThenBlocks[i]->condition->codegen();
+                irb::Value* condV = ifThenBlocks[i]->condition->codegen(new irb::ScalarType(context, irb::TypeID::Bool, 8, false));
                 if (!condV)
                     return nullptr;
                 irb::Value* blockV = ifThenBlocks[i]->block->codegen();
@@ -1214,7 +1212,7 @@ public:
                 elseBs[elseBs.size() - 1] = endB;
             }
             for (uint32_t i = 0; i < ifThenBlocks.size(); i++) {
-                irb::Value* condV = ifThenBlocks[i]->condition->codegen();
+                irb::Value* condV = ifThenBlocks[i]->condition->codegen(new irb::ScalarType(context, irb::TypeID::Bool, 8, false));
                 builder->opBlockMerge(mergeBs[i]);
                 builder->opBranchCond(condV, thenBs[i], elseBs[i]);
 
@@ -1315,7 +1313,7 @@ public:
             builder->setInsertBlock(condB);
         }
         
-        irb::Value* condV = condition->codegen();
+        irb::Value* condV = condition->codegen(new irb::ScalarType(context, irb::TypeID::Bool, 8, false));
         if (!condV)
             return nullptr;
 
