@@ -375,10 +375,27 @@ public:
         type->getValue(this); //HACK: the standard library functions still don't have their returnV initialized at this point
         Value* returnV = type->getReturnV();
         Value* value = new Value(context, returnV->getType(), context.popRegisterName());
-        funcName[0] = toupper(funcName[0]);
-        std::string code = "OpExtInst " + returnV->getName() + " " + importV->getName() + " " + specializedType->getOpPrefix(true, false) + funcName;
-        for (auto* arg : arguments)
-            code += " " + arg->getName();
+        std::string code;
+        if (funcName == "isinf") {
+            if (arguments.size() != 1) {
+                IRB_INVALID_ARGUMENT_WITH_REASON("arguments", "the number of arguments of 'isinf' function must be 1");
+                return nullptr;
+            }
+            code = "OpIsInf " + returnV->getName() + " " + arguments[0]->getName();
+        } else if (funcName == "isnan") {
+            if (arguments.size() != 1) {
+                IRB_INVALID_ARGUMENT_WITH_REASON("arguments", "the number of arguments of 'isnan' function must be 1");
+                return nullptr;
+            }
+            code = "OpIsNan " + returnV->getName() + " " + arguments[0]->getName();
+        } else {
+            funcName[0] = toupper(funcName[0]);
+            if (funcName == "Smoothstep")
+                funcName = "SmoothStep";
+            code = "OpExtInst " + returnV->getName() + " " + importV->getName() + " " + specializedType->getOpPrefix(true, false) + funcName;
+            for (auto* arg : arguments)
+                code += " " + arg->getName();
+        }
         getSPIRVInsertBlock()->addCode(code, value);
 
         return value;

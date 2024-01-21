@@ -3,27 +3,46 @@ struct FragmentOut {
 }
 
 fragment testStandardFunctions(testTexture: texture2D<float>, testSampler: sampler) -> struct FragmentOut {
-    var absTest = abs(0);
-    var acosTest = acos(0.0);
-    var acoshTest = acosh(0.0);
-    var asinTest = asin(0.0);
-    var asinhTest = asinh(0.0);
-    var atanTest = atan(0.0);
-    var atanhTest = atanh(0.0);
-    var ceilTest = ceil(0.0);
-    var clampTest = clamp(0.0, 0.0, 0.0);
-    var cosTest = cos(0.0);
-    var coshTest = cosh(0.0);
-    var crossTest = cross(float3(0.0), float3(0.0));
-    var degreesTest = degrees(0.0);
-    var distanceTest = distance(float3(0.0), float3(0.0));
-    var dotTest = dot(float3(0.0), float3(0.0));
-    var expTest = exp(0.0);
-    var exp2Test = exp2(0.0);
-    var floorTest = floor(0.0);
-    var fractTest = fract(0.0);
-    var sinTest = sin(0.0);
-    var sampleTest = sample(testTexture, testSampler, float2(0.0));
+    var absTest = abs(0)
+    var acosTest = acos(0.0)
+    var acoshTest = acosh(0.0)
+    var asinTest = asin(0.0)
+    var asinhTest = asinh(0.0)
+    var atanTest = atan(0.0)
+    var atanhTest = atanh(0.0)
+    var ceilTest = ceil(0.0)
+    var clampTest = clamp(0.0, 0.0, 0.0)
+    var cosTest = cos(0.0)
+    var coshTest = cosh(0.0)
+    var crossTest = cross(float3(0.0), float3(0.0))
+    var distanceTest = distance(float3(0.0), float3(0.0))
+    var dotTest = dot(float3(0.0), float3(0.0))
+    var expTest = exp(0.0)
+    var exp2Test = exp2(0.0)
+    var floorTest = floor(0.0)
+    var fractTest = fract(0.0)
+    var isinfTest = isinf(0.0)
+    var isnanTest = isnan(0.0)
+    var lengthTest = length(float3(0.0))
+    var logTest = log(0.0)
+    var log2Test = log2(0.0)
+    var maxTest = max(0.0, 0.0)
+    var minTest = min(0.0, 0.0)
+    var mixTest = mix(0.0, 0.0, 0.0)
+    var normalizeTest = normalize(float3(0.0))
+    var powTest = pow(0.0, 0.0)
+    var reflectTest = reflect(float3(0.0), float3(0.0))
+    var refractTest = refract(float3(0.0), float3(0.0), 0.0)
+    var roundTest = round(0.0)
+    var sampleTest = sample(testTexture, testSampler, float2(0.0))
+    var signTest = sign(0.0)
+    var sinTest = sin(0.0)
+    var sinhTest = sinh(0.0)
+    var smoothstepTest = smoothstep(0.0, 0.0, 0.0)
+    var sqrtTest = sqrt(0.0)
+    var stepTest = step(0.0, 0.0)
+    var tanTest = tan(0.0)
+    var tanhTest = tanh(0.0)
 
     var fragmentOut: struct FragmentOut
     fragmentOut.outColor = float4(0.0, 0.0, 0.0, 1.0)

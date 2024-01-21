@@ -28,8 +28,6 @@ declare float @air.cosh(float) local_unnamed_addr
 
 declare <3 x float> @air.cross(<3 x float>, <3 x float>) local_unnamed_addr
 
-declare float @air.degrees(float) local_unnamed_addr
-
 declare float @air.distance(<3 x float>, <3 x float>) local_unnamed_addr
 
 declare float @air.dot(<3 x float>, <3 x float>) local_unnamed_addr
@@ -42,9 +40,49 @@ declare float @air.floor(float) local_unnamed_addr
 
 declare float @air.fract(float) local_unnamed_addr
 
-declare float @air.sin(float) local_unnamed_addr
+declare i1 @air.isinf.f32(float) local_unnamed_addr
+
+declare i1 @air.isnan.f32(float) local_unnamed_addr
+
+declare float @air.length(<3 x float>) local_unnamed_addr
+
+declare float @air.log(float) local_unnamed_addr
+
+declare float @air.log2(float) local_unnamed_addr
+
+declare float @air.max.f32(float, float) local_unnamed_addr
+
+declare float @air.min.f32(float, float) local_unnamed_addr
+
+declare float @air.mix.f32(float, float, float) local_unnamed_addr
+
+declare <3 x float> @air.normalize(<3 x float>) local_unnamed_addr
+
+declare float @air.pow(float, float) local_unnamed_addr
+
+declare <3 x float> @air.reflect(<3 x float>, <3 x float>) local_unnamed_addr
+
+declare <3 x float> @air.refract(<3 x float>, <3 x float>, float) local_unnamed_addr
+
+declare float @air.round(float) local_unnamed_addr
 
 declare <4 x float> @air.sample_texture_2d.f32(ptr addrspace(2) nocapture readonly, ptr addrspace(2) nocapture readonly, <2 x float>, i1, <2 x i32>, i1, float, float, i32) local_unnamed_addr
+
+declare float @air.sign.f32(float) local_unnamed_addr
+
+declare float @air.sin(float) local_unnamed_addr
+
+declare float @air.sinh(float) local_unnamed_addr
+
+declare float @air.smoothstep(float, float, float) local_unnamed_addr
+
+declare float @air.sqrt(float) local_unnamed_addr
+
+declare float @air.step(float, float) local_unnamed_addr
+
+declare float @air.tan(float) local_unnamed_addr
+
+declare float @air.tanh(float) local_unnamed_addr
 
 define %FragmentOut @testStandardFunctions(ptr addrspace(2) nocapture readonly %testTexture, ptr addrspace(2) nocapture readonly %testSampler) local_unnamed_addr {
   %_5 = tail call i32 @air.abs.i32(i32 0)
@@ -59,15 +97,34 @@ define %FragmentOut @testStandardFunctions(ptr addrspace(2) nocapture readonly %
   %_14 = tail call float @air.cos(float 0.000000e+00)
   %_15 = tail call float @air.cosh(float 0.000000e+00)
   %_16 = tail call <3 x float> @air.cross(<3 x float> zeroinitializer, <3 x float> zeroinitializer)
-  %_17 = tail call float @air.degrees(float 0.000000e+00)
-  %_18 = tail call float @air.distance(<3 x float> zeroinitializer, <3 x float> zeroinitializer)
-  %_19 = tail call float @air.dot(<3 x float> zeroinitializer, <3 x float> zeroinitializer)
-  %_20 = tail call float @air.exp(float 0.000000e+00)
-  %_21 = tail call float @air.exp2(float 0.000000e+00)
-  %_22 = tail call float @air.floor(float 0.000000e+00)
-  %_23 = tail call float @air.fract(float 0.000000e+00)
-  %_24 = tail call float @air.sin(float 0.000000e+00)
-  %_27 = tail call <4 x float> @air.sample_texture_2d.f32(ptr addrspace(2) nocapture readonly %testTexture, ptr addrspace(2) nocapture readonly %testSampler, <2 x float> zeroinitializer, i1 true, <2 x i32> zeroinitializer, i1 false, float 0.000000e+00, float 0.000000e+00, i32 0)
+  %_17 = tail call float @air.distance(<3 x float> zeroinitializer, <3 x float> zeroinitializer)
+  %_18 = tail call float @air.dot(<3 x float> zeroinitializer, <3 x float> zeroinitializer)
+  %_19 = tail call float @air.exp(float 0.000000e+00)
+  %_20 = tail call float @air.exp2(float 0.000000e+00)
+  %_21 = tail call float @air.floor(float 0.000000e+00)
+  %_22 = tail call float @air.fract(float 0.000000e+00)
+  %_23 = tail call i1 @air.isinf.f32(float 0.000000e+00)
+  %_24 = tail call i1 @air.isnan.f32(float 0.000000e+00)
+  %_25 = tail call float @air.length(<3 x float> zeroinitializer)
+  %_26 = tail call float @air.log(float 0.000000e+00)
+  %_27 = tail call float @air.log2(float 0.000000e+00)
+  %_28 = tail call float @air.max.f32(float 0.000000e+00, float 0.000000e+00)
+  %_29 = tail call float @air.min.f32(float 0.000000e+00, float 0.000000e+00)
+  %_30 = tail call float @air.mix.f32(float 0.000000e+00, float 0.000000e+00, float 0.000000e+00)
+  %_31 = tail call <3 x float> @air.normalize(<3 x float> zeroinitializer)
+  %_32 = tail call float @air.pow(float 0.000000e+00, float 0.000000e+00)
+  %_33 = tail call <3 x float> @air.reflect(<3 x float> zeroinitializer, <3 x float> zeroinitializer)
+  %_34 = tail call <3 x float> @air.refract(<3 x float> zeroinitializer, <3 x float> zeroinitializer, float 0.000000e+00)
+  %_35 = tail call float @air.round(float 0.000000e+00)
+  %_38 = tail call <4 x float> @air.sample_texture_2d.f32(ptr addrspace(2) nocapture readonly %testTexture, ptr addrspace(2) nocapture readonly %testSampler, <2 x float> zeroinitializer, i1 true, <2 x i32> zeroinitializer, i1 false, float 0.000000e+00, float 0.000000e+00, i32 0)
+  %_39 = tail call float @air.sign.f32(float 0.000000e+00)
+  %_40 = tail call float @air.sin(float 0.000000e+00)
+  %_41 = tail call float @air.sinh(float 0.000000e+00)
+  %_42 = tail call float @air.smoothstep(float 0.000000e+00, float 0.000000e+00, float 0.000000e+00)
+  %_43 = tail call float @air.sqrt(float 0.000000e+00)
+  %_44 = tail call float @air.step(float 0.000000e+00, float 0.000000e+00)
+  %_45 = tail call float @air.tan(float 0.000000e+00)
+  %_46 = tail call float @air.tanh(float 0.000000e+00)
   ret %FragmentOut { <4 x float> <float 0.000000e+00, float 0.000000e+00, float 0.000000e+00, float 1.000000e+00> }
 }
 
