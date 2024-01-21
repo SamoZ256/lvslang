@@ -17,7 +17,7 @@ std::string readFile(const std::string& filename) {
         file.close();
         content = stream.str();
     } catch (std::ifstream::failure e) {
-        std::cout << "Error: could not open file '" << filename << "'" << std::endl;
+        std::cout << SET_TEXT_COLOR("31") << "error:" << RESET_TEXT_COLOR() << " no such file or directory '" << filename << "'" << std::endl;
         throw std::runtime_error("");
     }
 
@@ -121,6 +121,7 @@ int main(int argc, char* argv[]) {
         LVSLANG_ERROR("no input sources specified");
         return 1;
     }
+    options.inputName = std::filesystem::absolute(options.inputName).string();
     options.source = readFile(options.inputName);
     
     if (spirvVersionStr != "") {

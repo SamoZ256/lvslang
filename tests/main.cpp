@@ -15,7 +15,7 @@ std::string readFile(const std::string& filename) {
         file.close();
         content = stream.str();
     } catch (std::ifstream::failure e) {
-        std::cout << "Error: could not open file '" << filename << "'" << std::endl;
+        std::cout << SET_TEXT_COLOR("31") << "error:" << RESET_TEXT_COLOR() << " no such file or directory '" << filename << "'" << std::endl;
         throw std::runtime_error("");
     }
 
@@ -42,7 +42,7 @@ inline void printTestFailed(const std::string& testName) {
 
 void _addTest(lvslang::CompileOptions& options, const std::string& testName, const std::string& filename, const std::string& expectedFilename) {
     std::cout << "Testing '" << testName << "' ..." << std::endl;
-    options.inputName = filename;
+    options.inputName = std::filesystem::absolute(filename).string();
     options.source = readFile(filename);
     std::string code;
     bool result = lvslang::compile(options, code);

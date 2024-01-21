@@ -1,5 +1,7 @@
 #include "lvslang/lvslang.hpp"
 
+#include <filesystem>
+
 #include "spirv-tools/libspirv.hpp"
 #include "spirv-tools/optimizer.hpp"
 
@@ -133,7 +135,7 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
         spvtools::Optimizer opt(targetEnv);
 
         auto printMsgToStderr = [](spv_message_level_t, const char*, const spv_position_t& pos, const char* m) {
-            std::cerr << pos.line << ":" << pos.column << ": error: " << m << std::endl;
+            std::cerr << pos.line << ":" << pos.column << ": " << SET_TEXT_COLOR("31") << "error" << RESET_TEXT_COLOR() << ": " << m << std::endl;
         };
         core.SetMessageConsumer(printMsgToStderr);
         opt.SetMessageConsumer(printMsgToStderr);
@@ -182,6 +184,10 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
         std::unique_ptr<llvm::MemoryBuffer> buffer = llvm::MemoryBuffer::getMemBuffer(llvm::StringRef(code));
         llvm::SMDiagnostic error;
         std::unique_ptr<llvm::Module> llvmModule = llvm::parseIR(buffer->getMemBufferRef(), error, llvmContext);
+        if (!llvmModule) {
+            error.print(options.inputName.c_str(), llvm::errs());
+            return false;
+        }
 
         llvm::LoopAnalysisManager LAM;
         llvm::FunctionAnalysisManager FAM;
