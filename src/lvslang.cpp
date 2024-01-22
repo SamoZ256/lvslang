@@ -31,6 +31,7 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
     context.codeHeader = "";
     context.codeMain = "";
     source = Source{};
+    currentIndentation = 0;
     standardFunctions.clear();
 
     irb::target = options.target;

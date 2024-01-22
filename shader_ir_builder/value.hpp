@@ -207,7 +207,7 @@ public:
     virtual Type* copy() = 0;
 
     bool equals(Type* other) {
-        if (other->getTypeID() == TypeID::All)
+        if (other->isTemplate() && (typeID & other->getTypeID()))
             return true;
 
         return _equals(other);
@@ -299,8 +299,8 @@ public:
         return typeID & TypeID::Sampler;
     }
 
-    inline bool isTemplate() const {
-        return typeID == TypeID::All;
+    virtual bool isTemplate() const {
+        return false;
     }
 
     virtual bool isOperatorFriendly() {
@@ -1120,9 +1120,9 @@ public:
     }
 };
 
-class TemplateType : public irb::Type {
+class TemplateType : public Type {
 public:
-    TemplateType(irb::Context& aContext) : irb::Type(aContext, irb::TypeID::All) {}
+    TemplateType(Context& aContext, TypeID aTypeID = TypeID::All) : Type(aContext, aTypeID) {}
 
     ~TemplateType() = default;
 
@@ -1134,7 +1134,7 @@ public:
         return true;
     }
 
-    irb::Value* getValue(irb::IRBuilder* builder, bool decorate = false) override {
+    Value* getValue(IRBuilder* builder, bool decorate = false) override {
         return nullptr;
     }
 
@@ -1148,6 +1148,10 @@ public:
 
     Type* specialize(Type* specializedType) override {
         return specializedType;
+    }
+
+    bool isTemplate() const override {
+        return true;
     }
 };
 

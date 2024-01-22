@@ -389,10 +389,22 @@ public:
             }
             code = "OpIsNan " + returnV->getName() + " " + arguments[0]->getName();
         } else {
+            std::vector<std::string> needOpFunctions = {
+                "abs",
+                "clamp",
+                "max",
+                "min",
+                "mix",
+                "sign"
+            };
+
+            std::string opPrefix;
+            if (std::find(needOpFunctions.begin(), needOpFunctions.end(), funcName) != needOpFunctions.end())
+                opPrefix = specializedType->getOpPrefix(true, false);
             funcName[0] = toupper(funcName[0]);
             if (funcName == "Smoothstep")
                 funcName = "SmoothStep";
-            code = "OpExtInst " + returnV->getName() + " " + importV->getName() + " " + specializedType->getOpPrefix(true, false) + funcName;
+            code = "OpExtInst " + returnV->getName() + " " + importV->getName() + " " + opPrefix + funcName;
             for (auto* arg : arguments)
                 code += " " + arg->getName();
         }

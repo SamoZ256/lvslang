@@ -1150,8 +1150,8 @@ bool compile() {
     addStandardFunction("atan", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
     addStandardFunction("atanh", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
     //TODO: check this
-    //TODO: support vectors
-    addStandardFunction("ceil", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
+    //TODO: limit vectors to float
+    addStandardFunction("ceil", new irb::TemplateType(context, irb::TypeID::Float | irb::TypeID::Vector), {{.type = new irb::TemplateType(context, irb::TypeID::Float | irb::TypeID::Vector)}});
     addStandardFunction("clamp", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}});
     addStandardFunction("cos", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
     addStandardFunction("cosh", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
@@ -1162,10 +1162,8 @@ bool compile() {
     addStandardFunction("distance", createScalarType(TOKEN_TYPE_FLOAT), {{.type = new irb::VectorType(context, createScalarType(TOKEN_TYPE_FLOAT), 3)}, {.type = new irb::VectorType(context, createScalarType(TOKEN_TYPE_FLOAT), 3)}});
     //TODO: limit this to vectors
     addStandardFunction("dot", createScalarType(TOKEN_TYPE_FLOAT), {{.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}});
-    //TODO: support half?
-    addStandardFunction("exp", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
-    //TODO: support half?
-    addStandardFunction("exp2", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
+    addStandardFunction("exp", new irb::TemplateType(context, irb::TypeID::Float), {{.type = new irb::TemplateType(context, irb::TypeID::Float)}});
+    addStandardFunction("exp2", new irb::TemplateType(context, irb::TypeID::Float), {{.type = new irb::TemplateType(context, irb::TypeID::Float)}});
     //TODO: check this
     //TODO: support vectors
     addStandardFunction("floor", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
@@ -1178,17 +1176,14 @@ bool compile() {
     addStandardFunction("isnan", createScalarType(TOKEN_TYPE_BOOL), {{.type = new irb::TemplateType(context)}});
     //TODO: support half and other vector sizes
     addStandardFunction("length", createScalarType(TOKEN_TYPE_FLOAT), {{.type = new irb::VectorType(context, createScalarType(TOKEN_TYPE_FLOAT), 3)}});
-    //TODO: support half
-    addStandardFunction("log", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
-    //TODO: support half
-    addStandardFunction("log2", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
+    addStandardFunction("log", new irb::TemplateType(context, irb::TypeID::Float), {{.type = new irb::TemplateType(context, irb::TypeID::Float)}});
+    addStandardFunction("log2", new irb::TemplateType(context, irb::TypeID::Float), {{.type = new irb::TemplateType(context, irb::TypeID::Float)}});
     addStandardFunction("max", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}});
     addStandardFunction("min", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}});
     addStandardFunction("mix", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}});
     //TODO: support other vector types and sizes
     addStandardFunction("normalize", new irb::VectorType(context, createScalarType(TOKEN_TYPE_FLOAT), 3), {{.type = new irb::VectorType(context, createScalarType(TOKEN_TYPE_FLOAT), 3)}});
-    //TODO: support half
-    addStandardFunction("pow", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}, {.type = createScalarType(TOKEN_TYPE_FLOAT)}});
+    addStandardFunction("pow", new irb::TemplateType(context, irb::TypeID::Float), {{.type = new irb::TemplateType(context, irb::TypeID::Float)}, {.type = new irb::TemplateType(context, irb::TypeID::Float)}});
     //TODO: support other vector types and sizes
     addStandardFunction("reflect", new irb::VectorType(context, createScalarType(TOKEN_TYPE_FLOAT), 3), {{.type = new irb::VectorType(context, createScalarType(TOKEN_TYPE_FLOAT), 3)}, {.type = new irb::VectorType(context, createScalarType(TOKEN_TYPE_FLOAT), 3)}});
     //TODO: support other vector types and sizes
@@ -1199,12 +1194,9 @@ bool compile() {
     addStandardFunction("sign", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}});
     addStandardFunction("sin", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
     addStandardFunction("sinh", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
-    //TODO: support half
-    addStandardFunction("smoothstep", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}, {.type = createScalarType(TOKEN_TYPE_FLOAT)}, {.type = createScalarType(TOKEN_TYPE_FLOAT)}});
-    //TODO: support half
-    addStandardFunction("sqrt", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
-    //TODO: support half
-    addStandardFunction("step", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}, {.type = createScalarType(TOKEN_TYPE_FLOAT)}});
+    addStandardFunction("smoothstep", new irb::TemplateType(context, irb::TypeID::Float), {{.type = new irb::TemplateType(context, irb::TypeID::Float)}, {.type = new irb::TemplateType(context, irb::TypeID::Float)}, {.type = new irb::TemplateType(context, irb::TypeID::Float)}});
+    addStandardFunction("sqrt", new irb::TemplateType(context, irb::TypeID::Float), {{.type = new irb::TemplateType(context, irb::TypeID::Float)}});
+    addStandardFunction("step", new irb::TemplateType(context, irb::TypeID::Float), {{.type = new irb::TemplateType(context, irb::TypeID::Float)}, {.type = new irb::TemplateType(context, irb::TypeID::Float)}});
     addStandardFunction("tan", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
     addStandardFunction("tanh", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
     //TODO: add transpose function
