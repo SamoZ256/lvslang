@@ -13,37 +13,47 @@ class IRBuilder;
 inline Target target = Target::None;
 
 enum class TypeID {
-    None,
-    All,
+    None = 0x0,
 
     //Scalar
-    Void,
-    Bool,
-    Integer,
-    Float,
+    Void      = 0x1,
+    Bool      = 0x2,
+    Integer   = 0x4,
+    Float     = 0x8,
 
     //Container
-    Pointer,
-    Array,
+    Pointer   = 0x10,
+    Array     = 0x20,
 
     //User-defined
-    Structure,
+    Structure = 0x40,
 
     //Vector
-    Vector,
+    Vector    = 0x80,
 
     //Function
-    Function,
+    Function  = 0x100,
 
     //Builtin
-    Texture,
-    Sampler,
+    Texture   = 0x200,
+    Sampler   = 0x400,
 
     //Misc
-    Block,
+    Block     = 0x800,
+
+    Scalar    = Void | Bool | Integer | Float,
+    All       = Scalar | Pointer | Array | Structure | Vector | Function | Texture | Sampler,
 
     MaxEnum
 };
+
+inline uint32_t operator&(TypeID a, TypeID b) {
+    return (uint32_t)a & (uint32_t)b;
+}
+
+inline TypeID operator|(TypeID a, TypeID b) {
+    return TypeID((uint32_t)a | (uint32_t)b);
+}
 
 inline std::string getTypeName(TypeID typeID, uint32_t bitCount, bool isSigned) {
     std::string strTmp;
@@ -257,40 +267,40 @@ public:
             attributesStr += attr;
     }
 
-    virtual bool isScalar() {
-        return false;
+    inline bool isScalar() const {
+        return typeID & TypeID::Scalar;
     }
 
-    virtual bool isPointer() {
-        return false;
+    inline bool isPointer() const {
+        return typeID & TypeID::Pointer;
     }
 
-    virtual bool isArray() {
-        return false;
+    inline bool isArray() const {
+        return typeID & TypeID::Array;
     }
 
-    virtual bool isStructure() {
-        return false;
+    inline bool isStructure() const {
+        return typeID & TypeID::Structure;
     }
 
-    virtual bool isFunctionType() {
-        return false;
+    inline bool isFunctionType() const {
+        return typeID & TypeID::Function;
     }
 
-    virtual bool isVector() {
-        return false;
+    inline bool isVector() const {
+        return typeID & TypeID::Vector;
     }
 
-    virtual bool isTexture() {
-        return false;
+    inline bool isTexture() const {
+        return typeID & TypeID::Texture;
     }
 
-    virtual bool isSampler() {
-        return false;
+    inline bool isSampler() const {
+        return typeID & TypeID::Sampler;
     }
 
-    virtual bool isTemplate() {
-        return false;
+    inline bool isTemplate() const {
+        return typeID == TypeID::All;
     }
 
     virtual bool isOperatorFriendly() {
@@ -550,10 +560,6 @@ public:
         return "Unknown";
     }
 
-    bool isScalar() override {
-        return true;
-    }
-
     bool isOperatorFriendly() override {
         return true;
     }
@@ -647,10 +653,6 @@ public:
         return new PointerType(context, _baseType->specialize(specializedType), storageClass);
     }
 
-    bool isPointer() override {
-        return true;
-    }
-
     Type* getElementType() override {
         return _baseType->copy();
     }
@@ -726,10 +728,6 @@ public:
     Type* specialize(Type* specializedType) override {
         return new ArrayType(context, arrayType->specialize(specializedType), size);
     }
-
-    bool isArray() override {
-        return true;
-    }
     
     //Getters
     inline uint32_t getSize() const {
@@ -781,10 +779,6 @@ public:
             bitCount += member.type->getBitCount(align);
         
         return bitCount;
-    }
-
-    bool isStructure() override {
-        return true;
     }
 
     inline Structure* getStructure() {
@@ -882,10 +876,6 @@ public:
         FunctionType* specializedFunctionType = new FunctionType(context, returnType->specialize(specializedType), specializedArguments);
 
         return specializedFunctionType;
-    }
-
-    bool isFunctionType() override {
-        return true;
     }
 
     //Getters
@@ -1013,10 +1003,6 @@ public:
         return new VectorType(context, componentType->specialize(specializedType), componentCount);
     }
 
-    bool isVector() override {
-        return true;
-    }
-
     Type* getBaseType() override {
         return componentType->copy();
     }
@@ -1085,10 +1071,6 @@ public:
         return new TextureType(context, viewType, type->specialize(specializedType));
     }
 
-    bool isTexture() override {
-        return true;
-    }
-
     inline TextureViewType getViewType() {
         return viewType;
     }
@@ -1136,10 +1118,6 @@ public:
     Type* getSpecializedType(Type* other) override {
         return nullptr;
     }
-
-    bool isSampler() override {
-        return true;
-    }
 };
 
 class TemplateType : public irb::Type {
@@ -1170,38 +1148,6 @@ public:
 
     Type* specialize(Type* specializedType) override {
         return specializedType;
-    }
-
-    bool isScalar() override {
-        return true;
-    }
-
-    bool isPointer() override {
-        return true;
-    }
-
-    bool isArray() override {
-        return true;
-    }
-
-    bool isStructure() override {
-        return true;
-    }
-
-    bool isVector() override {
-        return true;
-    }
-
-    bool isTexture() override {
-        return true;
-    }
-
-    bool isSampler() override {
-        return true;
-    }
-
-    bool isTemplate() override {
-        return true;
     }
 };
 
