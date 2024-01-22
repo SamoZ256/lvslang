@@ -16,7 +16,7 @@ define %VertexOut @vertexMain(%VertexIn %vertexIn, ptr addrspace(2) nocapture no
   %_13 = load <2 x float>, ptr addrspace(2) %_12, align 4
   %op = fmul <2 x float> %vertexIn.fca.0.extract, %_13
   %op0 = fadd <2 x float> %_8, %op
-  %1 = shufflevector <2 x float> %op0, <2 x float> poison, <4 x i32> <i32 0, i32 1, i32 undef, i32 undef>
+  %1 = shufflevector <2 x float> %op0, <2 x float> poison, <4 x i32> <i32 0, i32 1, i32 poison, i32 poison>
   %_19 = shufflevector <4 x float> %1, <4 x float> <float poison, float poison, float 0.000000e+00, float 1.000000e+00>, <4 x i32> <i32 0, i32 1, i32 6, i32 7>
   %_23.fca.0.insert = insertvalue %VertexOut poison, <4 x float> %_19, 0
   %_23.fca.1.insert = insertvalue %VertexOut %_23.fca.0.insert, <2 x float> %vertexIn.fca.1.extract, 1
