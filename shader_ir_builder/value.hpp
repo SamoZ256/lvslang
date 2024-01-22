@@ -55,147 +55,10 @@ inline TypeID operator|(TypeID l, TypeID r) {
     return TypeID((uint32_t)l | (uint32_t)r);
 }
 
-inline std::string getTypeName(TypeID typeID, uint32_t bitCount, bool isSigned) {
-    std::string strTmp;
-    switch (target) {
-    case Target::Metal:
-        switch (typeID) {
-        case TypeID::Void:
-            return "void";
-        case TypeID::Bool:
-            return "bool";
-        case TypeID::Integer:
-            switch (bitCount) {
-            case 8:
-                strTmp = "char";
-                break;
-            case 16:
-                strTmp = "short";
-                break;
-            case 32:
-                strTmp = "int";
-                break;
-            default:
-                IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of integer can only be 8, 16 or 32");
-                return nullptr;
-            }
-            if (!isSigned)
-                strTmp = "u" + strTmp;
-            
-            return strTmp;
-        case TypeID::Float:
-            switch (bitCount) {
-            case 16:
-                return "half";
-            case 32:
-                return "float";
-            default:
-                IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of float can only be 16 or 32");
-                return nullptr;
-            }
-        default:
-            break;
-        }
-        return "";
-    case Target::HLSL:
-        switch (typeID) {
-        case TypeID::Void:
-            return "void";
-        case TypeID::Bool:
-            return "bool";
-        case TypeID::Integer:
-            switch (bitCount) {
-            case 8:
-            case 16:
-                strTmp = "int16_t";
-                break;
-            case 32:
-                strTmp = "int";
-                break;
-            default:
-                IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of integer can only be 8, 16 or 32");
-                return nullptr;
-            }
-            if (!isSigned)
-                strTmp = "u" + strTmp;
-            
-            return strTmp;
-        case TypeID::Float:
-            switch (bitCount) {
-            case 16:
-                return "min16float";
-            case 32:
-                return "float";
-            default:
-                IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of float can only be 16 or 32");
-                return nullptr;
-            }
-        default:
-            break;
-        }
-        return "";
-    case Target::GLSL:
-        switch (typeID) {
-        case TypeID::Void:
-            return "void";
-        case TypeID::Bool:
-            return "bool";
-        case TypeID::Integer:
-            //TODO: uncomment
-            strTmp = "int"/* + std::to_string(bitCount)*/;
-            if (!isSigned)
-                strTmp = "u" + strTmp;
-            
-            return strTmp;
-        case TypeID::Float:
-            switch (bitCount) {
-            case 16:
-                return "float16_t";
-            case 32:
-                return "float";
-            default:
-                IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of float can only be 16 or 32");
-                return nullptr;
-            }
-        default:
-            break;
-        }
-        return "";
-    case Target::AIR:
-        switch (typeID) {
-        case TypeID::Void:
-            return "void";
-        case TypeID::Bool:
-            return "i1";
-        case TypeID::Integer:
-            return "i" + std::to_string(bitCount);
-        case TypeID::Float:
-            switch (bitCount) {
-            case 16:
-                return "half";
-            case 32:
-                return "float";
-            default:
-                IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of float can only be 16 or 32");
-                return nullptr;
-            }
-        default:
-            break;
-        }
-        return "";
-    default:
-        return "";
-    }
-};
-
 class Type {
 protected:
     Context& context;
     TypeID typeID;
-
-    std::string nameBegin;
-    std::string nameEnd = "";
-    std::string code;
 
     std::string attributesStr;
 
@@ -315,16 +178,14 @@ public:
         return typeID;
     }
 
-    std::string getName() {
-        return nameBegin + nameEnd;
+    std::string getName() const {
+        return getNameBegin() + getNameEnd();
     }
 
-    const std::string& getNameBegin() {
-        return nameBegin;
-    }
+    virtual std::string getNameBegin() const = 0;
 
-    const std::string& getNameEnd() {
-        return nameEnd;
+    virtual std::string getNameEnd() const {
+        return "";
     }
 };
 
@@ -400,35 +261,8 @@ private:
     uint32_t bitCount;
     bool isSigned;
 
-    std::string registerName;
-
 public:
-    ScalarType(Context& aContext, TypeID aTypeID, uint32_t aBitCount, bool aIsSigned = true) : Type(aContext, aTypeID), bitCount(aBitCount), isSigned(aIsSigned) {
-        nameBegin = getTypeName(typeID, bitCount, isSigned);
-        switch (typeID) {
-        case TypeID::Void:
-            code = "OpTypeVoid";
-            registerName = "void";
-            break;
-        case TypeID::Bool:
-            code = "OpTypeBool";
-            registerName = "bool";
-            break;
-        case TypeID::Integer:
-            code = "OpTypeInt " + std::to_string(bitCount) + " " + (isSigned ? "1" : "0");
-            if (!isSigned)
-                registerName = "u";
-            registerName += "int" + std::to_string(bitCount);
-            break;
-        case TypeID::Float:
-            code = "OpTypeFloat " + std::to_string(bitCount);
-            registerName = "float" + std::to_string(bitCount);
-            break;
-        default:
-            break;
-        }
-        //TODO: add " noundef" attribute by default?
-    }
+    ScalarType(Context& aContext, TypeID aTypeID, uint32_t aBitCount, bool aIsSigned = true) : Type(aContext, aTypeID), bitCount(aBitCount), isSigned(aIsSigned) {}
 
     ~ScalarType() = default;
 
@@ -447,7 +281,18 @@ public:
     Value* getValue(IRBuilder* builder, bool decorate = false) override;
 
     std::string getNameForRegister() override {
-        return registerName;
+        switch (typeID) {
+        case TypeID::Void:
+            return "void";
+        case TypeID::Bool:
+            return "bool";
+        case TypeID::Integer:
+            return (isSigned ? "int" : "uint") + std::to_string(bitCount);
+        case TypeID::Float:
+            return "float" + std::to_string(bitCount);
+        default:
+            return "unknown";
+        }
     }
 
     uint32_t getBitCount(bool align = false) override {
@@ -497,7 +342,7 @@ public:
         switch (typeID) {
         case TypeID::Bool:
         case TypeID::Integer:
-            return nameBegin;
+            return getNameBegin();
         case TypeID::Float:
             return "f" + std::to_string(bitCount);
         default:
@@ -567,6 +412,140 @@ public:
     bool getIsSigned() override {
         return isSigned;
     }
+
+    //TODO: add "noundef" attribute by default?
+    std::string getNameBegin() const override {
+        std::string strTmp;
+        switch (target) {
+        case Target::Metal:
+            switch (typeID) {
+            case TypeID::Void:
+                return "void";
+            case TypeID::Bool:
+                return "bool";
+            case TypeID::Integer:
+                switch (bitCount) {
+                case 8:
+                    strTmp = "char";
+                    break;
+                case 16:
+                    strTmp = "short";
+                    break;
+                case 32:
+                    strTmp = "int";
+                    break;
+                default:
+                    IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of integer can only be 8, 16 or 32");
+                    return nullptr;
+                }
+                if (!isSigned)
+                    strTmp = "u" + strTmp;
+                
+                return strTmp;
+            case TypeID::Float:
+                switch (bitCount) {
+                case 16:
+                    return "half";
+                case 32:
+                    return "float";
+                default:
+                    IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of float can only be 16 or 32");
+                    return nullptr;
+                }
+            default:
+                break;
+            }
+            return "";
+        case Target::HLSL:
+            switch (typeID) {
+            case TypeID::Void:
+                return "void";
+            case TypeID::Bool:
+                return "bool";
+            case TypeID::Integer:
+                switch (bitCount) {
+                case 8:
+                case 16:
+                    strTmp = "int16_t";
+                    break;
+                case 32:
+                    strTmp = "int";
+                    break;
+                default:
+                    IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of integer can only be 8, 16 or 32");
+                    return nullptr;
+                }
+                if (!isSigned)
+                    strTmp = "u" + strTmp;
+                
+                return strTmp;
+            case TypeID::Float:
+                switch (bitCount) {
+                case 16:
+                    return "min16float";
+                case 32:
+                    return "float";
+                default:
+                    IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of float can only be 16 or 32");
+                    return nullptr;
+                }
+            default:
+                break;
+            }
+            return "";
+        case Target::GLSL:
+            switch (typeID) {
+            case TypeID::Void:
+                return "void";
+            case TypeID::Bool:
+                return "bool";
+            case TypeID::Integer:
+                //TODO: uncomment
+                strTmp = "int"/* + std::to_string(bitCount)*/;
+                if (!isSigned)
+                    strTmp = "u" + strTmp;
+                
+                return strTmp;
+            case TypeID::Float:
+                switch (bitCount) {
+                case 16:
+                    return "float16_t";
+                case 32:
+                    return "float";
+                default:
+                    IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of float can only be 16 or 32");
+                    return nullptr;
+                }
+            default:
+                break;
+            }
+            return "";
+        case Target::AIR:
+            switch (typeID) {
+            case TypeID::Void:
+                return "void";
+            case TypeID::Bool:
+                return "i1";
+            case TypeID::Integer:
+                return "i" + std::to_string(bitCount);
+            case TypeID::Float:
+                switch (bitCount) {
+                case 16:
+                    return "half";
+                case 32:
+                    return "float";
+                default:
+                    IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of float can only be 16 or 32");
+                    return nullptr;
+                }
+            default:
+                break;
+            }
+            return "";
+        default:
+            return "";
+        }
+    }
 };
 
 class ConstantValue : public Value {
@@ -611,12 +590,7 @@ private:
     std::string attributesStr;
 
 public:
-    PointerType(Context& aContext, Type* aBaseType, StorageClass aStorageClass) : Type(aContext, TypeID::Pointer), _baseType(aBaseType), storageClass(aStorageClass) {
-        if (TARGET_IS_CODE(target))
-            nameBegin = _baseType->getName() + "*";
-        else if (target == Target::AIR)
-            nameBegin = "ptr";
-    }
+    PointerType(Context& aContext, Type* aBaseType, StorageClass aStorageClass) : Type(aContext, TypeID::Pointer), _baseType(aBaseType), storageClass(aStorageClass) {}
 
     ~PointerType() = default;
 
@@ -661,6 +635,19 @@ public:
         return true;
     }
 
+    std::string getNameBegin() const override {
+        if (TARGET_IS_CODE(target)) {
+            return _baseType->getName() + "*";
+        } else if (target == Target::AIR) {
+            if (target == Target::AIR && addressSpace != -1)
+                return "ptr addrspace(" + std::to_string(addressSpace) + ")";
+            else
+                return "ptr";
+        } else {
+            return "unknown";
+        }
+    }
+
     //Getters
     inline StorageClass getStorageClass() const {
         return storageClass;
@@ -673,8 +660,6 @@ public:
     //Setters
     inline void setAddressSpace(int aAddressSpace) {
         addressSpace = aAddressSpace;
-        if (target == Target::AIR && addressSpace != -1)
-            nameBegin = "ptr addrspace(" + std::to_string(addressSpace) + ")";
     }
 };
 
@@ -716,14 +701,7 @@ private:
     uint32_t size;
 
 public:
-    ArrayType(Context& aContext, Type* aArrayType, uint32_t aSize) : Type(aContext, TypeID::Array), arrayType(aArrayType), size(aSize) {
-        if (TARGET_IS_IR(target)) {
-            nameBegin = "[" + std::to_string(size) + " x " + arrayType->getName() + "]";
-        } else {
-            nameBegin = arrayType->getNameBegin();
-            nameEnd = "[" + std::to_string(size) + "]" + arrayType->getNameEnd();
-        }
-    }
+    ArrayType(Context& aContext, Type* aArrayType, uint32_t aSize) : Type(aContext, TypeID::Array), arrayType(aArrayType), size(aSize) {}
 
     ~ArrayType() = default;
 
@@ -760,6 +738,20 @@ public:
     Type* specialize(Type* specializedType) override {
         return new ArrayType(context, arrayType->specialize(specializedType), size);
     }
+
+    std::string getNameBegin() const override {
+        if (TARGET_IS_IR(target))
+            return "[" + std::to_string(size) + " x " + arrayType->getName() + "]";
+        else
+            return arrayType->getNameBegin();
+    }
+
+    std::string getNameEnd() const override {
+        if (TARGET_IS_CODE(target))
+            return "[" + std::to_string(size) + "]" + arrayType->getNameEnd();
+        
+        return "unknown";
+    }
     
     //Getters
     inline uint32_t getSize() const {
@@ -771,18 +763,15 @@ class StructureType : public Type {
 private:
     Structure* structure;
 
+    std::string name;
+
 public:
-    StructureType(Context& aContext, const std::string& aName) : Type(aContext, TypeID::Structure) {
-        structure = context.structures[aName];
+    StructureType(Context& aContext, const std::string& aName) : Type(aContext, TypeID::Structure), name(aName) {
+        structure = context.structures[name];
         //if (target != Target::GLSL)
         //    nameBegin = "struct ";
-        if (!structure) {
-            error("use of undeclared structure '" + aName + "'", "StructureType::StructureType");
-        }
-        if (target == Target::AIR)
-            nameBegin = "%" + aName;
-        else
-            nameBegin = aName;
+        if (!structure)
+            error("use of undeclared structure '" + name + "'", "StructureType::StructureType");
     }
 
     ~StructureType() = default;
@@ -802,7 +791,7 @@ public:
     Value* getValue(IRBuilder* builder, bool decorate = false) override;
 
     std::string getNameForRegister() override {
-        return "struct_" + nameBegin;
+        return "struct_" + name;
     }
 
     uint32_t getBitCount(bool align = false) override {
@@ -811,6 +800,13 @@ public:
             bitCount += member.type->getBitCount(align);
         
         return bitCount;
+    }
+
+    std::string getNameBegin() const override {
+        if (target == Target::AIR)
+            return "%" + name;
+        else
+            return name;
     }
 
     inline Structure* getStructure() {
@@ -825,10 +821,7 @@ private:
     Value* returnV = nullptr;
 
 public:
-    FunctionType(Context& aContext, Type* aReturnType, const std::vector<Type*>& aArguments) : Type(aContext, TypeID::Function), returnType(aReturnType), arguments(aArguments) {
-        //TODO: set different name for code backends?
-        nameBegin = "ptr";
-    }
+    FunctionType(Context& aContext, Type* aReturnType, const std::vector<Type*>& aArguments) : Type(aContext, TypeID::Function), returnType(aReturnType), arguments(aArguments) {}
 
     ~FunctionType() = default;
 
@@ -910,6 +903,11 @@ public:
         return specializedFunctionType;
     }
 
+    //TODO: make this different in case of code backends
+    std::string getNameBegin() const override {
+        return "ptr";
+    }
+
     //Getters
     inline Type* getReturnType() const {
         return returnType;
@@ -946,34 +944,6 @@ public:
         if (componentCount < 2 || componentCount > 4) {
             error("vectors can only have component count of 2, 3 or 4", "VectorType::VectorType");
             return;
-        }
-        switch (target) {
-        case Target::Metal:
-        case Target::HLSL:
-            nameBegin = componentType->getName() + std::to_string(componentCount);
-            break;
-        case Target::GLSL:
-            switch (componentType->getTypeID()) {
-            case TypeID::Integer:
-                nameBegin = (componentType->getIsSigned() ? "i" : "u");
-                if (componentType->getBitCount() != 32)
-                    nameBegin += std::to_string(componentType->getBitCount());
-                break;
-            case TypeID::Float:
-                if (componentType->getBitCount() != 32)
-                    nameBegin = "f" + std::to_string(componentType->getBitCount());
-                break;
-            default:
-                break;
-            }
-            nameBegin += "vec";
-            nameBegin += std::to_string(componentCount);
-            break;
-        case Target::AIR:
-            nameBegin = "<" + std::to_string(componentCount) + " x " + componentType->getName() + ">";
-            break;
-        default:
-            break;
         }
     }
 
@@ -1043,6 +1013,38 @@ public:
         return true;
     }
 
+    std::string getNameBegin() const override {
+        std::string name;
+        switch (target) {
+        case Target::Metal:
+        case Target::HLSL:
+            return componentType->getName() + std::to_string(componentCount);
+        case Target::GLSL:
+            switch (componentType->getTypeID()) {
+            case TypeID::Integer:
+                name = (componentType->getIsSigned() ? "i" : "u");
+                if (componentType->getBitCount() != 32)
+                    name += std::to_string(componentType->getBitCount());
+                break;
+            case TypeID::Float:
+                if (componentType->getBitCount() != 32)
+                    name = "f" + std::to_string(componentType->getBitCount());
+                break;
+            default:
+                break;
+            }
+            name += "vec";
+            name += std::to_string(componentCount);
+
+            return name;
+        case Target::AIR:
+            return "<" + std::to_string(componentCount) + " x " + componentType->getName() + ">";
+        default:
+            return "unknown";
+        }
+    }
+
+    //Getters
     uint8_t getComponentCount() {
         return componentCount;
     }
@@ -1055,16 +1057,8 @@ private:
 
 public:
     TextureType(Context& aContext, TextureViewType aViewType, Type* aType) : Type(aContext, TypeID::Texture), viewType(aViewType), type(aType) {
-        GET_TEXTURE_NAME(viewType);
-        nameBegin = viewTypeStr;
-        if (target == Target::Metal) {
-            nameBegin += "<" + type->getName() + ">";
-        } else if (target == Target::HLSL) {
-            if (type->getTypeID() != TypeID::Float || type->getBitCount() != 32)
-                nameBegin += "<" + type->getName() + ">"; //TODO: check if this is correct
-        } else if (target == Target::AIR) {
+        if (target == Target::AIR)
             attributesStr = " nocapture readonly";
-        }
     }
 
     ~TextureType() = default;
@@ -1103,6 +1097,20 @@ public:
         return new TextureType(context, viewType, type->specialize(specializedType));
     }
 
+    std::string getNameBegin() const override {
+        GET_TEXTURE_NAME(viewType);
+        std::string name = viewTypeStr;
+        if (target == Target::Metal) {
+            name += "<" + type->getName() + ">";
+        } else if (target == Target::HLSL) {
+            if (type->getTypeID() != TypeID::Float || type->getBitCount() != 32)
+                name += "<" + type->getName() + ">"; //TODO: check if this is correct
+        }
+
+        return name;
+    }
+
+    //Getters
     inline TextureViewType getViewType() {
         return viewType;
     }
@@ -1112,15 +1120,8 @@ public:
 class SamplerType : public Type {
 public:
     SamplerType(Context& aContext) : Type(aContext, TypeID::Sampler) {
-        //TODO: add template addguments
-        if (TARGET_IS_IR(target)) {
-            nameBegin = "ptr addrspace(2)";//"%\"struct.metal::sampler\"";
+        if (target == Target::AIR)
             attributesStr = " nocapture readonly";
-        } else if (target == Target::HLSL) {
-            nameBegin = "SamplerState";
-        } else {
-            nameBegin = "sampler";
-        }
     }
 
     ~SamplerType() = default;
@@ -1149,6 +1150,16 @@ public:
 
     Type* getSpecializedType(Type* other) override {
         return nullptr;
+    }
+
+    std::string getNameBegin() const override {
+        //TODO: add template addguments
+        if (TARGET_IS_IR(target))
+            return "ptr addrspace(2)";//"%\"struct.metal::sampler\"";
+        else if (target == Target::HLSL)
+            return "SamplerState";
+        else
+            return "sampler";
     }
 };
 
@@ -1184,6 +1195,11 @@ public:
 
     bool isTemplate() const override {
         return true;
+    }
+
+    //TODO: change this?
+    std::string getNameBegin() const override {
+        return "template<>";
     }
 };
 

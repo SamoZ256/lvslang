@@ -9,9 +9,7 @@ class IRBuilder;
 
 class BlockType : public Type {
 public:
-    BlockType(Context& aContext) : Type(aContext, TypeID::Block) {
-        nameBegin = "label";
-    }
+    BlockType(Context& aContext) : Type(aContext, TypeID::Block) {}
 
     ~BlockType() = default;
 
@@ -25,6 +23,10 @@ public:
 
     std::string getNameForRegister() override {
         return "";
+    }
+
+    std::string getNameBegin() const override {
+        return "label";
     }
 };
 

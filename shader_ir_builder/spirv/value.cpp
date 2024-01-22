@@ -5,11 +5,31 @@
 namespace irb {
 
 Value* ScalarType::getValue(IRBuilder* builder, bool decorate) {
-    std::string comment = std::to_string(bitCount) + "-bit " + registerName;
-    if (!isSigned)
-        comment += ", sign-less";
+    std::string code;
+    switch (typeID) {
+    case TypeID::Void:
+        code = "OpTypeVoid";
+        break;
+    case TypeID::Bool:
+        code = "OpTypeBool";
+        break;
+    case TypeID::Integer:
+        code = "OpTypeInt " + std::to_string(bitCount) + " " + (isSigned ? "1" : "0");
+        break;
+    case TypeID::Float:
+        code = "OpTypeFloat " + std::to_string(bitCount);
+        break;
+    default:
+        code = "OpUnknownType";
+        break;
+    }
     
-    return static_cast<SPIRVBuilder*>(builder)->_addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), comment);
+    //std::string comment = registerName;
+    //if (!isSigned)
+    //    comment += ", sign-less";
+    
+    //TODO: add comment?
+    return static_cast<SPIRVBuilder*>(builder)->_addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister());
 }
 
 Value* PointerType::getValue(IRBuilder* builder, bool decorate) {
@@ -38,7 +58,7 @@ Value* StructureType::getValue(IRBuilder* builder, bool decorate) {
     for (auto* memberValue : memberValues)
         code += " " + memberValue->getName();
 
-    Value* value = static_cast<SPIRVBuilder*>(builder)->_addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), nameBegin, nameBegin);
+    Value* value = static_cast<SPIRVBuilder*>(builder)->_addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), name, name);
 
     if (decorate && !structure->decorated) {
         //We need to set @ref decorated to 'true' at the beginning, since @ref opMemberDecorate is going to call this function and we want to avoid endless loop

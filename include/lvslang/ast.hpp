@@ -132,21 +132,17 @@ class EnumType : public irb::Type {
 private:
     Enumeration* enumeration;
 
+    std::string name;
+
 public:
-    EnumType(irb::Context& aContext, const std::string& aName) : Type(aContext) {
-        enumeration = enumerations[aName];
+    EnumType(irb::Context& aContext, const std::string& aName) : Type(aContext), name(aName) {
+        enumeration = enumerations[name];
         typeID = enumeration->type->getTypeID(); //HACK: set the typeID later
         //if (target != Target::GLSL)
         //    nameBegin = "struct ";
-        if (irb::target == irb::Target::Metal || irb::target == irb::Target::HLSL)
-            nameBegin = aName;
-        else if (irb::target == irb::Target::GLSL)
-            nameBegin = enumeration->type->getNameBegin();
-        else if (irb::target == irb::Target::AIR)
-            nameBegin = enumeration->type->getName();
 
         if (!enumeration) {
-            logError("use of undeclared enum '" + aName + "'");
+            logError("use of undeclared enum '" + name + "'");
             return;
         }
     }
@@ -170,7 +166,7 @@ public:
     }
 
     std::string getNameForRegister() override {
-        return "enum_" + nameBegin;
+        return "enum_" + name;
     }
 
     uint32_t getBitCount(bool align = false) override {
@@ -181,6 +177,18 @@ public:
         return enumeration->type;
     }
 
+    std::string getNameBegin() const override {
+        if (irb::target == irb::Target::Metal || irb::target == irb::Target::HLSL)
+            return name;
+        else if (irb::target == irb::Target::GLSL)
+            return enumeration->type->getNameBegin();
+        else if (irb::target == irb::Target::AIR)
+            return enumeration->type->getName();
+        else
+            return "unknown";
+    }
+
+    //Getters
     inline Enumeration* getEnum() {
         return enumeration;
     }
