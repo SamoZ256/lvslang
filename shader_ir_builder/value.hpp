@@ -47,12 +47,12 @@ enum class TypeID {
     MaxEnum
 };
 
-inline uint32_t operator&(TypeID a, TypeID b) {
-    return (uint32_t)a & (uint32_t)b;
+inline uint32_t operator&(TypeID l, TypeID r) {
+    return (uint32_t)l & (uint32_t)r;
 }
 
-inline TypeID operator|(TypeID a, TypeID b) {
-    return TypeID((uint32_t)a | (uint32_t)b);
+inline TypeID operator|(TypeID l, TypeID r) {
+    return TypeID((uint32_t)l | (uint32_t)r);
 }
 
 inline std::string getTypeName(TypeID typeID, uint32_t bitCount, bool isSigned) {
@@ -675,6 +675,38 @@ public:
         addressSpace = aAddressSpace;
         if (target == Target::AIR && addressSpace != -1)
             nameBegin = "ptr addrspace(" + std::to_string(addressSpace) + ")";
+    }
+};
+
+class Size {
+public:
+    virtual uint32_t getSize() const = 0;
+
+    inline bool equals(Size* other) const {
+        return (getSize() == 0 || other->getSize() == 0 || getSize() == other->getSize());
+    }
+};
+
+class NumberSize : public Size {
+private:
+    uint32_t size;
+
+public:
+    NumberSize(uint32_t aSize) : size(aSize) {
+        if (size == 0)
+            IRB_ERROR("size cannot be 0");
+    }
+
+    uint32_t getSize() const override {
+        return size;
+    }
+};
+
+class TemplateSize : public Size {
+public:
+    uint32_t getSize() const override {
+        IRB_ERROR("cannot get size of template size");
+        return 0;
     }
 };
 
