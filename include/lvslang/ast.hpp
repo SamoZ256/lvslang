@@ -1457,7 +1457,7 @@ public:
     irb::Value* codegen(irb::Type* requiredType = nullptr) override {
         setDebugInfo();
 
-        type = new irb::ArrayType(context, new irb::ScalarType(context, irb::TypeID::Integer, 8, true), values.size());
+        type = new irb::ArrayType(context, new irb::ScalarType(context, irb::TypeID::Integer, 8, true), new irb::NumberSize(values.size()));
 
         std::string codeStr = "{";
         for (uint32_t i = 0; i < values.size(); i++) {
@@ -1585,7 +1585,7 @@ public:
             if (memberName.size() == 1)
                 type = elementExprType->getBaseType();
             else
-                type = new irb::VectorType(context, elementExprType->getBaseType(), memberName.size());
+                type = new irb::VectorType(context, elementExprType->getBaseType(), new irb::NumberSize(memberName.size()));
             if (TARGET_IS_CODE(irb::target)) {
                 irb::Type* trueType = type;
                 //HACK: get the pointer type
@@ -1785,7 +1785,7 @@ public:
             irb::Value* component = components[i];
             if (auto vectorType = dynamic_cast<irb::VectorType*>(component->getType())) {
                 components.erase(components.begin() + i);
-                for (uint8_t j = 0; j < vectorType->getComponentCount(); j++) {
+                for (uint8_t j = 0; j < vectorType->getComponentCount()->getValue(); j++) {
                     irb::Value* vectorComponent;
                     if (TARGET_IS_IR(irb::target))
                         vectorComponent = builder->opCast(builder->opVectorExtract(component, new irb::ConstantInt(context, j, 32, true)), type->getBaseType());
@@ -1802,13 +1802,13 @@ public:
                 return nullptr;
             }
         } else if (type->isArray()) {
-            uint32_t size = static_cast<irb::ArrayType*>(type)->getSize();
+            uint32_t size = static_cast<irb::ArrayType*>(type)->getSize()->getValue();
             if (components.size() > size) {
                 logError("array initializer cannot be larger than the array itself (" + std::to_string(components.size()) + " > " + std::to_string(size) + ")");
                 return nullptr;
             }
         } else if (type->isVector()) {
-            uint32_t componentCount = static_cast<irb::VectorType*>(type)->getComponentCount();
+            uint32_t componentCount = static_cast<irb::VectorType*>(type)->getComponentCount()->getValue();
             if (components.size() > componentCount) {
                 logError("vector initializer cannot be larger than the vector itself (" + std::to_string(components.size()) + " > " + std::to_string(componentCount) + ")");
                 return nullptr;
@@ -1835,8 +1835,8 @@ public:
                 //Fill the list in case it is just a one value initializer
                 if (components.size() == 1) {
                     //TODO: do this in a more elegant way?
-                    components.reserve(vectorType->getComponentCount());
-                    for (uint8_t i = 0; i < vectorType->getComponentCount() - 1; i++)
+                    components.reserve(vectorType->getComponentCount()->getValue());
+                    for (uint8_t i = 0; i < vectorType->getComponentCount()->getValue() - 1; i++)
                         components.push_back(components[0]);
                 }
                 context.pushRegisterName("const_vector");

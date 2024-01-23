@@ -118,7 +118,7 @@ public:
     }
 
     virtual Type* specialize(Type* specializedType) {
-        return this;
+        return specializedType;
     }
 
     inline std::string getAttributes() const {
@@ -665,32 +665,31 @@ public:
 
 class Size {
 public:
-    virtual uint32_t getSize() const = 0;
+    virtual uint32_t getValue() const = 0;
 
     inline bool equals(Size* other) const {
-        return (getSize() == 0 || other->getSize() == 0 || getSize() == other->getSize());
+        return (getValue() == 0 || other->getValue() == 0 || getValue() == other->getValue());
     }
 };
 
 class NumberSize : public Size {
 private:
-    uint32_t size;
+    uint32_t value;
 
 public:
-    NumberSize(uint32_t aSize) : size(aSize) {
-        if (size == 0)
-            IRB_ERROR("size cannot be 0");
+    NumberSize(uint32_t aValue) : value(aValue) {
+        if (value == 0)
+            error("value cannot be 0", "NumerSize::NumberSize");
     }
 
-    uint32_t getSize() const override {
-        return size;
+    uint32_t getValue() const override {
+        return value;
     }
 };
 
 class TemplateSize : public Size {
 public:
-    uint32_t getSize() const override {
-        IRB_ERROR("cannot get size of template size");
+    uint32_t getValue() const override {
         return 0;
     }
 };
@@ -698,10 +697,10 @@ public:
 class ArrayType : public Type {
 private:
     Type* arrayType;
-    uint32_t size;
+    Size* size;
 
 public:
-    ArrayType(Context& aContext, Type* aArrayType, uint32_t aSize) : Type(aContext, TypeID::Array), arrayType(aArrayType), size(aSize) {}
+    ArrayType(Context& aContext, Type* aArrayType, Size* aSize) : Type(aContext, TypeID::Array), arrayType(aArrayType), size(aSize) {}
 
     ~ArrayType() = default;
 
@@ -710,17 +709,21 @@ public:
     }
 
     bool _equals(Type* other) override {
-        return (other->isArray() && other->getBitCount() == getBitCount() && arrayType->equals(other->getElementType()));
+        if (!other->isArray())
+            return false;
+        ArrayType* otherArray = static_cast<ArrayType*>(other);
+
+        return (size->equals(otherArray->getSize()) && arrayType->equals(other->getElementType()));
     }
 
     Value* getValue(IRBuilder* builder, bool decorate = false) override;
 
     std::string getNameForRegister() override {
-        return "array_" + arrayType->getNameForRegister() + "_" + std::to_string(size);
+        return "array_" + arrayType->getNameForRegister() + "_" + std::to_string(size->getValue());
     }
 
     uint32_t getBitCount(bool align = false) override {
-        return arrayType->getBitCount(align) * size;
+        return arrayType->getBitCount(align) * size->getValue();
     }
 
     uint16_t pointerCount() override {
@@ -732,29 +735,40 @@ public:
     }
 
     Type* getSpecializedType(Type* other) override {
-        return arrayType->getSpecializedType(other->getBaseType());
+        Type* specializedBaseType = arrayType->getSpecializedType(other->getBaseType());
+        if (size->getValue() == 0)
+            return new ArrayType(context, specializedBaseType, static_cast<ArrayType*>(other)->getSize());
+
+        return specializedBaseType;
     }
 
     Type* specialize(Type* specializedType) override {
+        if (size->getValue() == 0)
+            return specializedType;
+        
         return new ArrayType(context, arrayType->specialize(specializedType), size);
     }
 
     std::string getNameBegin() const override {
         if (TARGET_IS_IR(target))
-            return "[" + std::to_string(size) + " x " + arrayType->getName() + "]";
+            return "[" + std::to_string(size->getValue()) + " x " + arrayType->getName() + "]";
         else
             return arrayType->getNameBegin();
     }
 
     std::string getNameEnd() const override {
         if (TARGET_IS_CODE(target))
-            return "[" + std::to_string(size) + "]" + arrayType->getNameEnd();
+            return "[" + std::to_string(size->getValue()) + "]" + arrayType->getNameEnd();
         
         return "unknown";
     }
+
+    bool isTemplate() const override {
+        return size->getValue() == 0;
+    }
     
     //Getters
-    inline uint32_t getSize() const {
+    inline Size* getSize() const {
         return size;
     }
 };
@@ -933,15 +947,15 @@ public:
 class VectorType : public Type {
 private:
     Type* componentType;
-    uint8_t componentCount;
+    Size* componentCount;
 
 public:
-    VectorType(Context& aContext, Type* aComponentType, uint8_t aComponentCount) : Type(aContext, TypeID::Vector), componentType(aComponentType), componentCount(aComponentCount) {
+    VectorType(Context& aContext, Type* aComponentType, Size* aComponentCount) : Type(aContext, TypeID::Vector), componentType(aComponentType), componentCount(aComponentCount) {
         if (!componentType->isScalar()) {
             error("vectors cannot have non-scalar component type", "VectorType::VectorType");
             return;
         }
-        if (componentCount < 2 || componentCount > 4) {
+        if (componentCount->getValue() != 0 && (componentCount->getValue() < 2 || componentCount->getValue() > 4)) {
             error("vectors can only have component count of 2, 3 or 4", "VectorType::VectorType");
             return;
         }
@@ -958,17 +972,17 @@ public:
             return false;
         VectorType* otherVector = static_cast<VectorType*>(other);
 
-        return (otherVector->getComponentCount() == componentCount && componentType->equals(otherVector->getBaseType()));
+        return (componentCount->equals(otherVector->getComponentCount()) && componentType->equals(otherVector->getBaseType()));
     }
 
     Value* getValue(IRBuilder* builder, bool decorate = false) override;
 
     std::string getNameForRegister() override {
-        return "vec_" + componentType->getNameForRegister() + "_" + std::to_string(componentCount);
+        return "vec_" + componentType->getNameForRegister() + "_" + std::to_string(componentCount->getValue());
     }
 
     uint32_t getBitCount(bool align = false) override {
-        uint8_t alignComponentCount = componentCount;
+        uint8_t alignComponentCount = componentCount->getValue();
         if (align && alignComponentCount == 3)
             alignComponentCount = 4;
         return componentType->getBitCount() * alignComponentCount;
@@ -998,10 +1012,17 @@ public:
     }
 
     Type* getSpecializedType(Type* other) override {
-        return componentType->getSpecializedType(other->getBaseType());
+        Type* specializedComponentType = componentType->getSpecializedType(other->getBaseType());
+        if (componentCount->getValue() == 0)
+            return new VectorType(context, specializedComponentType, static_cast<VectorType*>(other)->getComponentCount());
+
+        return specializedComponentType;
     }
 
     Type* specialize(Type* specializedType) override {
+        if (componentCount->getValue() == 0)
+            return specializedType;
+        
         return new VectorType(context, componentType->specialize(specializedType), componentCount);
     }
 
@@ -1018,7 +1039,7 @@ public:
         switch (target) {
         case Target::Metal:
         case Target::HLSL:
-            return componentType->getName() + std::to_string(componentCount);
+            return componentType->getName() + std::to_string(componentCount->getValue());
         case Target::GLSL:
             switch (componentType->getTypeID()) {
             case TypeID::Integer:
@@ -1034,18 +1055,22 @@ public:
                 break;
             }
             name += "vec";
-            name += std::to_string(componentCount);
+            name += std::to_string(componentCount->getValue());
 
             return name;
         case Target::AIR:
-            return "<" + std::to_string(componentCount) + " x " + componentType->getName() + ">";
+            return "<" + std::to_string(componentCount->getValue()) + " x " + componentType->getName() + ">";
         default:
             return "unknown";
         }
     }
 
+    bool isTemplate() const override {
+        return componentCount->getValue() == 0;
+    }
+
     //Getters
-    uint8_t getComponentCount() {
+    Size* getComponentCount() {
         return componentCount;
     }
 };

@@ -121,7 +121,7 @@ public:
         if (r->getType()->isVector() && l->getType()->isScalar())
             std::swap(l, r);
         if (l->getType()->isVector() && r->getType()->isScalar()) {
-            r = opVectorConstruct(static_cast<VectorType*>(type), std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount(), r)); //TODO: check if the type is vector
+            r = opVectorConstruct(static_cast<VectorType*>(type), std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount()->getValue(), r)); //TODO: check if the type is vector
         }
         
         bool needsOrd = (operation == Operation::GreaterThan || operation == Operation::GreaterThanEqual || operation == Operation::LessThan || operation == Operation::LessThanEqual);
@@ -310,7 +310,7 @@ public:
 
             return opSTDFunctionCall_EXT(functionName, functionType, {val}, new ScalarType(context, TypeID::Void, 0));
         } else if (val->getType()->isScalar() && type->isVector()) {
-            return opVectorConstruct(static_cast<VectorType*>(type), std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount(), val));
+            return opVectorConstruct(static_cast<VectorType*>(type), std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount()->getValue(), val));
         }
 
         //HACK: just ignore
@@ -324,13 +324,13 @@ public:
     Value* opSample(Value* texture, Value* sampler, Value* coords, Value* lod = nullptr) override {
         //TODO: find out what are these arguments
         Value* argument4 = new ConstantBool(context, true);
-        Value* argument5 = opVectorConstruct(new VectorType(context, new ScalarType(context, TypeID::Integer, 32, true), 2), {new ConstantInt(context, 0, 32, true), new ConstantInt(context, 0, 32, true)});
+        Value* argument5 = opVectorConstruct(new VectorType(context, new ScalarType(context, TypeID::Integer, 32, true), new NumberSize(2)), {new ConstantInt(context, 0, 32, true), new ConstantInt(context, 0, 32, true)});
         Value* argument6 = new ConstantBool(context, false);
         Value* argument7 = new ConstantFloat(context, 0.0f, 32);
         Value* argument8 = new ConstantFloat(context, 0.0f, 32);
         Value* argument9 = new ConstantInt(context, 0, 32, true);
 
-        FunctionType* type = new FunctionType(context, new VectorType(context, texture->getType()->getBaseType(), 4), {texture->getType(), sampler->getType(), coords->getType(), argument4->getType(), argument5->getType(), argument6->getType(), argument7->getType(), argument8->getType(), argument9->getType()});
+        FunctionType* type = new FunctionType(context, new VectorType(context, texture->getType()->getBaseType(), new NumberSize(4)), {texture->getType(), sampler->getType(), coords->getType(), argument4->getType(), argument5->getType(), argument6->getType(), argument7->getType(), argument8->getType(), argument9->getType()});
 
         return opSTDFunctionCall_EXT("sample_texture_2d", type, {texture, sampler, coords, argument4, argument5, argument6, argument7, argument8, argument9}, type->getReturnType());
     }

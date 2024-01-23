@@ -44,10 +44,10 @@ Value* ArrayType::getValue(IRBuilder* builder, bool decorate) {
     Value* arrayValue = arrayType->getValue(builder);
     Type* sizeType = new ScalarType(context, TypeID::Integer, 32, false);
     Value* sizeTypeValue = sizeType->getValue(builder);
-    Value* sizeValue = builder->opConstant(new ConstantInt(context, size, 32, false));
+    Value* sizeValue = builder->opConstant(new ConstantInt(context, size->getValue(), 32, false));
     std::string code = "OpTypeArray " + arrayValue->getName() + " " + sizeValue->getName();
 
-    return static_cast<SPIRVBuilder*>(builder)->_addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), arrayType->getNameForRegister() + "[" + std::to_string(size) + "]");
+    return static_cast<SPIRVBuilder*>(builder)->_addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), arrayType->getNameForRegister() + "[" + std::to_string(size->getValue()) + "]");
 }
 
 Value* StructureType::getValue(IRBuilder* builder, bool decorate) {
@@ -107,9 +107,9 @@ Value* FunctionType::getValue(IRBuilder* builder, bool decorate) {
 
 Value* VectorType::getValue(IRBuilder* builder, bool decorate) {
     Value* componentValue = componentType->getValue(builder);
-    std::string code = "OpTypeVector " + componentValue->getName() + " " + std::to_string(componentCount);
+    std::string code = "OpTypeVector " + componentValue->getName() + " " + std::to_string(componentCount->getValue());
     
-    return static_cast<SPIRVBuilder*>(builder)->_addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), "vector(" + std::to_string(componentCount) + ") of " + componentType->getNameForRegister());
+    return static_cast<SPIRVBuilder*>(builder)->_addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), "vector(" + std::to_string(componentCount->getValue()) + ") of " + componentType->getNameForRegister());
 }
 
 Value* TextureType::getValue(IRBuilder* builder, bool decorate) {
