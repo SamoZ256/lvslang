@@ -40,6 +40,7 @@ inline void printTestFailed(const std::string& testName) {
     std::cout << SET_TEXT_COLOR("31") << "Test '" << testName << "' failed" << RESET_TEXT_COLOR() << std::endl;
 }
 
+//TODO: not return anything?
 bool _addTest(lvslang::CompileOptions& options, const std::string& testName, const std::string& filename, const std::string& expectedFilename) {
     std::cout << "Testing '" << testName << "' ..." << std::endl;
     options.inputName = std::filesystem::absolute(filename).string();
@@ -110,9 +111,7 @@ void addTest(const std::string& testName) {
         if (!outputExpected || i == 0) {
             for (uint32_t j = 0; j < sizeof(targets) / sizeof(irb::Target); j++) {
                 options.target = targets[j];
-                bool success = _addTest(options, testName + " [" + frontendNames[i] + " frontend, " + targetNames[j] + " backend]", baseDir + "/" + testName + "." + frontendExtensions[i], baseDir + "/" + testName + ".expected." + targetExtensions[j]);
-                if (!success)
-                    return;
+                _addTest(options, testName + " [" + frontendNames[i] + " frontend, " + targetNames[j] + " backend]", baseDir + "/" + testName + "." + frontendExtensions[i], baseDir + "/" + testName + ".expected." + targetExtensions[j]);
             }
         }
     }
@@ -131,6 +130,7 @@ int main(int argc, char* argv[]) {
     addTest("basic");
     addTest("standard_functions");
     addTest("control_flow");
+    addTest("advanced_features");
 
     return 0;
 }

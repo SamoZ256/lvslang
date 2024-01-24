@@ -836,7 +836,7 @@ ExpressionAST* parseBinOpRHS(int expressionPrecedence, ExpressionAST* lhs) {
 }
 
 //Function declaration
-FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, irb::FunctionRole functionRole = irb::FunctionRole::Normal) {
+FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, bool isSTDFunction = false, irb::FunctionRole functionRole = irb::FunctionRole::Normal) {
     if (crntToken != TOKEN_IDENTIFIER) {
         logError("excpected function name");
 
@@ -900,16 +900,21 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, irb::Functi
         functionType = _parseTypeWithAttributesExpression(&attributes);
     }
 
-    return new FunctionPrototypeAST(functionName, functionType, arguments/*, attributes*/, isDefined, functionRole);
+    return new FunctionPrototypeAST(functionName, functionType, arguments/*, attributes*/, isDefined, isSTDFunction, functionRole);
 }
 
 //TODO: support forward declarations
 //Function definition
-FunctionDefinitionAST* parseFunctionDefinition(irb::FunctionRole functionRole = irb::FunctionRole::Normal) {
+ExpressionAST* parseFunctionDefinition(bool isSTDFunction = false, irb::FunctionRole functionRole = irb::FunctionRole::Normal) {
     getNextToken(); // 'func', 'vertex', 'fragment' or 'kernel'
-    FunctionPrototypeAST* declaration = parseFunctionPrototype(true, functionRole);
+    FunctionPrototypeAST* declaration = parseFunctionPrototype(true, isSTDFunction, functionRole);
     if (!declaration)
         return nullptr;
+    
+    if (crntToken != '{') {
+        declaration->setIsDefined(false);
+        return declaration;
+    }
     
     if (BlockExpressionAST* expr = dynamic_cast<BlockExpressionAST*>(parseExpression()))
         return new FunctionDefinitionAST(declaration, expr);
@@ -917,6 +922,7 @@ FunctionDefinitionAST* parseFunctionDefinition(irb::FunctionRole functionRole = 
     return nullptr;
 }
 
+//TODO: remove this
 //Extern
 FunctionPrototypeAST* parseExtern() {
     getNextToken(); // 'extern'
@@ -1077,13 +1083,13 @@ bool mainLoop() {
             expression = parseFunctionDefinition();
             break;
         case TOKEN_VERTEX:
-            expression = parseFunctionDefinition(irb::FunctionRole::Vertex);
+            expression = parseFunctionDefinition(false, irb::FunctionRole::Vertex);
             break;
         case TOKEN_FRAGMENT:
-            expression = parseFunctionDefinition(irb::FunctionRole::Fragment);
+            expression = parseFunctionDefinition(false, irb::FunctionRole::Fragment);
             break;
         case TOKEN_KERNEL:
-            expression = parseFunctionDefinition(irb::FunctionRole::Kernel);
+            expression = parseFunctionDefinition(false, irb::FunctionRole::Kernel);
             break;
         case TOKEN_EXTERN:
             expression = parseExtern();
@@ -1097,6 +1103,9 @@ bool mainLoop() {
             break;
         case TOKEN_TYPE_ENUM:
             expression = parseEnumDeclaration();
+            break;
+        case TOKEN_STD_FUNCTION:
+            expression = parseFunctionDefinition(true, irb::FunctionRole::Normal);
             break;
         default:
             logError("unknown top level token '" + std::to_string(crntToken) + "'");

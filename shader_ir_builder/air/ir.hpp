@@ -64,12 +64,11 @@ public:
     }
 
     Value* opRegisterFunction(FunctionType* functionType) override {
-        return new Value(context, functionType, context.popRegisterName(), "@");
+        return new Value(context, functionType, context.popRegisterName(), "@", false);
     }
 
-    Value* opFunctionDeclaration(FunctionType* functionType, Value* value = nullptr) override {
-        if (!value)
-            value = opRegisterFunction(functionType);
+    Value* opFunctionDeclaration(FunctionType* functionType) override {
+        Value* value = opRegisterFunction(functionType);
 
         code += "declare " + functionType->getReturnType()->getName() + " " + value->getName() + "(";
         for (uint32_t i = 0; i < functionType->getArguments().size(); i++) {
@@ -126,7 +125,7 @@ public:
         
         bool needsOrd = (operation == Operation::GreaterThan || operation == Operation::GreaterThanEqual || operation == Operation::LessThan || operation == Operation::LessThanEqual);
         bool signSensitive = (operation == Operation::Divide || operation == Operation::Modulo || operation == Operation::Remainder || needsOrd);
-        bool needsPrefix = (operation == Operation::Add || operation == Operation::Subtract || operation == Operation::Multiply || operation == Operation::Divide || operation == Operation::Modulo || operation == Operation::Remainder || needsOrd);
+        bool needsPrefix = (operation == Operation::Add || operation == Operation::Subtract || operation == Operation::Multiply || operation == Operation::Divide || operation == Operation::Modulo || operation == Operation::Remainder || operation == Operation::And || operation == Operation::Or || operation == Operation::Equal || operation == Operation::NotEqual || needsOrd);
 
         GET_OPERATION_NAME(operation);
 
@@ -135,7 +134,7 @@ public:
         std::string opKindName = "";
         if (operationKindStr != "") {
             opKindName = (prefix == "f" ? "o" : prefix) + operationKindStr + " "; //TODO: support unordered?
-            if (prefix == "u" || prefix == "s")
+            if (prefix != "f")
                 prefix = "i";
         }
         getAIRInsertBlock()->addCode(prefix + operationStr + " " + opKindName + l->getNameWithType() + ", " + r->getName(), value);

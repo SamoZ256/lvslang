@@ -82,7 +82,7 @@ public:
 
     virtual Value* opRegisterFunction(FunctionType* functionType) = 0;
     
-    virtual Value* opFunctionDeclaration(FunctionType* functionType, Value* value = nullptr) = 0;
+    virtual Value* opFunctionDeclaration(FunctionType* functionType) = 0;
 
     virtual Value* opFunction(FunctionType* functionType, Value* value = nullptr) = 0;
 

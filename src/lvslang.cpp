@@ -187,7 +187,6 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
         std::unique_ptr<llvm::Module> llvmModule = llvm::parseIR(buffer->getMemBufferRef(), error, llvmContext);
         if (!llvmModule) {
             error.print(options.inputName.c_str(), llvm::errs());
-            std::cout << code << std::endl;
             return false;
         }
 

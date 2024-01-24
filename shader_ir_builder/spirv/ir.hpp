@@ -245,13 +245,10 @@ public:
     }
 
     Value* opRegisterFunction(FunctionType* functionType) override {
-        return new Value(context, functionType, context.popRegisterName());
+        return new Value(context, functionType, context.popRegisterName(), "%", false);
     }
 
-    Value* opFunctionDeclaration(FunctionType* functionType, Value* value = nullptr) override {
-        if (value)
-            return value;
-        
+    Value* opFunctionDeclaration(FunctionType* functionType) override {
         return opRegisterFunction(functionType);
     }
 
@@ -308,7 +305,7 @@ public:
         
         bool needsOrd = (operation == Operation::GreaterThan || operation == Operation::GreaterThanEqual || operation == Operation::LessThan || operation == Operation::LessThanEqual);
         bool signSensitive = (operation == Operation::Divide || operation == Operation::Modulo || operation == Operation::Remainder || needsOrd);
-        bool needsPrefix = (operation == Operation::Add || operation == Operation::Subtract || operation == Operation::Multiply || operation == Operation::Divide || operation == Operation::Modulo || operation == Operation::Remainder || needsOrd);
+        bool needsPrefix = (operation == Operation::Add || operation == Operation::Subtract || operation == Operation::Multiply || operation == Operation::Divide || operation == Operation::Modulo || operation == Operation::Remainder || operation == Operation::Equal || operation == Operation::NotEqual || needsOrd);
 
         GET_OPERATION_NAME(operation);
 

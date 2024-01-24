@@ -501,14 +501,16 @@ public:
         } else if (op == "|") {
             operation = irb::Operation::BitwiseOr;
         } else if (op == "==") {
-            operation = irb::Operation::LogicalEqual;
+            operation = irb::Operation::Equal;
+            type = new irb::ScalarType(context, irb::TypeID::Bool, 8, false);
         } else if (op == "!=") {
-            operation = irb::Operation::LogicalNotEqual;
+            operation = irb::Operation::NotEqual;
+            type = new irb::ScalarType(context, irb::TypeID::Bool, 8, false);
         } else if (op == "&&") {
-            operation = irb::Operation::LogicalAnd;
+            operation = irb::Operation::And;
             type = new irb::ScalarType(context, irb::TypeID::Bool, 8, false);
         } else if (op == "||") {
-            operation = irb::Operation::LogicalOr;
+            operation = irb::Operation::Or;
             type = new irb::ScalarType(context, irb::TypeID::Bool, 8, false);
         } else if (op == ">") {
             operation = irb::Operation::GreaterThan;
@@ -583,13 +585,14 @@ private:
     std::vector<irb::Argument> _arguments;
     //std::vector<int> attributes;
     bool isDefined;
+    bool isSTDFunction;
     irb::FunctionRole functionRole;
 
     irb::Value* value;
     irb::FunctionType* functionType;
 
 public:
-    FunctionPrototypeAST(const std::string& aName, irb::Type* aType, std::vector<irb::Argument> aArguments/*, const std::vector<int>& aAttributes*/, bool aIsDefined, irb::FunctionRole aFunctionRole) : _name(aName), type(aType), _arguments(aArguments)/*, attributes(aAttributes)*/, isDefined(aIsDefined), functionRole(aFunctionRole) {
+    FunctionPrototypeAST(const std::string& aName, irb::Type* aType, std::vector<irb::Argument> aArguments/*, const std::vector<int>& aAttributes*/, bool aIsDefined, bool aIsSTDFunction, irb::FunctionRole aFunctionRole) : _name(aName), type(aType), _arguments(aArguments)/*, attributes(aAttributes)*/, isDefined(aIsDefined), isSTDFunction(aIsSTDFunction), functionRole(aFunctionRole) {
         uint32_t bufferBinding = 0, textureBinding = 0, samplerBinding = 0;
         for (uint32_t i = 0; i < _arguments.size(); i++) {
             irb::Argument& arg = _arguments[i];
@@ -628,7 +631,7 @@ public:
         std::vector<irb::Type*> argumentTypes;
         argumentTypes.resize((_arguments.size()));
         for (uint32_t i = 0; i < argumentTypes.size(); i++)
-            argumentTypes[i] = new irb::PointerType(context, _arguments[i].type, irb::StorageClass::Function);
+            argumentTypes[i] = _arguments[i].type;
         functionType = new irb::FunctionType(context, type, argumentTypes);
     }
 
@@ -638,6 +641,9 @@ public:
         functionDeclarations[_name] = this;
 
         if (TARGET_IS_CODE(irb::target)) {
+            if (isSTDFunction)
+                return new irb::Value(context, nullptr, "");
+                
             std::string codeStr;
             std::string argsStr;
             std::string entryPointStr;
@@ -889,7 +895,10 @@ public:
                 value = new irb::Value(context, nullptr, regName);
             } else {*/
             context.pushRegisterName(_name);
-            value = builder->opRegisterFunction(functionType);
+            if (isSTDFunction)
+                value = builder->opFunctionDeclaration(functionType);
+            else
+                value = builder->opRegisterFunction(functionType);
             builder->opName(value, _name + "(");
 
             return new irb::Value(context, functionType);
@@ -923,6 +932,11 @@ public:
 
     inline irb::FunctionType* getFunctionType() const {
         return functionType;
+    }
+    
+    //Setters
+    inline void setIsDefined(bool aIsDefined) {
+        isDefined = aIsDefined;
     }
 };
 

@@ -307,6 +307,8 @@ int _getNextToken() {
             return TOKEN_CONST;
         if (identifierStr == "auto")
             return TOKEN_AUTO;
+        if (identifierStr == "STD_FUNCTION")
+            return TOKEN_STD_FUNCTION;
         
         int type = getTypeFromString(identifierStr);
         if (type != 0)

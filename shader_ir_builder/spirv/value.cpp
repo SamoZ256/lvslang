@@ -88,7 +88,7 @@ Value* FunctionType::getValue(IRBuilder* builder, bool decorate) {
     returnV = returnType->getValue(builder);
     std::vector<Value*> argumentVs(arguments.size());
     for (uint16_t i = 0; i < argumentVs.size(); i++)
-        argumentVs[i] = arguments[i]->getValue(builder);
+        argumentVs[i] = PointerType(context, arguments[i], StorageClass::Function).getValue(builder);
     Value* value = new Value(context, this);
     std::string code = "OpTypeFunction " + returnV->getName();
     for (auto* argV : argumentVs)

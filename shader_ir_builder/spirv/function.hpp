@@ -15,9 +15,9 @@ private:
 
 public:
     SPIRVFunction(Context& aContext, IRBuilder* builder, FunctionType* aFunctionType, Block* blockTypesVariablesConstants, Value* aValue) : Function(aContext, aFunctionType) {
+        value = aValue;
         Value* functionV = functionType->getValue(builder);
         Value* returnV = functionType->getReturnV();
-        value = aValue;
         SPIRVBlock* block = new SPIRVBlock(context);
         setInsertBlock(block);
         block->addCode("OpFunction " + returnV->getName() + " " + property + " " + functionV->getName(), value, value->getName());
