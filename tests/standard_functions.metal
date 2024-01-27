@@ -148,7 +148,23 @@ fragment struct FragmentOut testStandardFunctions(texture2d<float> testTexture, 
     float lengthTestFloat3 = length(float3(0.0));
     float lengthTestFloat4 = length(float4(0.0));
 
-    //TODO: test log and log2
+    half logTestHalf = log(half(0.0));
+    half2 logTestHalf2 = log(half2(0.0));
+    half3 logTestHalf3 = log(half3(0.0));
+    half4 logTestHalf4 = log(half4(0.0));
+    float logTestFloat = log(float(0.0));
+    float2 logTestFloat2 = log(float2(0.0));
+    float3 logTestFloat3 = log(float3(0.0));
+    float4 logTestFloat4 = log(float4(0.0));
+
+    half log2TestHalf = log2(half(0.0));
+    half2 log2TestHalf2 = log2(half2(0.0));
+    half3 log2TestHalf3 = log2(half3(0.0));
+    half4 log2TestHalf4 = log2(half4(0.0));
+    float log2TestFloat = log2(float(0.0));
+    float2 log2TestFloat2 = log2(float2(0.0));
+    float3 log2TestFloat3 = log2(float3(0.0));
+    float4 log2TestFloat4 = log2(float4(0.0));
 
     char maxTestChar = max(char(0), char(0));
     char2 maxTestChar2 = max(char2(0), char2(0));

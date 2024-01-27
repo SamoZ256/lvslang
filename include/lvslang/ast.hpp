@@ -149,6 +149,10 @@ public:
         return enumeration->type;
     }
 
+    std::string getTemplateName() const override {
+        return "e" + name;
+    }
+
     std::string getNameBegin() const override {
         if (irb::target == irb::Target::Metal || irb::target == irb::Target::HLSL)
             return name;
@@ -568,6 +572,9 @@ private:
     irb::Value* value;
     irb::FunctionType* functionType;
 
+    //For finding the correct overload
+    std::string identifier;
+
 public:
     FunctionPrototypeAST(const std::string& aName, irb::Type* aType, std::vector<irb::Argument> aArguments/*, const std::vector<int>& aAttributes*/, bool aIsDefined, bool aIsSTDFunction, irb::FunctionRole aFunctionRole) : _name(aName), type(aType), _arguments(aArguments)/*, attributes(aAttributes)*/, isDefined(aIsDefined), isSTDFunction(aIsSTDFunction), functionRole(aFunctionRole) {
         uint32_t bufferBinding = 0, textureBinding = 0, samplerBinding = 0;
@@ -610,6 +617,8 @@ public:
         for (uint32_t i = 0; i < argumentTypes.size(); i++)
             argumentTypes[i] = _arguments[i].type;
         functionType = new irb::FunctionType(context, type, argumentTypes);
+
+        identifier = functionType->getTemplateName();
     }
 
     irb::Value* codegen(irb::Type* requiredType = nullptr) override {
@@ -915,6 +924,10 @@ public:
     inline bool getIsSTDFunction() const {
         return isSTDFunction;
     }
+
+    inline const std::string& getIdentifier() const {
+        return identifier;
+    }
     
     //Setters
     inline void setIsDefined(bool aIsDefined) {
@@ -1033,6 +1046,11 @@ public:
                 argsStr += argVs[i]->getRawName();
             }
 
+            std::string identifier;
+            //TODO: move this to a separate function?
+            for (auto* argV : argVs)
+                identifier += (irb::target == irb::Target::AIR ? "." : "_") + argV->getType()->getTemplateName();
+
             //Find suitable function overload
             if (declarations.size() == 1) {
                 declaration = declarations[0];
@@ -1042,26 +1060,19 @@ public:
                     return nullptr;
                 }
                 
-                for (uint32_t i = 0; i < arguments.size(); i++) {
-                    if (!argVs[i]->getType()->equals(declaration->arguments()[i].type)) {
-                        logError(("Argument " + std::to_string(i + 1) + " of function '" + callee + "' has type '" + declaration->arguments()[i].type->getName() + "', got '" + argVs[i]->getType()->getName() + "' instead").c_str());
-                        return nullptr;
+                if (identifier != declaration->getIdentifier()) {
+                    for (uint32_t i = 0; i < arguments.size(); i++) {
+                        if (!argVs[i]->getType()->equals(declaration->arguments()[i].type)) {
+                            logError(("Argument " + std::to_string(i + 1) + " of function '" + callee + "' has type '" + declaration->arguments()[i].type->getName() + "', got '" + argVs[i]->getType()->getName() + "' instead").c_str());
+                            return nullptr;
+                        }
                     }
                 }
             } else {
                 for (auto* decl : declarations) {
-                    if (decl->arguments().size() == arguments.size()) {
-                        bool match = true;
-                        for (uint32_t i = 0; i < arguments.size(); i++) {
-                            if (!argVs[i]->getType()->equals(decl->arguments()[i].type)) {
-                                match = false;
-                                break;
-                            }
-                        }
-                        if (match) {
-                            declaration = decl;
-                            break;
-                        }
+                    if (identifier == decl->getIdentifier()) {
+                        declaration = decl;
+                        break;
                     }
                 }
                 if (!declaration) {
@@ -1379,7 +1390,7 @@ public:
                 if (!initV)
                     return nullptr;
                 
-                if (!initV->getType()->equals(type)) {
+                if (type && !initV->getType()->equals(type)) {
                     //TODO: use @ref getDebugName instead of @ref getName
                     logError("cannot initialize variable of type '" + type->getName() + "' with value of type '" + initV->getType()->getName() + "'");
                     return nullptr;

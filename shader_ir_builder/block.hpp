@@ -21,6 +21,10 @@ public:
         return nullptr;
     }
 
+    std::string getTemplateName() const override {
+        return "";
+    }
+
     std::string getNameForRegister() override {
         return "";
     }

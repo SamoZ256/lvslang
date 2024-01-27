@@ -147,11 +147,23 @@ STD_FUNCTION float length(float2 x);
 STD_FUNCTION float length(float3 x);
 STD_FUNCTION float length(float4 x);
 
-//TODO: add overloads
+STD_FUNCTION half log(half x);
+STD_FUNCTION half2 log(half2 x);
+STD_FUNCTION half3 log(half3 x);
+STD_FUNCTION half4 log(half4 x);
 STD_FUNCTION float log(float x);
+STD_FUNCTION float2 log(float2 x);
+STD_FUNCTION float3 log(float3 x);
+STD_FUNCTION float4 log(float4 x);
 
-//TODO: add overloads
+STD_FUNCTION half log2(half x);
+STD_FUNCTION half2 log2(half2 x);
+STD_FUNCTION half3 log2(half3 x);
+STD_FUNCTION half4 log2(half4 x);
 STD_FUNCTION float log2(float x);
+STD_FUNCTION float2 log2(float2 x);
+STD_FUNCTION float3 log2(float3 x);
+STD_FUNCTION float4 log2(float4 x);
 
 STD_FUNCTION char max(char x, char y);
 STD_FUNCTION char2 max(char2 x, char2 y);

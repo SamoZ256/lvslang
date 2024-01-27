@@ -1,4 +1,4 @@
-source_filename = "/Users/samuliak/Desktop/lvslang/build/../tests/advanced_features.metal"
+source_filename = "/Users/samuliak/Desktop/lvslang/build/../tests/advanced_features.lvsl"
 target datalayout = "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v24:32:32-v32:32:32-v48:64:64-v64:64:64-v96:128:128-v128:128:128-v192:256:256-v256:256:256-v512:512:512-v1024:1024:1024-n8:16:32"
 target triple = "air64-apple-macosx14.0.0"
 
@@ -10,14 +10,14 @@ define %FragmentOut @testAdvancedFeatures() local_unnamed_addr #0 {
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
-define i1 @forwardDeclaredFunction(i32 %a0, <3 x i32> %b) local_unnamed_addr #0 {
-  %_270 = extractelement <3 x i32> %b, i64 0
-  %op = icmp eq i32 %_270, %a0
-  %_273 = extractelement <3 x i32> %b, i64 1
-  %op0 = icmp eq i32 %_273, %a0
+define i1 @forwardDeclaredFunction.i32.v3i32(i32 %a0, <3 x i32> %b) local_unnamed_addr #0 {
+  %_284 = extractelement <3 x i32> %b, i64 0
+  %op = icmp eq i32 %_284, %a0
+  %_287 = extractelement <3 x i32> %b, i64 1
+  %op0 = icmp eq i32 %_287, %a0
   %op1 = or i1 %op, %op0
-  %_276 = extractelement <3 x i32> %b, i64 2
-  %op2 = icmp eq i32 %_276, %a0
+  %_290 = extractelement <3 x i32> %b, i64 2
+  %op2 = icmp eq i32 %_290, %a0
   %op3 = or i1 %op2, %op1
   ret i1 %op3
 }

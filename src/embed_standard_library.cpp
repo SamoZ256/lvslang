@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
     size_t pos = 0;
     while ((pos = source.find("\n", pos)) != std::string::npos) {
         if (pos != oldPos) {
-            output += source.substr(oldPos, pos - 1 - oldPos);
+            output += source.substr(oldPos, pos - oldPos);
             output += "\\n\" \\\n\"";
         }
         pos++;

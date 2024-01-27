@@ -33,11 +33,11 @@ bool outputExpected = false;
 std::string baseDir = "../tests";
 
 inline void printTestPassed(const std::string& testName) {
-    std::cout << SET_TEXT_COLOR("32") << "Test '" << testName << "' passed" << RESET_TEXT_COLOR() << std::endl;
+    std::cout << SET_TEXT_COLOR("32") << "Test " << testName << " passed" << RESET_TEXT_COLOR() << std::endl;
 }
 
 inline void printTestFailed(const std::string& testName) {
-    std::cout << SET_TEXT_COLOR("31") << "Test '" << testName << "' failed" << RESET_TEXT_COLOR() << std::endl;
+    std::cout << SET_TEXT_COLOR("31") << "Test " << testName << " failed" << RESET_TEXT_COLOR() << std::endl;
 }
 
 //TODO: not return anything?

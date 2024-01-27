@@ -56,7 +56,7 @@
 "STD_FUNCTION func cosh(x: float) -> float\n" \
 "STD_FUNCTION func cross(x: half3, y: half3) -> half3\n" \
 "STD_FUNCTION func cross(x: float3, y: float3) -> float3\n" \
-"//TODO: add determinant functio\n" \
+"//TODO: add determinant function\n" \
 "STD_FUNCTION func distance(x: half2, y: half2) -> half\n" \
 "STD_FUNCTION func distance(x: half3, y: half3) -> half\n" \
 "STD_FUNCTION func distance(x: half4, y: half4) -> half\n" \
@@ -101,7 +101,7 @@
 "STD_FUNCTION func fract(x: float2) -> float2\n" \
 "STD_FUNCTION func fract(x: float3) -> float3\n" \
 "STD_FUNCTION func fract(x: float4) -> float4\n" \
-"//TODO: add image function\n" \
+"//TODO: add image functions\n" \
 "STD_FUNCTION func isinf(x: half) -> bool\n" \
 "STD_FUNCTION func isinf(x: half2) -> bool2\n" \
 "STD_FUNCTION func isinf(x: half3) -> bool3\n" \
@@ -124,10 +124,22 @@
 "STD_FUNCTION func length(x: float2) -> float\n" \
 "STD_FUNCTION func length(x: float3) -> float\n" \
 "STD_FUNCTION func length(x: float4) -> float\n" \
-"//TODO: add overload\n" \
+"STD_FUNCTION func log(x: half) -> half\n" \
+"STD_FUNCTION func log(x: half2) -> half2\n" \
+"STD_FUNCTION func log(x: half3) -> half3\n" \
+"STD_FUNCTION func log(x: half4) -> half4\n" \
 "STD_FUNCTION func log(x: float) -> float\n" \
-"//TODO: add overload\n" \
+"STD_FUNCTION func log(x: float2) -> float2\n" \
+"STD_FUNCTION func log(x: float3) -> float3\n" \
+"STD_FUNCTION func log(x: float4) -> float4\n" \
+"STD_FUNCTION func log2(x: half) -> half\n" \
+"STD_FUNCTION func log2(x: half2) -> half2\n" \
+"STD_FUNCTION func log2(x: half3) -> half3\n" \
+"STD_FUNCTION func log2(x: half4) -> half4\n" \
 "STD_FUNCTION func log2(x: float) -> float\n" \
+"STD_FUNCTION func log2(x: float2) -> float2\n" \
+"STD_FUNCTION func log2(x: float3) -> float3\n" \
+"STD_FUNCTION func log2(x: float4) -> float4\n" \
 "STD_FUNCTION func max(x: char, y: char) -> char\n" \
 "STD_FUNCTION func max(x: char2, y: char2) -> char2\n" \
 "STD_FUNCTION func max(x: char3, y: char3) -> char3\n" \
@@ -210,9 +222,9 @@
 "STD_FUNCTION func round(x: float2) -> float2\n" \
 "STD_FUNCTION func round(x: float3) -> float3\n" \
 "STD_FUNCTION func round(x: float4) -> float4\n" \
-"//TODO: add overload\n" \
+"//TODO: add overloads\n" \
 "STD_FUNCTION func sample(texture: texture2D<float>, samplr: sampler, coord: float2) -> float4\n" \
-"//TODO: check if integers are supporte\n" \
+"//TODO: check if integers are supported\n" \
 "STD_FUNCTION func sign(x: char) -> char\n" \
 "STD_FUNCTION func sign(x: char2) -> char2\n" \
 "STD_FUNCTION func sign(x: char3) -> char3\n" \
@@ -261,5 +273,5 @@
 "STD_FUNCTION func step(edge: float4, x: float4) -> float4\n" \
 "STD_FUNCTION func tan(x: float) -> float\n" \
 "STD_FUNCTION func tanh(x: float) -> float\n" \
-"//TODO: add transpose functio\n" \
+"//TODO: add transpose function\n" \
 ""

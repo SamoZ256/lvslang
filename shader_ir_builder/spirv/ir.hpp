@@ -251,7 +251,7 @@ public:
     }
 
     Value* opRegisterFunction(FunctionType* functionType) override {
-        return new Value(context, functionType, context.popRegisterName(), "%", false);
+        return new Value(context, functionType, context.popRegisterName() + functionType->getTemplateName(), "%", false);
     }
 
     Value* opStandardFunctionDeclaration(FunctionType* functionType, const std::string& name) override {

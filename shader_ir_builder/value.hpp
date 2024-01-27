@@ -98,9 +98,7 @@ public:
         return "";
     }
 
-    virtual std::string getTemplateName() {
-        return "none.none";
-    }
+    virtual std::string getTemplateName() const = 0;
 
     virtual std::string getCastOpName(Type* castFrom) {
         return "";
@@ -321,11 +319,11 @@ public:
         }
     }
 
-    std::string getTemplateName() override {
+    std::string getTemplateName() const override {
         switch (typeID) {
         case TypeID::Bool:
         case TypeID::Integer:
-            return getNameBegin();
+            return (isSigned ? "i" : "u") + std::to_string(bitCount);
         case TypeID::Float:
             return "f" + std::to_string(bitCount);
         default:
@@ -602,6 +600,10 @@ public:
 
     //TODO: override @ref getOpPrefix
 
+    std::string getTemplateName() const override {
+        return "p" + _baseType->getTemplateName();
+    }
+
     Type* getElementType() override {
         return _baseType->copy();
     }
@@ -678,6 +680,10 @@ public:
         return arrayType;
     }
 
+    std::string getTemplateName() const override {
+        return "a" + std::to_string(size) + arrayType->getTemplateName();
+    }
+
     std::string getNameBegin() const override {
         if (TARGET_IS_IR(target))
             return "[" + std::to_string(size) + " x " + arrayType->getName() + "]";
@@ -741,6 +747,10 @@ public:
         return bitCount;
     }
 
+    std::string getTemplateName() const override {
+        return "s" + name;
+    }
+
     std::string getNameBegin() const override {
         if (target == Target::AIR)
             return "%" + name;
@@ -793,6 +803,14 @@ public:
             registerName += "_" + arg->getNameForRegister();
         
         return registerName;
+    }
+
+    std::string getTemplateName() const override {
+        std::string templateName;
+        for (const auto* arg : arguments)
+            templateName += (target == Target::AIR ? "." : "_") + arg->getTemplateName();
+        
+        return templateName;
     }
 
     //TODO: make this different in case of code backends
@@ -870,7 +888,7 @@ public:
         return componentType->getOpPrefix(signSensitive, needsOrd);
     }
 
-    std::string getTemplateName() override {
+    std::string getTemplateName() const override {
         return "v" + std::to_string(componentCount) + componentType->getTemplateName();
     }
 
@@ -973,6 +991,11 @@ public:
         return type;
     }
 
+    //TODO: change this?
+    std::string getTemplateName() const override {
+        return "t" + std::to_string((int)viewType) + type->getTemplateName();
+    }
+
     std::string getNameBegin() const override {
         GET_TEXTURE_NAME(viewType);
         std::string name = viewTypeStr;
@@ -1022,6 +1045,10 @@ public:
 
     uint32_t getBitCount(bool align = false) override {
         return 64; //TODO: check if this is correct
+    }
+
+    std::string getTemplateName() const override {
+        return "sm";
     }
 
     std::string getNameBegin() const override {
