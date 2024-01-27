@@ -850,8 +850,11 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, bool isSTDF
         irb::Type* type = _parseTypeWithAttributesExpression(&argAttributes);
         if (!type)
             return nullptr;
-        std::string name = identifierStr;
-        getNextToken(); // argument name
+        std::string name;
+        if (crntToken == TOKEN_IDENTIFIER) {
+            name = identifierStr;
+            getNextToken(); // argument name
+        }
         _parseAttributes(&argAttributes);
         arguments.push_back(irb::Argument{name, type, argAttributes});
     } while (crntToken == ',');

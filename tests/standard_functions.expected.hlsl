@@ -27,6 +27,7 @@ FragmentOut_Output _testStandardFunctions() {
 
 FragmentOut testStandardFunctions(Texture2D testTexture, SamplerState testSampler) {
 	int absTest = abs(0);
+	min16float absTestHalf = abs(min16float(0.000000));
 	float acosTest = acos(0.000000);
 	float acoshTest = acosh(0.000000);
 	float asinTest = asin(0.000000);

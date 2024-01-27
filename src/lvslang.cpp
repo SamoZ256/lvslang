@@ -27,30 +27,19 @@ void reset() {
     context.crntRegisterNumber = 0;
     context.registerNames.clear();
     context.structures.clear();
-    context.codeHeader = "";
     context.codeMain = "";
     currentIndentation = 0;
+    functionDeclarations.clear();
 }
 
 bool compile(const CompileOptions& options, std::string& outputCode) {
     reset();
+    context.codeHeader = "";
     source = Source{};
 
     irb::target = options.target;
     irb::spirvVersion = options.spirvVersion;
     lvslang::glslVersion = options.glslVersion;
-
-    std::string extension = options.inputName.substr(options.inputName.find_last_of('.'));
-    bool success;
-    if (extension == ".lvsl") {
-        lvsl::compileStandardLibrary();
-    } else if (extension == ".metal") {
-        metal::compileStandardLibrary();
-    } else {
-        throw std::runtime_error("unsupported output file extension '" + extension + "'");
-    }
-
-    reset();
 
     switch (irb::target) {
     case irb::Target::None:
@@ -81,6 +70,18 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
         LVSLANG_ERROR_UNSUPPORTED_TARGET("Unknown");
         break;
     }
+
+    std::string extension = options.inputName.substr(options.inputName.find_last_of('.'));
+    bool success;
+    if (extension == ".lvsl") {
+        lvsl::compileStandardLibrary();
+    } else if (extension == ".metal") {
+        metal::compileStandardLibrary();
+    } else {
+        throw std::runtime_error("unsupported output file extension '" + extension + "'");
+    }
+
+    reset();
 
     //Extensions
     //TODO: enable them only if needed

@@ -7,6 +7,7 @@ struct FragmentOut {
 
 fragment FragmentOut testStandardFunctions(texture2d<float> testTexture [[texture(0)]], sampler testSampler [[sampler(0)]]) {
 	int absTest = abs(0);
+	half absTestHalf = abs(half(0.000000));
 	float acosTest = acos(0.000000);
 	float acoshTest = acosh(0.000000);
 	float asinTest = asin(0.000000);

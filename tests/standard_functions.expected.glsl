@@ -24,6 +24,7 @@ void main() {
 
 FragmentOut testStandardFunctions(texture2D testTexture, sampler testSampler) {
 	int absTest = abs(0);
+	float16_t absTestHalf = abs(float16_t(0.000000));
 	float acosTest = acos(0.000000);
 	float acoshTest = acosh(0.000000);
 	float asinTest = asin(0.000000);

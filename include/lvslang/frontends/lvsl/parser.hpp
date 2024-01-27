@@ -853,27 +853,26 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, bool isSTDF
 
     std::vector<irb::Argument> arguments;
     do {
+        std::string name;
         if (getNextToken() == TOKEN_IDENTIFIER) {
-            std::string name = identifierStr;
+            name = identifierStr;
             if (getNextToken() == ':') {
                 getNextToken(); // ':'
-                irb::Attributes argAttributes;
-                irb::Type* type = _parseTypeWithAttributesExpression(&argAttributes);
-                if (!type)
-                    return nullptr;
-                arguments.push_back(irb::Argument{name, type, argAttributes});
             } else {
                 logError("expected argument type");
-
                 return nullptr;
             }
-        } else {
+        } else if (!(tokenIsType(crntToken) || tokenIsAttrib(crntToken))) {
             break;
         }
+        irb::Attributes argAttributes;
+        irb::Type* type = _parseTypeWithAttributesExpression(&argAttributes);
+        if (!type)
+            return nullptr;
+        arguments.push_back(irb::Argument{name, type, argAttributes});
     } while (crntToken == ',');
     if (crntToken != ')') {
         logError("expected ')' to match the '('");
-
         return nullptr;
     }
 

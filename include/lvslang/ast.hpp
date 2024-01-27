@@ -97,7 +97,7 @@ struct Variable {
 };
 
 static std::map<std::string, Variable> variables;
-static std::map<std::string, FunctionPrototypeAST*> functionDeclarations;
+static std::map<std::string, std::vector<FunctionPrototypeAST*> > functionDeclarations;
 static std::map<std::string, Enumeration*> enumerations;
 
 class EnumType : public irb::Type {
@@ -610,7 +610,7 @@ public:
     irb::Value* codegen(irb::Type* requiredType = nullptr) override {
         setDebugInfo();
 
-        functionDeclarations[_name] = this;
+        functionDeclarations[_name].push_back(this);
 
         if (TARGET_IS_CODE(irb::target)) {
             if (isSTDFunction)
@@ -958,15 +958,17 @@ public:
 
         for (uint32_t i = 0; i < declaration->arguments().size(); i++) {
             auto& arg = declaration->arguments()[i];
-            if (TARGET_IS_CODE(irb::target)) {
-                irb::Value* value = new irb::Value(context, new irb::PointerType(context, arg.type, irb::StorageClass::Function), arg.name);
-                variables[arg.name] = {value, false};
-            } else {
-                auto& attr = declaration->getArgumentAttributes(i);
-                context.pushRegisterName(arg.name);
-                irb::Type* type = arg.type;
-                irb::Value* argValue = builder->opFunctionParameter(type);
-                variables[arg.name] = {argValue, false};
+            if (arg.name != "") {
+                if (TARGET_IS_CODE(irb::target)) {
+                    irb::Value* value = new irb::Value(context, new irb::PointerType(context, arg.type, irb::StorageClass::Function), arg.name);
+                    variables[arg.name] = {value, false};
+                } else {
+                    auto& attr = declaration->getArgumentAttributes(i);
+                    context.pushRegisterName(arg.name);
+                    irb::Type* type = arg.type;
+                    irb::Value* argValue = builder->opFunctionParameter(type);
+                    variables[arg.name] = {argValue, false};
+                }
             }
         }
 
@@ -1011,30 +1013,63 @@ public:
     irb::Value* codegen(irb::Type* requiredType = nullptr) override {
         setDebugInfo();
 
-        if (FunctionPrototypeAST* declaration = functionDeclarations[callee]) {
+        if (functionDeclarations.count(callee)) {
+            const auto& declarations = functionDeclarations[callee];
+            FunctionPrototypeAST* declaration = nullptr;
             std::string argsStr;
             std::vector<irb::Value*> argVs(arguments.size());
             for (uint32_t i = 0; i < arguments.size(); i++) {
                 ExpressionAST* arg = arguments[i];
-                argVs[i] = arg->codegen(declaration->arguments()[i].type);
+                argVs[i] = arg->codegen(declaration ? declaration->arguments()[i].type : nullptr);
                 if (!argVs[i])
                     return nullptr;
-                if (!argVs[i]->getType()->equals(declaration->arguments()[i].type)) {
-                    logError(("Argument " + std::to_string(i + 1) + " of function '" + callee + "' has type '" + declaration->arguments()[i].type->getName() + "', got '" + argVs[i]->getType()->getName() + "' instead").c_str());
-                    return nullptr;
-                }
-                if (irb::target == irb::Target::SPIRV && !declaration->getIsSTDFunction()) {
-                    context.pushRegisterName("param");
-                    argVs[i] = builder->opVariable(new irb::PointerType(context, argVs[i]->getType(), irb::StorageClass::Function), argVs[i]);
-                }
                 if (i != 0)
                     argsStr += ", ";
                 argsStr += argVs[i]->getRawName();
             }
 
-            if (declaration->arguments().size() != arguments.size()) {
-                logError(("Expected " + std::to_string(declaration->arguments().size()) + " arguments, got " + std::to_string(arguments.size()) + " instead").c_str());
-                return nullptr;
+            //Find suitable function overload
+            if (declarations.size() == 1) {
+                declaration = declarations[0];
+
+                if (declaration->arguments().size() != arguments.size()) {
+                    logError(("Expected " + std::to_string(declaration->arguments().size()) + " arguments, got " + std::to_string(arguments.size()) + " instead").c_str());
+                    return nullptr;
+                }
+                
+                for (uint32_t i = 0; i < arguments.size(); i++) {
+                    if (!argVs[i]->getType()->equals(declaration->arguments()[i].type)) {
+                        logError(("Argument " + std::to_string(i + 1) + " of function '" + callee + "' has type '" + declaration->arguments()[i].type->getName() + "', got '" + argVs[i]->getType()->getName() + "' instead").c_str());
+                        return nullptr;
+                    }
+                }
+            } else {
+                for (auto* decl : declarations) {
+                    if (decl->arguments().size() == arguments.size()) {
+                        bool match = true;
+                        for (uint32_t i = 0; i < arguments.size(); i++) {
+                            if (!argVs[i]->getType()->equals(decl->arguments()[i].type)) {
+                                match = false;
+                                break;
+                            }
+                        }
+                        if (match) {
+                            declaration = decl;
+                            break;
+                        }
+                    }
+                }
+                if (!declaration) {
+                    logError("No matching function overload found");
+                    return nullptr;
+                }
+            }
+
+            for (uint32_t i = 0; i < arguments.size(); i++) {
+                if (irb::target == irb::Target::SPIRV && !declaration->getIsSTDFunction()) {
+                    context.pushRegisterName("param");
+                    argVs[i] = builder->opVariable(new irb::PointerType(context, argVs[i]->getType(), irb::StorageClass::Function), argVs[i]);
+                }
             }
 
             if (TARGET_IS_CODE(irb::target)) {
