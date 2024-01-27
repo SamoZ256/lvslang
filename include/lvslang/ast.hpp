@@ -237,6 +237,8 @@ protected:
 
     bool loadOnCodegen = true;
 
+    virtual irb::Value* _codegen(irb::Type* requiredType = nullptr) = 0;
+
 public:
     ExpressionAST() {
         debugLine = source.crntLine;
@@ -245,7 +247,15 @@ public:
 
     virtual ~ExpressionAST() = default;
 
-    virtual irb::Value* codegen(irb::Type* requiredType = nullptr) = 0;
+    irb::Value* codegen(irb::Type* requiredType = nullptr) {
+        setDebugInfo();
+
+        irb::Value* value = _codegen(requiredType);
+        if (TARGET_IS_IR(irb::target) && requiredType)
+            return builder->opCast(value, requiredType);
+        
+        return value;
+    }
 
     virtual bool isConstant() {
         return false;
@@ -278,9 +288,7 @@ private:
 public:
     NumberExpressionAST(double aValueD, long aValueL, unsigned long aValueU, irb::ScalarType* aType) : _valueD(aValueD), _valueL(aValueL), _valueU(aValueU), type(aType) {}
 
-    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
-        setDebugInfo();
-
+    irb::Value* _codegen(irb::Type* requiredType = nullptr) override {
         if (requiredType) {
             if (requiredType->isScalar()) {
                 type = requiredType;
@@ -348,9 +356,7 @@ private:
 public:
     VariableExpressionAST(const std::string& aName) : _name(aName) {}
 
-    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
-        setDebugInfo();
-
+    irb::Value* _codegen(irb::Type* requiredType = nullptr) override {
         auto iter = variables.find(_name);
         if (iter != variables.end()) {
             irb::Value* value = iter->second.value;
@@ -371,8 +377,6 @@ public:
                     value = new irb::Value(context, type, castBegin + value->getRawName() + castEnd);
                 }
             }
-            if (TARGET_IS_IR(irb::target) && requiredType)
-                value = builder->opCast(value, requiredType);
 
             return value;
         } else {
@@ -400,9 +404,7 @@ private:
 public:
     BinaryExpressionAST(const std::string& aOperator, ExpressionAST* aLHS, ExpressionAST* aRHS) : op(aOperator), lhs(aLHS), rhs(aRHS) {}
 
-    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
-        setDebugInfo();
-        
+    irb::Value* _codegen(irb::Type* requiredType = nullptr) override {
         if (op == "=")
             lhs->setLoadOnCodegen(false);
         
@@ -512,8 +514,6 @@ public:
         } else {
             context.pushRegisterName("op");
             irb::Value* value = builder->opOperation(l, r, type, operation);
-            if (requiredType)
-                value = builder->opCast(value, requiredType);
 
             return value;
         }
@@ -528,11 +528,7 @@ private:
 public:
     BlockExpressionAST(std::vector<ExpressionAST*> aExpressions) : expressions(aExpressions) {}
 
-    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
-        setDebugInfo();
-
-        //for (uint16_t i = 0; i < currentIndentation; i++)
-        //    codeStr += "\t";
+    irb::Value* _codegen(irb::Type* requiredType = nullptr) override {
         std::string codeStr = "{\n";
 
         currentIndentation += 1;
@@ -621,9 +617,7 @@ public:
         identifier = functionType->getTemplateName();
     }
 
-    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
-        setDebugInfo();
-
+    irb::Value* _codegen(irb::Type* requiredType = nullptr) override {
         functionDeclarations[_name].push_back(this);
 
         if (TARGET_IS_CODE(irb::target)) {
@@ -944,9 +938,7 @@ private:
 public:
     FunctionDefinitionAST(FunctionPrototypeAST* aDeclaration, BlockExpressionAST* aBody) : declaration(aDeclaration), body(aBody) {}
 
-    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
-        setDebugInfo();
-
+    irb::Value* _codegen(irb::Type* requiredType = nullptr) override {
         crntFunction = declaration;
 
         irb::Value* declV = declaration->codegen();
@@ -1028,9 +1020,7 @@ private:
 public:
     CallExpressionAST(const std::string& aCallee, std::vector<ExpressionAST*> aArguments) : callee(aCallee), arguments(aArguments) {}
 
-    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
-        setDebugInfo();
-
+    irb::Value* _codegen(irb::Type* requiredType = nullptr) override {
         if (functionDeclarations.count(callee)) {
             const auto& declarations = functionDeclarations[callee];
             FunctionPrototypeAST* declaration = nullptr;
@@ -1110,16 +1100,10 @@ public:
 
                 return new irb::Value(context, declaration->getType(), code);
             } else {
-                irb::Value* value;
                 if (callee == "sample")
-                    value = builder->opSample(declaration->getValue(), argVs[0], argVs[1], argVs[2]);
-                else
-                    value = builder->opFunctionCall(declaration->getValue(), argVs);
-                
-                if (requiredType)
-                    value = builder->opCast(value, requiredType);
-                
-                return value;
+                    return builder->opSample(declaration->getValue(), argVs[0], argVs[1], argVs[2]);
+
+                return builder->opFunctionCall(declaration->getValue(), argVs);
             }
         } else {
             logError(("Use of undeclared function '" + callee + "'").c_str());
@@ -1137,9 +1121,7 @@ private:
 public:
     ReturnExpressionAST(ExpressionAST* aExpression) : expression(aExpression) {}
 
-    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
-        setDebugInfo();
-
+    irb::Value* _codegen(irb::Type* requiredType = nullptr) override {
         irb::Type* funcReturnType = crntFunction->getFunctionType()->getReturnType();
         irb::Value* returnV = expression->codegen(funcReturnType->getTypeID() == irb::TypeID::Void ? nullptr : funcReturnType);
         if (!returnV)
@@ -1165,9 +1147,7 @@ private:
 public:
     IfExpressionAST(const std::vector<IfThenBlock*>& aIfThenBlocks, ExpressionAST* aElseBlock) : ifThenBlocks(aIfThenBlocks), elseBlock(aElseBlock) {}
 
-    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
-        setDebugInfo();
-
+    irb::Value* _codegen(irb::Type* requiredType = nullptr) override {
         if (TARGET_IS_CODE(irb::target)) {
             std::string codeStr;
             for (uint32_t i = 0; i < ifThenBlocks.size(); i++) {
@@ -1254,9 +1234,7 @@ private:
 public:
     InlineIfElseExpressionAST(ExpressionAST* aCondition, BlockExpressionAST* aThenBlock, BlockExpressionAST* aElseBlock) : condition(aCondition), thenBlock(aThenBlock), elseBlock(aElseBlock) {}
 
-    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
-        setDebugInfo();
-
+    irb::Value* _codegen(irb::Type* requiredType = nullptr) override {
         //TODO: implement this
 
         return nullptr;
@@ -1274,9 +1252,7 @@ private:
 public:
     WhileExpressionAST(ExpressionAST* aCondition, ExpressionAST* aBlock, bool aIsDoWhile) : condition(aCondition), block(aBlock), isDoWhile(aIsDoWhile) {}
 
-    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
-        setDebugInfo();
-
+    irb::Value* _codegen(irb::Type* requiredType = nullptr) override {
         irb::Block* mergeB;
         irb::Block* condB;
         irb::Block* thenB;
@@ -1373,9 +1349,7 @@ private:
 public:
     VariableDeclarationExpressinAST(const std::vector<VariableDeclaration>& aVariableNames, bool aIsGlobal, bool aIsConstant) : variableNames(aVariableNames), isGlobal(aIsGlobal), isConstant(aIsConstant) {}
 
-    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
-        setDebugInfo();
-
+    irb::Value* _codegen(irb::Type* requiredType = nullptr) override {
         std::string codeStr;
 
        irb::Value* value = nullptr;
@@ -1454,9 +1428,7 @@ public:
     ArrayExpressionAST(const std::vector<ExpressionAST*>& aValues) : values(aValues) {}
 
     //TODO: implement for IR as well
-    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
-        setDebugInfo();
-
+    irb::Value* _codegen(irb::Type* requiredType = nullptr) override {
         type = new irb::ArrayType(context, new irb::ScalarType(context, irb::TypeID::Integer, 8, true), values.size());
 
         std::string codeStr = "{";
@@ -1490,9 +1462,7 @@ private:
 public:
     SubscriptExpressionAST(ExpressionAST* aPtr, ExpressionAST* aIndex) : ptr(aPtr), index(aIndex) {}
 
-    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
-        setDebugInfo();
-
+    irb::Value* _codegen(irb::Type* requiredType = nullptr) override {
         ptr->setLoadOnCodegen(false);
         irb::Value* ptrV = ptr->codegen();
         irb::Value* indexV = index->codegen();
@@ -1515,8 +1485,6 @@ public:
             irb::Value* value = builder->opGetElementPtr(elementType, ptrV, {indexV});
             if (loadOnCodegen)
                 value = builder->opLoad(value);
-            if (requiredType)
-                value = builder->opCast(value, requiredType);
 
             return value;
         }
@@ -1535,9 +1503,7 @@ private:
 public:
     MemberAccessExpressionAST(ExpressionAST* aExpression, const std::string& aMemberName, bool aExprShouldBeLoadedBeforeAccessingMember) : expression(aExpression), memberName(aMemberName), exprShouldBeLoadedBeforeAccessingMember(aExprShouldBeLoadedBeforeAccessingMember) {}
 
-    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
-        setDebugInfo();
-
+    irb::Value* _codegen(irb::Type* requiredType = nullptr) override {
         expression->setLoadOnCodegen(false);
         irb::Value* exprV = expression->codegen();
         if (exprShouldBeLoadedBeforeAccessingMember) {
@@ -1654,9 +1620,7 @@ private:
 public:
     StructureDefinitionAST(const std::string& aName, const std::vector<irb::StructureMember>& aMembers) : name(aName), members(aMembers) {}
 
-    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
-        setDebugInfo();
-
+    irb::Value* _codegen(irb::Type* requiredType = nullptr) override {
         if (context.structures[name]) {
             logError("redefinition of structure '" + name + "'");
             return nullptr;
@@ -1709,9 +1673,7 @@ private:
 public:
     EnumDefinitionAST(const std::string& aName, const std::vector<EnumValue>& aValues) : name(aName), values(aValues) {}
 
-    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
-        setDebugInfo();
-
+    irb::Value* _codegen(irb::Type* requiredType = nullptr) override {
         if (enumerations[name]) {
             logError("redefinition of enum '" + name + "'");
             return nullptr;
@@ -1742,9 +1704,7 @@ private:
 public:
     EnumValueExpressionAST(Enumeration* aEnumeration, EnumValue& aValue) : enumeration(aEnumeration), value(aValue) {}
 
-    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
-        setDebugInfo();
-
+    irb::Value* _codegen(irb::Type* requiredType = nullptr) override {
         if (TARGET_IS_IR(irb::target)) {
             return builder->opConstant(new irb::ConstantValue(context, enumeration->type, std::to_string(value.value)));
         } else {
@@ -1766,9 +1726,7 @@ private:
 public:
     InitializerListExpressionAST(irb::Type* aType, std::vector<ExpressionAST*> aExpressions) : type(aType), expressions(aExpressions) {}
 
-    irb::Value* codegen(irb::Type* requiredType = nullptr) override {
-        setDebugInfo();
-
+    irb::Value* _codegen(irb::Type* requiredType = nullptr) override {
         std::vector<irb::Value*> components;
         components.reserve(expressions.size());
         for (auto* expression : expressions) {
