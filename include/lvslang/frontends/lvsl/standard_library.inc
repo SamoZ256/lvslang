@@ -222,7 +222,11 @@
 "STD_FUNCTION func round(x: float2) -> float2\n" \
 "STD_FUNCTION func round(x: float3) -> float3\n" \
 "STD_FUNCTION func round(x: float4) -> float4\n" \
-"//TODO: add overloads\n" \
+"//TODO: add more overloads\n" \
+"STD_FUNCTION func sample(texture: texture2D<char>, samplr: sampler, coord: float2) -> char4\n" \
+"STD_FUNCTION func sample(texture: texture2D<short>, samplr: sampler, coord: float2) -> short4\n" \
+"STD_FUNCTION func sample(texture: texture2D<int>, samplr: sampler, coord: float2) -> int4\n" \
+"STD_FUNCTION func sample(texture: texture2D<half>, samplr: sampler, coord: float2) -> half4\n" \
 "STD_FUNCTION func sample(texture: texture2D<float>, samplr: sampler, coord: float2) -> float4\n" \
 "//TODO: check if integers are supported\n" \
 "STD_FUNCTION func sign(x: char) -> char\n" \

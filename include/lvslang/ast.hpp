@@ -1110,10 +1110,16 @@ public:
 
                 return new irb::Value(context, declaration->getType(), code);
             } else {
+                irb::Value* value;
                 if (callee == "sample")
-                    return builder->opSample(declaration->getValue(), argVs[0], argVs[1], argVs[2]);
-
-                return builder->opFunctionCall(declaration->getValue(), argVs);
+                    value = builder->opSample(declaration->getValue(), argVs[0], argVs[1], argVs[2]);
+                else
+                    value = builder->opFunctionCall(declaration->getValue(), argVs);
+                
+                if (requiredType)
+                    value = builder->opCast(value, requiredType);
+                
+                return value;
             }
         } else {
             logError(("Use of undeclared function '" + callee + "'").c_str());

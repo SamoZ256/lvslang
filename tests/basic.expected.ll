@@ -1,4 +1,4 @@
-source_filename = "/Users/samuliak/Desktop/lvslang/build/../tests/basic.lvsl"
+source_filename = "/Users/samuliak/Desktop/lvslang/build/../tests/basic.metal"
 target datalayout = "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v24:32:32-v32:32:32-v48:64:64-v64:64:64-v96:128:128-v128:128:128-v192:256:256-v256:256:256-v512:512:512-v1024:1024:1024-n8:16:32"
 target triple = "air64-apple-macosx14.0.0"
 
@@ -13,23 +13,23 @@ declare <4 x float> @air.sample_texture_2d.v4f32(ptr addrspace(1) nocapture read
 define %VertexOut @vertexMain.sVertexIn.psModel(%VertexIn %vertexIn, ptr addrspace(2) nocapture noundef readonly "air-buffer-no-alias" %model) local_unnamed_addr #0 {
   %vertexIn.fca.0.extract = extractvalue %VertexIn %vertexIn, 0
   %vertexIn.fca.1.extract = extractvalue %VertexIn %vertexIn, 1
-  %_279 = load <2 x float>, ptr addrspace(2) %model, align 4
-  %_283 = getelementptr inbounds %Model, ptr addrspace(2) %model, i64 0, i32 1
-  %_284 = load <2 x float>, ptr addrspace(2) %_283, align 4
-  %op = fmul <2 x float> %vertexIn.fca.0.extract, %_284
-  %op0 = fadd <2 x float> %_279, %op
+  %_283 = load <2 x float>, ptr addrspace(2) %model, align 4
+  %_287 = getelementptr inbounds %Model, ptr addrspace(2) %model, i64 0, i32 1
+  %_288 = load <2 x float>, ptr addrspace(2) %_287, align 4
+  %op = fmul <2 x float> %vertexIn.fca.0.extract, %_288
+  %op0 = fadd <2 x float> %_283, %op
   %1 = shufflevector <2 x float> %op0, <2 x float> poison, <4 x i32> <i32 0, i32 1, i32 poison, i32 poison>
-  %_290 = shufflevector <4 x float> %1, <4 x float> <float poison, float poison, float 0.000000e+00, float 1.000000e+00>, <4 x i32> <i32 0, i32 1, i32 6, i32 7>
-  %_294.fca.0.insert = insertvalue %VertexOut poison, <4 x float> %_290, 0
-  %_294.fca.1.insert = insertvalue %VertexOut %_294.fca.0.insert, <2 x float> %vertexIn.fca.1.extract, 1
-  ret %VertexOut %_294.fca.1.insert
+  %_294 = shufflevector <4 x float> %1, <4 x float> <float poison, float poison, float 0.000000e+00, float 1.000000e+00>, <4 x i32> <i32 0, i32 1, i32 6, i32 7>
+  %_298.fca.0.insert = insertvalue %VertexOut poison, <4 x float> %_294, 0
+  %_298.fca.1.insert = insertvalue %VertexOut %_298.fca.0.insert, <2 x float> %vertexIn.fca.1.extract, 1
+  ret %VertexOut %_298.fca.1.insert
 }
 
 define %FragmentOut @fragmentMain.sVertexOut.t1f32.sm(%VertexOut %fragmentIn, ptr addrspace(1) nocapture readonly %colorTexture, ptr addrspace(2) nocapture readonly %colorSampler) local_unnamed_addr {
   %fragmentIn.fca.1.extract = extractvalue %VertexOut %fragmentIn, 1
-  %_306 = tail call <4 x float> @air.sample_texture_2d.v4f32(ptr addrspace(1) nocapture readonly %colorTexture, ptr addrspace(2) nocapture readonly %colorSampler, <2 x float> %fragmentIn.fca.1.extract, i1 true, <2 x i32> zeroinitializer, i1 false, float 0.000000e+00, float 0.000000e+00, i32 0)
-  %_307.fca.0.insert = insertvalue %FragmentOut poison, <4 x float> %_306, 0
-  ret %FragmentOut %_307.fca.0.insert
+  %_310 = tail call <4 x float> @air.sample_texture_2d.v4f32(ptr addrspace(1) nocapture readonly %colorTexture, ptr addrspace(2) nocapture readonly %colorSampler, <2 x float> %fragmentIn.fca.1.extract, i1 true, <2 x i32> zeroinitializer, i1 false, float 0.000000e+00, float 0.000000e+00, i32 0)
+  %_311.fca.0.insert = insertvalue %FragmentOut poison, <4 x float> %_310, 0
+  ret %FragmentOut %_311.fca.0.insert
 }
 
 attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn }
