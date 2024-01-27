@@ -255,7 +255,11 @@ STD_FUNCTION float2 round(float2 x);
 STD_FUNCTION float3 round(float3 x);
 STD_FUNCTION float4 round(float4 x);
 
-//TODO: add overloads
+//TODO: add more overloads
+STD_FUNCTION char4 sample(texture2d<char> texture, sampler samplr, float2 coord);
+STD_FUNCTION short4 sample(texture2d<short> texture, sampler samplr, float2 coord);
+STD_FUNCTION int4 sample(texture2d<int> texture, sampler samplr, float2 coord);
+STD_FUNCTION half4 sample(texture2d<half> texture, sampler samplr, float2 coord);
 STD_FUNCTION float4 sample(texture2d<float> texture, sampler samplr, float2 coord);
 
 //TODO: check if integers are supported

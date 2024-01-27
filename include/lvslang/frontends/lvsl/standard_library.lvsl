@@ -255,7 +255,11 @@ STD_FUNCTION func round(x: float2) -> float2
 STD_FUNCTION func round(x: float3) -> float3
 STD_FUNCTION func round(x: float4) -> float4
 
-//TODO: add overloads
+//TODO: add more overloads
+STD_FUNCTION func sample(texture: texture2D<char>, samplr: sampler, coord: float2) -> char4
+STD_FUNCTION func sample(texture: texture2D<short>, samplr: sampler, coord: float2) -> short4
+STD_FUNCTION func sample(texture: texture2D<int>, samplr: sampler, coord: float2) -> int4
+STD_FUNCTION func sample(texture: texture2D<half>, samplr: sampler, coord: float2) -> half4
 STD_FUNCTION func sample(texture: texture2D<float>, samplr: sampler, coord: float2) -> float4
 
 //TODO: check if integers are supported
