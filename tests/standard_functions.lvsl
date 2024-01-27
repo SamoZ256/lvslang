@@ -4,6 +4,7 @@ struct FragmentOut {
 
 fragment testStandardFunctions(testTexture: texture2D<float>, testSampler: sampler) -> struct FragmentOut {
     var absTest = abs(0)
+    var absTestHalf = abs(half(0.0));
     var acosTest = acos(0.0)
     var acoshTest = acosh(0.0)
     var asinTest = asin(0.0)

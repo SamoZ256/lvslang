@@ -42,7 +42,7 @@ inline void printTestFailed(const std::string& testName) {
 
 //TODO: not return anything?
 bool _addTest(lvslang::CompileOptions& options, const std::string& testName, const std::string& filename, const std::string& expectedFilename) {
-    std::cout << "Testing '" << testName << "' ..." << std::endl;
+    std::cout << "Testing " << testName << " ..." << std::endl;
     options.inputName = std::filesystem::absolute(filename).string();
     options.source = readFile(filename);
     std::string code;
@@ -111,7 +111,7 @@ void addTest(const std::string& testName) {
         if (!outputExpected || i == 0) {
             for (uint32_t j = 0; j < sizeof(targets) / sizeof(irb::Target); j++) {
                 options.target = targets[j];
-                _addTest(options, testName + " [" + frontendNames[i] + " frontend, " + targetNames[j] + " backend]", baseDir + "/" + testName + "." + frontendExtensions[i], baseDir + "/" + testName + ".expected." + targetExtensions[j]);
+                _addTest(options, "'" + testName + "' [" + frontendNames[i] + " frontend, " + targetNames[j] + " backend]", baseDir + "/" + testName + "." + frontendExtensions[i], baseDir + "/" + testName + ".expected." + targetExtensions[j]);
             }
         }
     }

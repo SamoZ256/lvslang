@@ -7,7 +7,7 @@ target triple = "air64-apple-macosx14.0.0"
 %Model = type { <2 x float>, <2 x float> }
 %FragmentOut = type { <4 x float> }
 
-declare <4 x float> @air.sample_texture_2d.f32(ptr addrspace(1) nocapture readonly, ptr addrspace(2) nocapture readonly, <2 x float>, i1, <2 x i32>, i1, float, float, i32) local_unnamed_addr
+declare <4 x float> @air.sample_texture_2d.v4f32(ptr addrspace(1) nocapture readonly, ptr addrspace(2) nocapture readonly, <2 x float>, i1, <2 x i32>, i1, float, float, i32) local_unnamed_addr
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
 define %VertexOut @vertexMain(%VertexIn %vertexIn, ptr addrspace(2) nocapture noundef readonly "air-buffer-no-alias" %model) local_unnamed_addr #0 {
@@ -27,7 +27,7 @@ define %VertexOut @vertexMain(%VertexIn %vertexIn, ptr addrspace(2) nocapture no
 
 define %FragmentOut @fragmentMain(%VertexOut %fragmentIn, ptr addrspace(1) nocapture readonly %colorTexture, ptr addrspace(2) nocapture readonly %colorSampler) local_unnamed_addr {
   %fragmentIn.fca.1.extract = extractvalue %VertexOut %fragmentIn, 1
-  %_292 = tail call <4 x float> @air.sample_texture_2d.f32(ptr addrspace(1) nocapture readonly %colorTexture, ptr addrspace(2) nocapture readonly %colorSampler, <2 x float> %fragmentIn.fca.1.extract, i1 true, <2 x i32> zeroinitializer, i1 false, float 0.000000e+00, float 0.000000e+00, i32 0)
+  %_292 = tail call <4 x float> @air.sample_texture_2d.v4f32(ptr addrspace(1) nocapture readonly %colorTexture, ptr addrspace(2) nocapture readonly %colorSampler, <2 x float> %fragmentIn.fca.1.extract, i1 true, <2 x i32> zeroinitializer, i1 false, float 0.000000e+00, float 0.000000e+00, i32 0)
   %_293.fca.0.insert = insertvalue %FragmentOut poison, <4 x float> %_292, 0
   ret %FragmentOut %_293.fca.0.insert
 }

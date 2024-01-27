@@ -63,9 +63,9 @@
 "STD_FUNCTION float distance(float2 x, float2 y)\n" \
 "STD_FUNCTION float distance(float3 x, float3 y)\n" \
 "STD_FUNCTION float distance(float4 x, float4 y)\n" \
-"STD_FUNCTION float dot(half2 x, half2 y)\n" \
-"STD_FUNCTION float dot(half3 x, half3 y)\n" \
-"STD_FUNCTION float dot(half4 x, half4 y)\n" \
+"STD_FUNCTION half dot(half2 x, half2 y)\n" \
+"STD_FUNCTION half dot(half3 x, half3 y)\n" \
+"STD_FUNCTION half dot(half4 x, half4 y)\n" \
 "STD_FUNCTION float dot(float2 x, float2 y)\n" \
 "STD_FUNCTION float dot(float3 x, float3 y)\n" \
 "STD_FUNCTION float dot(float4 x, float4 y)\n" \
@@ -103,21 +103,21 @@
 "STD_FUNCTION float4 fract(float4 x)\n" \
 "//TODO: add image function\n" \
 "STD_FUNCTION bool isinf(half x)\n" \
-"STD_FUNCTION bool isinf(half2 x)\n" \
-"STD_FUNCTION bool isinf(half3 x)\n" \
-"STD_FUNCTION bool isinf(half4 x)\n" \
+"STD_FUNCTION bool2 isinf(half2 x)\n" \
+"STD_FUNCTION bool3 isinf(half3 x)\n" \
+"STD_FUNCTION bool4 isinf(half4 x)\n" \
 "STD_FUNCTION bool isinf(float x)\n" \
-"STD_FUNCTION bool isinf(float2 x)\n" \
-"STD_FUNCTION bool isinf(float3 x)\n" \
-"STD_FUNCTION bool isinf(float4 x)\n" \
+"STD_FUNCTION bool2 isinf(float2 x)\n" \
+"STD_FUNCTION bool3 isinf(float3 x)\n" \
+"STD_FUNCTION bool4 isinf(float4 x)\n" \
 "STD_FUNCTION bool isnan(half x)\n" \
-"STD_FUNCTION bool isnan(half2 x)\n" \
-"STD_FUNCTION bool isnan(half3 x)\n" \
-"STD_FUNCTION bool isnan(half4 x)\n" \
+"STD_FUNCTION bool2 isnan(half2 x)\n" \
+"STD_FUNCTION bool3 isnan(half3 x)\n" \
+"STD_FUNCTION bool4 isnan(half4 x)\n" \
 "STD_FUNCTION bool isnan(float x)\n" \
-"STD_FUNCTION bool isnan(float2 x)\n" \
-"STD_FUNCTION bool isnan(float3 x)\n" \
-"STD_FUNCTION bool isnan(float4 x)\n" \
+"STD_FUNCTION bool2 isnan(float2 x)\n" \
+"STD_FUNCTION bool3 isnan(float3 x)\n" \
+"STD_FUNCTION bool4 isnan(float4 x)\n" \
 "STD_FUNCTION half length(half2 x)\n" \
 "STD_FUNCTION half length(half3 x)\n" \
 "STD_FUNCTION half length(half4 x)\n" \

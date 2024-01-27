@@ -871,7 +871,7 @@ public:
     }
 
     std::string getTemplateName() override {
-        return componentType->getTemplateName();
+        return "v" + std::to_string(componentCount) + componentType->getTemplateName();
     }
 
     std::string getCastOpName(Type* castFrom) override {

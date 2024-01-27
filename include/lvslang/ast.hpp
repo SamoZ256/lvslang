@@ -431,6 +431,11 @@ public:
                     }
                     builder->opStore(unloadedVector->getUnloadedVector(), loadedVector);
                 } else {
+                    if (!r->getType()->equals(l->getType()->getElementType())) {
+                        //TODO: use @ref getDebugName instead of @ref getName
+                        logError("cannot assign to variable of type '" + l->getType()->getName() + "' from type '" + r->getType()->getName() + "'");
+                        return nullptr;
+                    }
                     builder->opStore(l, r);
                 }
             }
@@ -1060,7 +1065,7 @@ public:
                     }
                 }
                 if (!declaration) {
-                    logError("No matching function overload found");
+                    logError("no matching function overload found");
                     return nullptr;
                 }
             }
@@ -1373,6 +1378,12 @@ public:
                 initV = initExpression->codegen(type);
                 if (!initV)
                     return nullptr;
+                
+                if (!initV->getType()->equals(type)) {
+                    //TODO: use @ref getDebugName instead of @ref getName
+                    logError("cannot initialize variable of type '" + type->getName() + "' with value of type '" + initV->getType()->getName() + "'");
+                    return nullptr;
+                }
             } else if (!type) {
                 logError("cannot deduce type without initial value");
                 return nullptr;

@@ -92,10 +92,11 @@ public:
             IRB_INVALID_ARGUMENT_WITH_REASON("name", "there is no such standard function");
             return nullptr;
         }
-        const auto& standardFunctionInfo = standardFunctionLUT[name];
         
         //TODO: only add template name if there is at least one argument
         std::string fullName = "air." + name + "." + functionType->getArguments()[0]->getTemplateName();
+
+        const auto& standardFunctionInfo = standardFunctionLUT[fullName];
 
         if (name == "sample") {
             //TODO: do error checks
