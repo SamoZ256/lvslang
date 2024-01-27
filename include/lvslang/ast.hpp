@@ -1038,7 +1038,7 @@ public:
             std::vector<irb::Value*> argVs(arguments.size());
             for (uint32_t i = 0; i < arguments.size(); i++) {
                 ExpressionAST* arg = arguments[i];
-                argVs[i] = arg->codegen(declaration ? declaration->arguments()[i].type : nullptr);
+                argVs[i] = arg->codegen(declarations.size() == 1 ? declarations[0]->arguments()[i].type : nullptr);
                 if (!argVs[i])
                     return nullptr;
                 if (i != 0)
