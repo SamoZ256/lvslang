@@ -285,7 +285,7 @@ case Target::SPIRV: \
     viewType##Str = textureViewTypeLUT_SPIRV[(int)viewType]; \
     break; \
 case Target::AIR: \
-    viewType##Str = "ptr addrspace(2)";/*"%\"struct.metal::texture" + textureViewTypeLUT_AIR[(int)viewType] + "\"";*/ \
+    viewType##Str = "ptr addrspace(1)";/*"%\"struct.metal::texture" + textureViewTypeLUT_AIR[(int)viewType] + "\"";*/ \
     break; \
 default: \
     break; \
@@ -420,6 +420,61 @@ case Target::AIR: \
 default: \
     break; \
 }
+
+//TODO: add AIR specific stuff
+struct StandardFunctionInfo {
+    struct {
+        std::string name;
+        bool requiresOpExtInst = true;
+        int32_t argumentIndexForSpecialization = -1;
+    } spirv;
+};
+
+static std::map<std::string, StandardFunctionInfo> standardFunctionLUT = {
+    {"abs", {{"Abs", true, 0}}},
+    {"acos", {{"Acos"}}},
+    {"acosh", {{"Acosh"}}},
+    {"asin", {{"Asin"}}},
+    {"asinh", {{"Asinh"}}},
+    {"atan", {{"Atan"}}},
+    {"atanh", {{"Atanh"}}},
+    {"ceil", {{"Ceil"}}},
+    {"clamp", {{"Clamp", true, 0}}},
+    {"cos", {{"Cos"}}},
+    {"cosh", {{"Cosh"}}},
+    {"cross", {{"Cross"}}},
+    {"distance", {{"Distance"}}},
+    {"dot", {{"Dot", false}}},
+    {"exp", {{"Exp"}}},
+    {"exp2", {{"Exp2"}}},
+    {"floor", {{"Floor"}}},
+    {"fract", {{"Fract"}}},
+    //TODO: add image functions
+    //TODO: add transpose
+    {"isinf", {{"IsInf", false}}},
+    {"isnan", {{"IsNan", false}}},
+    {"length", {{"Length"}}},
+    {"log", {{"Log"}}},
+    {"log2", {{"Log2"}}},
+    {"max", {{"Max", true, 0}}},
+    {"min", {{"Min", true, 0}}},
+    {"mix", {{"Mix", true, 0}}},
+    {"normalize", {{"Normalize"}}},
+    {"pow", {{"Pow"}}},
+    {"reflect", {{"Reflect"}}},
+    {"refract", {{"Refract"}}},
+    {"round", {{"Round"}}},
+    {"sample", {{"ImageSampleExplicitLod", false}}},
+    {"sign", {{"Sign", true, 0}}},
+    {"sin", {{"Sin"}}},
+    {"sinh", {{"Sinh"}}},
+    {"smoothstep", {{"SmoothStep"}}},
+    {"sqrt", {{"Sqrt"}}},
+    {"step", {{"Step"}}},
+    {"tan", {{"Tan"}}},
+    {"tanh", {{"Tanh"}}}
+    //TODO: add transpose function
+};
 
 //Utility functions
 union DoubleToUint64 {

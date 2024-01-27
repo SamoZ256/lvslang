@@ -67,8 +67,11 @@ public:
         return new Value(context, functionType, context.popRegisterName(), "@", false);
     }
 
-    Value* opFunctionDeclaration(FunctionType* functionType) override {
-        Value* value = opRegisterFunction(functionType);
+    Value* opFunctionDeclaration(FunctionType* functionType, const std::string& name) {
+        if (auto* value = functionDeclarations[name])
+            return value;
+
+        Value* value = new Value(context, functionType, name, "@", false);
 
         code += "declare " + functionType->getReturnType()->getName() + " " + value->getName() + "(";
         for (uint32_t i = 0; i < functionType->getArguments().size(); i++) {
@@ -78,7 +81,30 @@ public:
         }
         code += ");\n\n";
 
+        functionDeclarations[name] = value;
+
         return value;
+    }
+
+    //TODO: support fast math (in function names)
+    Value* opStandardFunctionDeclaration(FunctionType* functionType, const std::string& name) override {
+        if (!standardFunctionLUT.count(name)) {
+            IRB_INVALID_ARGUMENT_WITH_REASON("name", "there is no such standard function");
+            return nullptr;
+        }
+        const auto& standardFunctionInfo = standardFunctionLUT[name];
+        
+        //TODO: only add template name if there is at least one argument
+        std::string fullName = "air." + name + "." + functionType->getArguments()[0]->getTemplateName();
+
+        if (name == "sample") {
+            //TODO: do error checks
+            functionType = new FunctionType(context, functionType->getReturnType(), {functionType->getArguments()[0], functionType->getArguments()[1], functionType->getArguments()[2], new ScalarType(context, TypeID::Bool, 8, false), new VectorType(context, new ScalarType(context, TypeID::Integer, 32, true), new NumberSize(2)), new ScalarType(context, TypeID::Bool, 8, false), new ScalarType(context, TypeID::Float, 32, true), new ScalarType(context, TypeID::Float, 32, true), new ScalarType(context, TypeID::Integer, 32, true)});
+
+            return opFunctionDeclaration(functionType, "air.sample_texture_2d." + functionType->getReturnType()->getTemplateName());
+        } else {
+            return opFunctionDeclaration(functionType, fullName);
+        }
     }
 
     Value* opFunction(FunctionType* functionType, Value* value = nullptr) override {
@@ -192,28 +218,6 @@ public:
         return value;
     }
 
-    //TODO: support fast math (in function names as well)
-    Value* opSTDFunctionCall_EXT(std::string funcName, FunctionType* type, const std::vector<Value*>& arguments, Type* specializedType) override {
-        //We are going to push to register name so we need to save the value first
-        std::string registerName = context.popRegisterName();
-
-        //Adjust the name
-        funcName = "air." + funcName;
-        //TODO: check if this is correct
-        if (specializedType->getTypeID() != TypeID::Void)
-            funcName += "." + specializedType->getTemplateName();
-
-        Value* functionDecl = builtinFunctionDeclarations[funcName];
-        if (!functionDecl) {
-            context.pushRegisterName(funcName);
-            functionDecl = opFunctionDeclaration(type);
-            builtinFunctionDeclarations[funcName] = functionDecl;
-        }
-        context.pushRegisterName(registerName);
-
-        return opFunctionCall(functionDecl, arguments);
-    }
-
     void opBranch(Block* block) override {
         getAIRInsertBlock()->addCode("br " + block->getNameWithType());
     }
@@ -307,7 +311,9 @@ public:
             //TODO: move the function selection based on type to @ref opSTDFunctionCall_EXT
             std::string functionName = "convert." + type->getOpPrefix(true, false) + "." + type->getTemplateName() + "." + castFromType->getOpPrefix(true, false) + "." + castFromType->getTemplateName();
 
-            return opSTDFunctionCall_EXT(functionName, functionType, {val}, new ScalarType(context, TypeID::Void, 0));
+            Value* funcV = opFunctionDeclaration(functionType, functionName);
+
+            return opFunctionCall(funcV, {val});
         } else if (val->getType()->isScalar() && type->isVector()) {
             return opVectorConstruct(static_cast<VectorType*>(type), std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount()->getValue(), val));
         }
@@ -316,11 +322,7 @@ public:
         return val;
     }
 
-    Value* opDot(Value* a, Value* b) override {
-        return opSTDFunctionCall_EXT("dot", new FunctionType(context, a->getType()->getBaseType(), {a->getType(), b->getType()}), {a, b}, new ScalarType(context, TypeID::Void, 0));
-    }
-
-    Value* opSample(Value* texture, Value* sampler, Value* coords, Value* lod = nullptr) override {
+    Value* opSample(Value* funcV, Value* texture, Value* sampler, Value* coords, Value* lod = nullptr) override {
         //TODO: find out what are these arguments
         Value* argument4 = new ConstantBool(context, true);
         Value* argument5 = opVectorConstruct(new VectorType(context, new ScalarType(context, TypeID::Integer, 32, true), new NumberSize(2)), {new ConstantInt(context, 0, 32, true), new ConstantInt(context, 0, 32, true)});
@@ -329,9 +331,7 @@ public:
         Value* argument8 = new ConstantFloat(context, 0.0f, 32);
         Value* argument9 = new ConstantInt(context, 0, 32, true);
 
-        FunctionType* type = new FunctionType(context, new VectorType(context, texture->getType()->getBaseType(), new NumberSize(4)), {texture->getType(), sampler->getType(), coords->getType(), argument4->getType(), argument5->getType(), argument6->getType(), argument7->getType(), argument8->getType(), argument9->getType()});
-
-        return opSTDFunctionCall_EXT("sample_texture_2d", type, {texture, sampler, coords, argument4, argument5, argument6, argument7, argument8, argument9}, type->getReturnType());
+        return opFunctionCall(funcV, {texture, sampler, coords, argument4, argument5, argument6, argument7, argument8, argument9});
     }
 
     Value* opVariable(PointerType* type, Value* initializer = nullptr) override {
@@ -354,7 +354,7 @@ public:
 private:
     std::string code;
 
-    std::map<std::string, Value*> builtinFunctionDeclarations;
+    std::map<std::string, Value*> functionDeclarations;
 
     void _opDecorate(std::string begin, Decoration decoration, const std::vector<std::string>& values = {}) {
     }

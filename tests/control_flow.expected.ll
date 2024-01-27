@@ -7,13 +7,13 @@ target triple = "air64-apple-macosx14.0.0"
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
 define %FragmentOut @testControlFlow(ptr addrspace(2) nocapture noundef readonly "air-buffer-no-alias" %myBuffer) local_unnamed_addr #0 {
 end:
-  %_6 = load float, ptr addrspace(2) %myBuffer, align 4
-  %op3 = fcmp ogt float %_6, 0.000000e+00
-  %op4 = fcmp olt float %_6, 0.000000e+00
+  %_46 = load float, ptr addrspace(2) %myBuffer, align 4
+  %op3 = fcmp ogt float %_46, 0.000000e+00
+  %op4 = fcmp olt float %_46, 0.000000e+00
   %. = select i1 %op4, <4 x float> <float 0.000000e+00, float 1.000000e+00, float 0.000000e+00, float 1.000000e+00>, <4 x float> <float 0.000000e+00, float 0.000000e+00, float 1.000000e+00, float 1.000000e+00>
   %outColor.0 = select i1 %op3, <4 x float> <float 1.000000e+00, float 0.000000e+00, float 0.000000e+00, float 1.000000e+00>, <4 x float> %.
-  %_22.fca.0.insert = insertvalue %FragmentOut poison, <4 x float> %outColor.0, 0
-  ret %FragmentOut %_22.fca.0.insert
+  %_62.fca.0.insert = insertvalue %FragmentOut poison, <4 x float> %outColor.0, 0
+  ret %FragmentOut %_62.fca.0.insert
 }
 
 attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn }

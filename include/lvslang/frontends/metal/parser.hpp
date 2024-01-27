@@ -1066,6 +1066,7 @@ bool mainLoop() {
             expression = parseVariableDeclarationExpression(_parseTypeWithAttributesExpression(), true, true);
             break;
         case TOKEN_STD_FUNCTION:
+            getNextToken(); // 'STD_FUNCTION'
             expression = parseFunctionDefinition(true, irb::FunctionRole::Normal);
             break;
         case TOKEN_TYPE_ENUM_MIN ... TOKEN_TYPE_ENUM_MAX:
@@ -1083,7 +1084,10 @@ bool mainLoop() {
 
         if (expression) {
             if (auto* value = expression->codegen()) {
-                context.codeMain += value->getRawName() + "\n\n";
+                std::string code = value->getRawName();
+                //TODO: check if it contains something
+                if (code.size() > 0)
+                    context.codeMain += code + "\n\n";
             }
         } else if (skipUntilBlockEnd) {
             int blocksToSkip = 1;
@@ -1107,7 +1111,17 @@ bool mainLoop() {
     return success;
 }
 
-bool compile() {
+std::string standardLibrarySource = {
+    #include "standard_library.inc"
+};
+
+bool compileStandardLibrary() {
+    setSource(standardLibrarySource);
+
+    return mainLoop();
+}
+
+bool compile(const std::string& source) {
     //Reset
     lastChar = ' ';
 
@@ -1152,58 +1166,7 @@ bool compile() {
     binopPrecedence[TOKEN_OPERATOR_DOT                              ] = 400;
     binopPrecedence[TOKEN_OPERATOR_FUNCTION_RETURN_TYPE             ] = 400;
 
-    irb::Type* templateFloatType = new irb::TemplateType(context, irb::TypeID::Float);
-    irb::Type* templateFloatOrVectorType = new irb::TemplateType(context, irb::TypeID::Float | irb::TypeID::Vector);
-    irb::Type* templateFloatVectorType = new irb::VectorType(context, templateFloatType, new irb::TemplateSize());
-
-    //Standard library
-    addStandardFunction("abs", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}});
-    addStandardFunction("acos", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
-    addStandardFunction("acosh", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
-    addStandardFunction("asin", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
-    addStandardFunction("asinh", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
-    addStandardFunction("atan", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
-    addStandardFunction("atanh", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
-    //TODO: limit vectors to float
-    addStandardFunction("ceil", templateFloatOrVectorType, {{.type = templateFloatOrVectorType}});
-    addStandardFunction("clamp", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}});
-    addStandardFunction("cos", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
-    addStandardFunction("cosh", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
-    addStandardFunction("cross", templateFloatVectorType, {{.type = templateFloatVectorType}, {.type = templateFloatVectorType}});
-    //TODO: add determinant function
-    addStandardFunction("distance", createScalarType(TOKEN_TYPE_FLOAT), {{.type = templateFloatVectorType}, {.type = templateFloatVectorType}});
-    addStandardFunction("dot", createScalarType(TOKEN_TYPE_FLOAT), {{.type = templateFloatVectorType}, {.type = templateFloatVectorType}});
-    addStandardFunction("exp", templateFloatType, {{.type = templateFloatType}});
-    addStandardFunction("exp2", templateFloatType, {{.type = templateFloatType}});
-    addStandardFunction("floor", templateFloatOrVectorType, {{.type = templateFloatOrVectorType}});
-    addStandardFunction("fract", templateFloatOrVectorType, {{.type = templateFloatOrVectorType}});
-    //TODO: add image functions
-    //TODO: add transpose
-    addStandardFunction("isinf", createScalarType(TOKEN_TYPE_BOOL), {{.type = new irb::TemplateType(context)}});
-    addStandardFunction("isnan", createScalarType(TOKEN_TYPE_BOOL), {{.type = new irb::TemplateType(context)}});
-    //TODO: support half?
-    addStandardFunction("length", createScalarType(TOKEN_TYPE_FLOAT), {{.type = templateFloatVectorType}});
-    addStandardFunction("log", templateFloatType, {{.type = templateFloatType}});
-    addStandardFunction("log2", templateFloatType, {{.type = templateFloatType}});
-    addStandardFunction("max", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}});
-    addStandardFunction("min", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}});
-    addStandardFunction("mix", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}, {.type = new irb::TemplateType(context)}});
-    addStandardFunction("normalize", templateFloatVectorType, {{.type = templateFloatVectorType}});
-    addStandardFunction("pow", templateFloatType, {{.type = templateFloatType}, {.type = templateFloatType}});
-    addStandardFunction("reflect", templateFloatVectorType, {{.type = templateFloatVectorType}, {.type = templateFloatVectorType}});
-    addStandardFunction("refract", templateFloatVectorType, {{.type = templateFloatVectorType}, {.type = templateFloatVectorType}, {.type = createScalarType(TOKEN_TYPE_FLOAT)}});
-    addStandardFunction("round", templateFloatType, {{.type = templateFloatType}});
-    //TODO: overload this function
-    addStandardFunction("sample", new irb::VectorType(context, new irb::TemplateType(context), new irb::NumberSize(4)), {{.type = new irb::TextureType(context, irb::TextureViewType::_2D, new irb::TemplateType(context))}, {.type = new irb::SamplerType(context)}, {.type = new irb::VectorType(context, createScalarType(TOKEN_TYPE_FLOAT), new irb::NumberSize(2))}});
-    addStandardFunction("sign", new irb::TemplateType(context), {{.type = new irb::TemplateType(context)}});
-    addStandardFunction("sin", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
-    addStandardFunction("sinh", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
-    addStandardFunction("smoothstep", templateFloatType, {{.type = templateFloatType}, {.type = templateFloatType}, {.type = templateFloatType}});
-    addStandardFunction("sqrt", templateFloatType, {{.type = templateFloatType}});
-    addStandardFunction("step", templateFloatType, {{.type = templateFloatType}, {.type = templateFloatType}});
-    addStandardFunction("tan", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
-    addStandardFunction("tanh", createScalarType(TOKEN_TYPE_FLOAT), {{.type = createScalarType(TOKEN_TYPE_FLOAT)}});
-    //TODO: add transpose function
+    setSource(source);
 
     return mainLoop();
 }

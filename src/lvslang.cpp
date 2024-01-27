@@ -22,23 +22,35 @@
 
 namespace lvslang {
 
-bool compile(const CompileOptions& options, std::string& outputCode) {
-    //Reset
+void reset() {
     //TODO: move this to @ref context.reset()
     context.crntRegisterNumber = 0;
     context.registerNames.clear();
     context.structures.clear();
     context.codeHeader = "";
     context.codeMain = "";
-    source = Source{};
     currentIndentation = 0;
-    standardFunctions.clear();
+}
+
+bool compile(const CompileOptions& options, std::string& outputCode) {
+    reset();
+    source = Source{};
 
     irb::target = options.target;
     irb::spirvVersion = options.spirvVersion;
     lvslang::glslVersion = options.glslVersion;
 
-    setSource(options.source);
+    std::string extension = options.inputName.substr(options.inputName.find_last_of('.'));
+    bool success;
+    if (extension == ".lvsl") {
+        lvsl::compileStandardLibrary();
+    } else if (extension == ".metal") {
+        metal::compileStandardLibrary();
+    } else {
+        throw std::runtime_error("unsupported output file extension '" + extension + "'");
+    }
+
+    reset();
 
     switch (irb::target) {
     case irb::Target::None:
@@ -80,15 +92,11 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
         builder->opImportSTD_EXT("GLSL.std.450");
         builder->opMemoryModel();
     }
-
-    std::string extension = options.inputName.substr(options.inputName.find_last_of('.'));
-    bool success;
+    
     if (extension == ".lvsl")
-        success = lvsl::compile();
+        success = lvsl::compile(options.source);
     else if (extension == ".metal")
-        success = metal::compile();
-    else
-        throw std::runtime_error("unsupported output file extension '" + extension + "'");
+        success = metal::compile(options.source);
     
     if (!success)
         return false;
@@ -135,8 +143,13 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
         spvtools::SpirvTools core(targetEnv);
         spvtools::Optimizer opt(targetEnv);
 
-        auto printMsgToStderr = [](spv_message_level_t, const char*, const spv_position_t& pos, const char* m) {
-            std::cerr << pos.line << ":" << pos.column << ": " << SET_TEXT_COLOR("31") << "error" << RESET_TEXT_COLOR() << ": " << m << std::endl;
+        auto printMsgToStderr = [](spv_message_level_t, const char* source, const spv_position_t& pos, const char* message) {
+            std::cerr << pos.line << ":" << pos.column << ": " << SET_TEXT_COLOR("31") << "error" << RESET_TEXT_COLOR() << ": " << message << std::endl;
+            //std::cout << source << std::endl;
+            //std::cout << pos.column << std::endl;
+            //for (uint32_t i = 0; i < pos.column - 1; i++)
+            //    std::cout << " ";
+            //std::cout << "^" << std::endl;
         };
         core.SetMessageConsumer(printMsgToStderr);
         opt.SetMessageConsumer(printMsgToStderr);

@@ -7,6 +7,7 @@ option(BUILD_TESTS "Build tests" OFF)
 
 set(CMAKE_CXX_STANDARD 17)
 
+# -------- Main library and tools --------
 set(SPIRV-Headers_SOURCE_DIR ${PROJECT_SOURCE_DIR}/SPIRV-Headers)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/SPIRV-Tools)
@@ -41,6 +42,31 @@ target_include_directories(lvslang PRIVATE ${PROJECT_SOURCE_DIR}/include)
 
 target_link_libraries(lvslang PUBLIC lvslang_lib)
 
+# -------- Embed standard libraries --------
+add_executable(embed_standard_library src/embed_standard_library.cpp)
+
+function (run_embed_standard_library name)
+    set(PATH_WITHOUT_EXTENSION ${PROJECT_SOURCE_DIR}/include/lvslang/frontends/${name}/standard_library)
+    add_custom_command(
+        OUTPUT ${PATH_WITHOUT_EXTENSION}.inc
+        COMMAND embed_standard_library ${PATH_WITHOUT_EXTENSION}.${name} ${PATH_WITHOUT_EXTENSION}.inc
+        DEPENDS embed_standard_library ${PATH_WITHOUT_EXTENSION}.${name}
+        COMMENT "Embedding standard library ${name}"
+    )
+
+    # Add a custom target that depends on the custom command
+    add_custom_target(
+        run_embed_standard_library_${name} ALL
+        DEPENDS ${PATH_WITHOUT_EXTENSION}.inc
+    )
+
+    add_dependencies(lvslang_lib run_embed_standard_library_${name})
+endfunction()
+
+run_embed_standard_library(metal)
+run_embed_standard_library(lvsl)
+
+# -------- Tests --------
 if (BUILD_TESTS)
     add_subdirectory(tests)
 endif()

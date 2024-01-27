@@ -16,34 +16,6 @@ static GLSLVersion glslVersion = GLSLVersion::_1_10;
 irb::Context context;
 irb::IRBuilder* builder;
 
-//TODO: support templates
-struct StandardFunction {
-    irb::Type* type;
-    std::vector<irb::Argument> arguments;
-    irb::FunctionType* functionType;
-    irb::Value* value = nullptr;
-};
-
-//TODO: support overloads
-std::map<std::string, StandardFunction> standardFunctions;
-
-inline void addStandardFunction(const std::string& name, irb::Type* type, const std::vector<irb::Argument>& arguments) {
-    //FunctionPrototypeAST* declaration = new FunctionPrototypeAST(name, type, arguments, false, irb::FunctionRole::Normal, true);
-    //functionDeclarations[name] = declaration;
-    //declaration->codegen();
-    StandardFunction standardFunction = {type, arguments};
-    std::vector<irb::Type*> argumentTypes;
-    argumentTypes.resize((arguments.size()));
-    for (uint32_t i = 0; i < argumentTypes.size(); i++) {
-        argumentTypes[i] = arguments[i].type;
-        //if (arguments[i].type->isTexture() || arguments[i].type->isSampler())
-        //    pointerType->addAttribute(" nocapture readonly");
-        //argumentTypes[i] = pointerType;
-    }
-    standardFunction.functionType = new irb::FunctionType(context, type, argumentTypes);
-    standardFunctions[name] = standardFunction;
-}
-
 static FunctionPrototypeAST* crntFunction = nullptr;
 static uint32_t currentIndentation = 0;
 
@@ -408,7 +380,7 @@ public:
     }
 
     bool isVariable() override {
-        return false;
+        return true;
     }
 
     std::string& name() { return _name; }
@@ -894,11 +866,12 @@ public:
                 regName = "import " + regName;
                 value = new irb::Value(context, nullptr, regName);
             } else {*/
-            context.pushRegisterName(_name);
-            if (isSTDFunction)
-                value = builder->opFunctionDeclaration(functionType);
-            else
+            if (isSTDFunction) {
+                value = builder->opStandardFunctionDeclaration(functionType, _name);
+            } else {
+                context.pushRegisterName(_name);
                 value = builder->opRegisterFunction(functionType);
+            }
             builder->opName(value, _name + "(");
 
             return new irb::Value(context, functionType);
@@ -932,6 +905,10 @@ public:
 
     inline irb::FunctionType* getFunctionType() const {
         return functionType;
+    }
+
+    inline bool getIsSTDFunction() const {
+        return isSTDFunction;
     }
     
     //Setters
@@ -1046,7 +1023,7 @@ public:
                     logError(("Argument " + std::to_string(i + 1) + " of function '" + callee + "' has type '" + declaration->arguments()[i].type->getName() + "', got '" + argVs[i]->getType()->getName() + "' instead").c_str());
                     return nullptr;
                 }
-                if (TARGET_IS_IR(irb::target) && !arg->isVariable()) {
+                if (irb::target == irb::Target::SPIRV && !declaration->getIsSTDFunction()) {
                     context.pushRegisterName("param");
                     argVs[i] = builder->opVariable(new irb::PointerType(context, argVs[i]->getType(), irb::StorageClass::Function), argVs[i]);
                 }
@@ -1061,85 +1038,31 @@ public:
             }
 
             if (TARGET_IS_CODE(irb::target)) {
-                std::string code = callee + "(" + argsStr + ")";
+                std::string code;
+                if (callee == "sample") {
+                    switch (irb::target) {
+                    case irb::Target::Metal:
+                        code = argVs[0]->getRawName() + ".sample(" + argVs[1]->getRawName() + ", " + argVs[2]->getRawName() + ")";
+                        break;
+                    case irb::Target::HLSL:
+                        code = argVs[0]->getRawName() + ".SampleLevel(" + argVs[1]->getRawName() + ", " + argVs[2]->getRawName() + ", 0.0f)";
+                        break;
+                    case irb::Target::GLSL:
+                        code = "texture(sampler2D(" + argVs[0]->getRawName() + ", " + argVs[1]->getRawName() + "), " + argVs[2]->getRawName() + ")"; //TODO: support other samplers + textures as well
+                        break;
+                    default:
+                        break;
+                    }
+                } else {
+                    code = callee + "(" + argsStr + ")";
+                }
 
                 return new irb::Value(context, declaration->getType(), code);
             } else {
+                if (callee == "sample")
+                    return builder->opSample(declaration->getValue(), argVs[0], argVs[1], argVs[2]);
+
                 return builder->opFunctionCall(declaration->getValue(), argVs);
-            }
-        } else if (standardFunctions.count(callee)) { //TODO: find a more elegant way
-            auto& standardFunction = standardFunctions[callee];
-            std::string argsStr;
-            std::vector<irb::Value*> argVs(arguments.size());
-            for (uint32_t i = 0; i < arguments.size(); i++) {
-                ExpressionAST* arg = arguments[i];
-                argVs[i] = arg->codegen(standardFunction.arguments[i].type->isTemplate() ? nullptr : standardFunction.arguments[i].type);
-                if (!argVs[i])
-                    return nullptr;
-                if (!argVs[i]->getType()->equals(standardFunction.arguments[i].type)) {
-                    logError(("Argument " + std::to_string(i + 1) + " of function '" + callee + "' has type '" + standardFunction.arguments[i].type->getName() + "', got '" + argVs[i]->getType()->getName() + "' instead").c_str());
-                    return nullptr;
-                }
-                if (i != 0)
-                    argsStr += ", ";
-                argsStr += argVs[i]->getRawName();
-            }
-
-            std::vector<irb::Type*> argTypes(argVs.size());
-            for (uint32_t i = 0; i < argTypes.size(); i++)
-                argTypes[i] = argVs[i]->getType();
-            //TODO: use @ref requiredType as return type in some cases?
-            irb::FunctionType* specializedFunctionType = new irb::FunctionType(context, standardFunction.type, argTypes);
-            irb::Type* specializedType = standardFunction.functionType->getSpecializedFunctionType(specializedFunctionType);
-            if (!specializedType) {
-                logError("Cannot deduce template type for function '" + callee + "'");
-                return nullptr;
-            }
-
-            if (TARGET_IS_CODE(irb::target)) {
-                std::string code;
-                switch (irb::target) {
-                case irb::Target::Metal:
-                    if (callee == "sample")
-                        code = argVs[0]->getRawName() + ".sample(" + argVs[1]->getRawName() + ", " + argVs[2]->getRawName() + ")";
-                    else
-                        code = callee + "(" + argsStr + ")";
-                    break;
-                case irb::Target::HLSL:
-                    if (callee == "sample")
-                        code = argVs[0]->getRawName() + ".SampleLevel(" + argVs[1]->getRawName() + ", " + argVs[2]->getRawName() + ", 0.0f)";
-                    else
-                        code = callee + "(" + argsStr + ")";
-                    break;
-                case irb::Target::GLSL:
-                    if (callee == "sample")
-                        code = "texture(sampler2D(" + argVs[0]->getRawName() + ", " + argVs[1]->getRawName() + "), " + argVs[2]->getRawName() + ")"; //TODO: support other samplers + textures as well
-                    else
-                        code = callee + "(" + argsStr + ")";
-                    break;
-                default:
-                    break;
-                }
-
-                return new irb::Value(context, specializedFunctionType->getReturnType(), code);
-            } else {
-                if (!standardFunction.value) {
-                    std::string regName = callee;
-                    regName[0] = toupper(regName[0]);
-                    regName = "import " + regName;
-                    standardFunction.value = new irb::Value(context, nullptr, regName);
-                }
-                irb::Value* value;
-                if (callee == "dot")
-                    value = builder->opDot(argVs[0], argVs[1]);
-                else if (callee == "sample")
-                    value = builder->opSample(argVs[0], argVs[1], argVs[2]);
-                else
-                    value = builder->opSTDFunctionCall_EXT(callee, specializedFunctionType, argVs, specializedType);
-                
-                if (requiredType)
-                    return builder->opCast(value, requiredType);
-                return value;
             }
         } else {
             logError(("Use of undeclared function '" + callee + "'").c_str());

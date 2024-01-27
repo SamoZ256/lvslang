@@ -1,7 +1,7 @@
 ; SPIR-V
 ; Version: 1.6
 ; Generator: Khronos SPIR-V Tools Assembler; 0
-; Bound: 26
+; Bound: 27
 ; Schema: 0
                OpCapability Shader
                OpCapability Float16
@@ -21,12 +21,12 @@
     %v4float = OpTypeVector %float 4
   %_struct_6 = OpTypeStruct %v4float
        %void = OpTypeVoid
-         %11 = OpTypeFunction %void
+         %14 = OpTypeFunction %void
 %_ptr_Output__struct_6 = OpTypePointer Output %_struct_6
           %3 = OpVariable %_ptr_Output__struct_6 Output
 
                ; Function 2
-          %2 = OpFunction %void None %11
-         %25 = OpLabel
+          %2 = OpFunction %void None %14
+         %26 = OpLabel
                OpReturn
                OpFunctionEnd

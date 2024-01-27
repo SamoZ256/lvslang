@@ -82,7 +82,7 @@ public:
 
     virtual Value* opRegisterFunction(FunctionType* functionType) = 0;
     
-    virtual Value* opFunctionDeclaration(FunctionType* functionType) = 0;
+    virtual Value* opStandardFunctionDeclaration(FunctionType* functionType, const std::string& name) = 0;
 
     virtual Value* opFunction(FunctionType* functionType, Value* value = nullptr) = 0;
 
@@ -101,18 +101,6 @@ public:
     virtual void opReturn(Value* v = nullptr) = 0;
 
     virtual Value* opFunctionCall(Value* funcV, const std::vector<Value*>& arguments) = 0;
-
-    /**
-     * Call a standard library function.
-     * 
-     * @param[in] funcName the name of the function to call
-     * @param[in] type the type of the function
-     * @param[in] arguments the arguments of the function
-     * @param[in] specializedType the template type of the function that got specialized, specify void scalar type if none
-     * 
-     * @returns an id containing the result of the function call
-     */
-    virtual Value* opSTDFunctionCall_EXT(std::string funcName, FunctionType* type, const std::vector<Value*>& arguments, Type* specializedType) = 0;
 
     virtual void opBranch(Block* block) = 0;
 
@@ -136,13 +124,7 @@ public:
 
     //TODO: merge all the following functions into @ref opSTDFunctionCall_EXT
 
-    //TODO: create separate function for cross?
-
-    //TODO: create separate function for distance?
-
-    virtual Value* opDot(Value* a, Value* b) = 0;
-
-    virtual Value* opSample(Value* texture, Value* sampler, Value* coords, Value* lod = nullptr) = 0;
+    virtual Value* opSample(Value* funcV, Value* texture, Value* sampler, Value* coords, Value* lod = nullptr) = 0;
 
     //Miscelanous
     virtual Value* opVariable(PointerType* type, Value* initializer = nullptr) = 0;

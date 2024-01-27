@@ -7,6 +7,11 @@
 
 namespace irb {
 
+class StandardFunctionValue : public Value {
+public:
+    using Value::Value;
+};
+
 class SPIRVBuilder : public IRBuilder {
 private:
     std::map<std::string, Value*> typesVariablesConstantsDefinitions;
@@ -225,7 +230,8 @@ public:
     }
 
     void opName(Value* value, const std::string& name) override {
-        blockDebug->addCode("OpName " + value->getName() + " \"" + name + "\"");
+        if (!dynamic_cast<StandardFunctionValue*>(value))
+            blockDebug->addCode("OpName " + value->getName() + " \"" + name + "\"");
     }
 
     Value* opConstant(ConstantValue* val) override {
@@ -248,8 +254,27 @@ public:
         return new Value(context, functionType, context.popRegisterName(), "%", false);
     }
 
-    Value* opFunctionDeclaration(FunctionType* functionType) override {
-        return opRegisterFunction(functionType);
+    Value* opStandardFunctionDeclaration(FunctionType* functionType, const std::string& name) override {
+        const auto& standardFunctionInfo = standardFunctionLUT[name];
+
+        Value* returnV = functionType->getReturnType()->getValue(this);
+
+        std::string fullName;
+        if (standardFunctionInfo.spirv.requiresOpExtInst)
+            fullName = "OpExtInst " + returnV->getName() + " " + importV->getName() + " ";
+        else
+            fullName = "Op";
+
+        //TODO: only add template name if there is at least one argument
+        if (standardFunctionInfo.spirv.argumentIndexForSpecialization != -1)
+            fullName += functionType->getArguments()[standardFunctionInfo.spirv.argumentIndexForSpecialization]->getOpPrefix(true, false);
+        fullName += standardFunctionInfo.spirv.name;
+        if (!standardFunctionInfo.spirv.requiresOpExtInst)
+            fullName += " " + returnV->getName();
+
+        Value* value = new StandardFunctionValue(context, functionType, fullName, "", false);
+
+        return value;
     }
 
     Value* opFunction(FunctionType* functionType, Value* value = nullptr) override {
@@ -360,51 +385,13 @@ public:
         type->getValue(this); //HACK: the standard library functions still don't have their returnV initialized at this point
         Value* returnV = type->getReturnV();
         Value* value = new Value(context, returnV->getType(), context.popRegisterName());
-        std::string code = "OpFunctionCall " + returnV->getName() + " " + funcV->getName();
+        std::string code;
+        if (dynamic_cast<StandardFunctionValue*>(funcV))
+            code = funcV->getName();
+        else
+            code = "OpFunctionCall " + returnV->getName() + " " + funcV->getName();
         for (auto* arg : arguments)
             code += " " + arg->getName();
-        getSPIRVInsertBlock()->addCode(code, value);
-
-        return value;
-    }
-
-    Value* opSTDFunctionCall_EXT(std::string funcName, FunctionType* type, const std::vector<Value*>& arguments, Type* specializedType) override {
-        type->getValue(this); //HACK: the standard library functions still don't have their returnV initialized at this point
-        Value* returnV = type->getReturnV();
-        Value* value = new Value(context, returnV->getType(), context.popRegisterName());
-        std::string code;
-        if (funcName == "isinf") {
-            if (arguments.size() != 1) {
-                IRB_INVALID_ARGUMENT_WITH_REASON("arguments", "the number of arguments of 'isinf' function must be 1");
-                return nullptr;
-            }
-            code = "OpIsInf " + returnV->getName() + " " + arguments[0]->getName();
-        } else if (funcName == "isnan") {
-            if (arguments.size() != 1) {
-                IRB_INVALID_ARGUMENT_WITH_REASON("arguments", "the number of arguments of 'isnan' function must be 1");
-                return nullptr;
-            }
-            code = "OpIsNan " + returnV->getName() + " " + arguments[0]->getName();
-        } else {
-            std::vector<std::string> needOpFunctions = {
-                "abs",
-                "clamp",
-                "max",
-                "min",
-                "mix",
-                "sign"
-            };
-
-            std::string opPrefix;
-            if (std::find(needOpFunctions.begin(), needOpFunctions.end(), funcName) != needOpFunctions.end())
-                opPrefix = specializedType->getOpPrefix(true, false);
-            funcName[0] = toupper(funcName[0]);
-            if (funcName == "Smoothstep")
-                funcName = "SmoothStep";
-            code = "OpExtInst " + returnV->getName() + " " + importV->getName() + " " + opPrefix + funcName;
-            for (auto* arg : arguments)
-                code += " " + arg->getName();
-        }
         getSPIRVInsertBlock()->addCode(code, value);
 
         return value;
@@ -532,26 +519,7 @@ public:
         return value;
     }
 
-    Value* opDot(Value* a, Value* b) override {
-        if (!a->getType()->isVector() || !b->getType()->isVector()) {
-            IRB_ERROR("cannot dot non-vector types");
-            return nullptr;
-        }
-        VectorType* aType = static_cast<VectorType*>(a->getType());
-        VectorType* bType = static_cast<VectorType*>(b->getType());
-        if (!aType->getComponentCount()->equals(bType->getComponentCount())) {
-            IRB_ERROR("cannot dot vectors with different component counts");
-            return nullptr;
-        }
-        //TODO: check if this is correct
-        Value* typeV = (new ScalarType(context, TypeID::Float, 32, true))->getValue(this);//aType->getBaseType()->getValue(this);
-        Value* value = new Value(context, aType->getBaseType(), context.popRegisterName());
-        getSPIRVInsertBlock()->addCode("OpDot " + typeV->getName() + " " + a->getName() + " " + b->getName(), value);
-
-        return value;
-    }
-
-    Value* opSample(Value* texture, Value* sampler, Value* coords, Value* lod = nullptr) override {
+    Value* opSample(Value* funcV, Value* texture, Value* sampler, Value* coords, Value* lod = nullptr) override {
         Value* sampledImageTypeV = new Value(context, nullptr, "sampledImageType");
         blockTypesVariablesConstants->addCode("OpTypeSampledImage " + texture->getType()->getValue(this)->getName(), sampledImageTypeV);
 

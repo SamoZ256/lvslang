@@ -1,7 +1,7 @@
 ; SPIR-V
 ; Version: 1.6
 ; Generator: Khronos SPIR-V Tools Assembler; 0
-; Bound: 148
+; Bound: 150
 ; Schema: 0
                OpCapability Shader
                OpCapability Float16
@@ -36,6 +36,7 @@
                OpMemberDecorate %_struct_17 0 Location 0
 
                ; Types, variables and constants
+        %int = OpTypeInt 32 1
       %float = OpTypeFloat 32
     %v4float = OpTypeVector %float 4
     %v2float = OpTypeVector %float 2
@@ -43,7 +44,7 @@
  %_struct_14 = OpTypeStruct %v2float %v2float
  %_struct_15 = OpTypeStruct %v2float %v2float
        %void = OpTypeVoid
-         %25 = OpTypeFunction %void
+         %28 = OpTypeFunction %void
 %_ptr_Input__struct_14 = OpTypePointer Input %_struct_14
           %3 = OpVariable %_ptr_Input__struct_14 Input
 %_ptr_Uniform__struct_15 = OpTypePointer Uniform %_struct_15
@@ -52,57 +53,56 @@
           %5 = OpVariable %_ptr_Output__struct_16 Output
 %_ptr_Output_v4float = OpTypePointer Output %v4float
 %gl_Position = OpVariable %_ptr_Output_v4float Output
-        %int = OpTypeInt 32 1
       %int_0 = OpConstant %int 0
     %float_0 = OpConstant %float 0
     %float_1 = OpConstant %float 1
  %_struct_17 = OpTypeStruct %v4float
-         %38 = OpTypeImage %float 2D 0 0 0 1 Unknown
-         %40 = OpTypeSampler
+         %40 = OpTypeImage %float 2D 0 0 0 1 Unknown
+         %42 = OpTypeSampler
 %_ptr_Input__struct_16 = OpTypePointer Input %_struct_16
           %8 = OpVariable %_ptr_Input__struct_16 Input
-%_ptr_UniformConstant_38 = OpTypePointer UniformConstant %38
-          %9 = OpVariable %_ptr_UniformConstant_38 UniformConstant
 %_ptr_UniformConstant_40 = OpTypePointer UniformConstant %40
-         %10 = OpVariable %_ptr_UniformConstant_40 UniformConstant
+          %9 = OpVariable %_ptr_UniformConstant_40 UniformConstant
+%_ptr_UniformConstant_42 = OpTypePointer UniformConstant %42
+         %10 = OpVariable %_ptr_UniformConstant_42 UniformConstant
 %_ptr_Output__struct_17 = OpTypePointer Output %_struct_17
          %11 = OpVariable %_ptr_Output__struct_17 Output
-         %48 = OpTypeSampledImage %38
+         %50 = OpTypeSampledImage %40
 %_ptr_Input_v2float = OpTypePointer Input %v2float
        %uint = OpTypeInt 32 0
      %uint_1 = OpConstant %uint 1
 
                ; Function 2
-          %2 = OpFunction %void None %25
-         %49 = OpLabel
-         %52 = OpLoad %_struct_14 %3
-         %53 = OpLoad %_struct_15 %4
-        %103 = OpCompositeExtract %v2float %53 0
-        %105 = OpCompositeExtract %v2float %52 0
-        %107 = OpCompositeExtract %v2float %53 1
-        %109 = OpExtInst %v2float %1 Fma %105 %107 %103
-        %110 = OpCompositeExtract %float %109 0
-        %111 = OpCompositeExtract %float %109 1
-        %112 = OpCompositeConstruct %v4float %110 %111 %float_0 %float_1
-        %115 = OpCompositeExtract %v2float %52 1
-        %141 = OpCompositeConstruct %_struct_16 %112 %115
-               OpStore %5 %141
-         %55 = OpAccessChain %_ptr_Output_v4float %5 %int_0
-         %56 = OpLoad %v4float %55
-               OpStore %gl_Position %56
+          %2 = OpFunction %void None %28
+         %51 = OpLabel
+         %54 = OpLoad %_struct_14 %3
+         %55 = OpLoad %_struct_15 %4
+        %105 = OpCompositeExtract %v2float %55 0
+        %107 = OpCompositeExtract %v2float %54 0
+        %109 = OpCompositeExtract %v2float %55 1
+        %111 = OpExtInst %v2float %1 Fma %107 %109 %105
+        %112 = OpCompositeExtract %float %111 0
+        %113 = OpCompositeExtract %float %111 1
+        %114 = OpCompositeConstruct %v4float %112 %113 %float_0 %float_1
+        %117 = OpCompositeExtract %v2float %54 1
+        %143 = OpCompositeConstruct %_struct_16 %114 %117
+               OpStore %5 %143
+         %57 = OpAccessChain %_ptr_Output_v4float %5 %int_0
+         %58 = OpLoad %v4float %57
+               OpStore %gl_Position %58
                OpReturn
                OpFunctionEnd
 
                ; Function 7
-          %7 = OpFunction %void None %25
-         %77 = OpLabel
-        %146 = OpAccessChain %_ptr_Input_v2float %8 %uint_1
-        %147 = OpLoad %v2float %146
-         %82 = OpLoad %38 %9
-         %83 = OpLoad %40 %10
-        %125 = OpSampledImage %48 %82 %83
-        %126 = OpImageSampleExplicitLod %v4float %125 %147 Lod %float_0
-        %142 = OpCompositeConstruct %_struct_17 %126
-               OpStore %11 %142
+          %7 = OpFunction %void None %28
+         %79 = OpLabel
+        %148 = OpAccessChain %_ptr_Input_v2float %8 %uint_1
+        %149 = OpLoad %v2float %148
+         %84 = OpLoad %40 %9
+         %85 = OpLoad %42 %10
+        %127 = OpSampledImage %50 %84 %85
+        %128 = OpImageSampleExplicitLod %v4float %127 %149 Lod %float_0
+        %144 = OpCompositeConstruct %_struct_17 %128
+               OpStore %11 %144
                OpReturn
                OpFunctionEnd
