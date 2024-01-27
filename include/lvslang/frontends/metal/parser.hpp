@@ -202,7 +202,7 @@ irb::Type* _parseTypeExpression() {
             type = createScalarType(crntToken);
         }
         if (componentCount != 0)
-            type = new irb::VectorType(context, type, new irb::NumberSize(componentCount));
+            type = new irb::VectorType(context, type, componentCount);
         getNextToken(); //Type or '>'
     } else {
         logError("unknown type '" + identifierStr + "'");
@@ -245,7 +245,7 @@ irb::Type* _parseTypeExpression() {
     }
 
     for (int32_t i = arraySizes.size() - 1; i >= 0; i--)
-        type = new irb::ArrayType(context, type, new irb::NumberSize(arraySizes[i]->valueU()));
+        type = new irb::ArrayType(context, type, arraySizes[i]->valueU());
     
     if (pointerCount)
         type = new irb::PointerType(context, type, irb::StorageClass::Function);

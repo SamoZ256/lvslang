@@ -179,7 +179,7 @@ public:
             opDecorate(returnVariable, Decoration::Location, {"0"});
         
             context.pushRegisterName("position");
-            positionVariable = opVariable(new PointerType(context, new VectorType(context, new ScalarType(context, TypeID::Float, 32, true), new irb::NumberSize(4)), StorageClass::Output));
+            positionVariable = opVariable(new PointerType(context, new VectorType(context, new ScalarType(context, TypeID::Float, 32, true), 4), StorageClass::Output));
             opDecorate(positionVariable, Decoration::Position);
         }
         
@@ -324,7 +324,7 @@ public:
                 getSPIRVInsertBlock()->addCode("OpVectorTimesScalar " + typeV->getName() + " " + l->getName() + " " + r->getName(), value);
                 return value;
             } else {
-                r = opVectorConstruct(static_cast<VectorType*>(type), std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount()->getValue(), r)); //TODO: check if the type is vector
+                r = opVectorConstruct(static_cast<VectorType*>(type), std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount(), r)); //TODO: check if the type is vector
             }
         }
         
@@ -417,7 +417,7 @@ public:
     }
 
     Value* opVectorConstruct(VectorType* type, const std::vector<Value*>& components) override {
-        if (components.size() != type->getComponentCount()->getValue()) {
+        if (components.size() != type->getComponentCount()) {
             IRB_INVALID_ARGUMENT_WITH_REASON("components", "the number of components must match the number of components of the vector type");
             return nullptr;
         }
@@ -498,10 +498,10 @@ public:
             VectorType* srcVec = static_cast<VectorType*>(val->getType());
             VectorType* dstVec = static_cast<VectorType*>(type);
             if (srcVec->getComponentCount() < dstVec->getComponentCount()) {
-                error("cannot cast from a vector with component count of " + std::to_string(srcVec->getComponentCount()->getValue()) + " to a vector with component count of " + std::to_string(dstVec->getComponentCount()->getValue()), "SPIRVBuilder::opCast");
+                error("cannot cast from a vector with component count of " + std::to_string(srcVec->getComponentCount()) + " to a vector with component count of " + std::to_string(dstVec->getComponentCount()), "SPIRVBuilder::opCast");
                 return nullptr;
             }
-            std::vector<Value*> components(dstVec->getComponentCount()->getValue());
+            std::vector<Value*> components(dstVec->getComponentCount());
             for (uint8_t i = 0; i < components.size(); i++)
                 components[i] = opVectorExtract(val, new ConstantInt(context, i, 32, false));
             
@@ -509,7 +509,7 @@ public:
         } else if (opName == "VCS") { //Vector construct from scalar
             VectorType* dstVec = static_cast<VectorType*>(type);
 
-            return opVectorConstruct(dstVec, std::vector<Value*>(dstVec->getComponentCount()->getValue(), val));
+            return opVectorConstruct(dstVec, std::vector<Value*>(dstVec->getComponentCount(), val));
         }
 
         Value* typeV = type->getValue(this);
@@ -528,7 +528,7 @@ public:
 
         if (!lod)
             lod = opConstant(new ConstantFloat(context, 0.0f, 32));
-        Value* value = new Value(context, new VectorType(context, texture->getType()->getBaseType(), new irb::NumberSize(4)), context.popRegisterName());
+        Value* value = new Value(context, new VectorType(context, texture->getType()->getBaseType(), 4), context.popRegisterName());
         getSPIRVInsertBlock()->addCode("OpImageSampleExplicitLod " + value->getType()->getValue(this)->getName() + " " + sampledImage->getName() + " " + coords->getName() + " Lod " + lod->getName(), value);
 
         return value;

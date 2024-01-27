@@ -69,14 +69,7 @@ public:
 
     virtual Type* copy() = 0;
 
-    bool equals(Type* other) {
-        if (other->isTemplate() && (typeID & other->getTypeID()))
-            return true;
-
-        return _equals(other);
-    }
-
-    virtual bool _equals(Type* other) {
+    virtual bool equals(Type* other) {
         return false;
     }
 
@@ -111,14 +104,6 @@ public:
 
     virtual std::string getCastOpName(Type* castFrom) {
         return "";
-    }
-
-    virtual Type* getSpecializedType(Type* other) {
-        return nullptr;
-    }
-
-    virtual Type* specialize(Type* specializedType) {
-        return specializedType;
     }
 
     inline std::string getAttributes() const {
@@ -160,10 +145,6 @@ public:
 
     inline bool isSampler() const {
         return typeID & TypeID::Sampler;
-    }
-
-    virtual bool isTemplate() const {
-        return false;
     }
 
     virtual bool isOperatorFriendly() {
@@ -270,7 +251,7 @@ public:
         return new ScalarType(*this);
     }
 
-    bool _equals(Type* other) override {
+    bool equals(Type* other) override {
         if (!other->isScalar() || other->getTypeID() != typeID)
             return false;
         ScalarType* otherScalar = static_cast<ScalarType*>(other);
@@ -600,7 +581,7 @@ public:
         return new PointerType(*this);
     }
 
-    bool _equals(Type* other) override {
+    bool equals(Type* other) override {
         return (other->isPointer() && _baseType == other->getElementType());
     }
 
@@ -620,14 +601,6 @@ public:
     }
 
     //TODO: override @ref getOpPrefix
-
-    Type* getSpecializedType(Type* other) override {
-        return _baseType->getSpecializedType(other->getElementType());
-    }
-
-    Type* specialize(Type* specializedType) override {
-        return new PointerType(context, _baseType->specialize(specializedType), storageClass);
-    }
 
     Type* getElementType() override {
         return _baseType->copy();
@@ -665,44 +638,13 @@ public:
     }
 };
 
-class Size {
-public:
-    virtual uint32_t getValue() const = 0;
-
-    inline bool equals(Size* other) const {
-        return (getValue() == 0 || other->getValue() == 0 || getValue() == other->getValue());
-    }
-};
-
-class NumberSize : public Size {
-private:
-    uint32_t value;
-
-public:
-    NumberSize(uint32_t aValue) : value(aValue) {
-        if (value == 0)
-            error("value cannot be 0", "NumerSize::NumberSize");
-    }
-
-    uint32_t getValue() const override {
-        return value;
-    }
-};
-
-class TemplateSize : public Size {
-public:
-    uint32_t getValue() const override {
-        return 0;
-    }
-};
-
 class ArrayType : public Type {
 private:
     Type* arrayType;
-    Size* size;
+    uint32_t size;
 
 public:
-    ArrayType(Context& aContext, Type* aArrayType, Size* aSize) : Type(aContext, TypeID::Array), arrayType(aArrayType), size(aSize) {}
+    ArrayType(Context& aContext, Type* aArrayType, uint32_t aSize) : Type(aContext, TypeID::Array), arrayType(aArrayType), size(aSize) {}
 
     ~ArrayType() = default;
 
@@ -710,22 +652,22 @@ public:
         return new ArrayType(*this);
     }
 
-    bool _equals(Type* other) override {
+    bool equals(Type* other) override {
         if (!other->isArray())
             return false;
         ArrayType* otherArray = static_cast<ArrayType*>(other);
 
-        return (size->equals(otherArray->getSize()) && arrayType->equals(other->getElementType()));
+        return (size == otherArray->getSize() && arrayType->equals(other->getElementType()));
     }
 
     Value* getValue(IRBuilder* builder, bool decorate = false) override;
 
     std::string getNameForRegister() override {
-        return "array_" + arrayType->getNameForRegister() + "_" + std::to_string(size->getValue());
+        return "array_" + arrayType->getNameForRegister() + "_" + std::to_string(size);
     }
 
     uint32_t getBitCount(bool align = false) override {
-        return arrayType->getBitCount(align) * size->getValue();
+        return arrayType->getBitCount(align) * size;
     }
 
     uint16_t pointerCount() override {
@@ -736,41 +678,22 @@ public:
         return arrayType;
     }
 
-    Type* getSpecializedType(Type* other) override {
-        Type* specializedBaseType = arrayType->getSpecializedType(other->getBaseType());
-        if (size->getValue() == 0)
-            return new ArrayType(context, specializedBaseType, static_cast<ArrayType*>(other)->getSize());
-
-        return specializedBaseType;
-    }
-
-    Type* specialize(Type* specializedType) override {
-        if (size->getValue() == 0)
-            return specializedType;
-        
-        return new ArrayType(context, arrayType->specialize(specializedType), size);
-    }
-
     std::string getNameBegin() const override {
         if (TARGET_IS_IR(target))
-            return "[" + std::to_string(size->getValue()) + " x " + arrayType->getName() + "]";
+            return "[" + std::to_string(size) + " x " + arrayType->getName() + "]";
         else
             return arrayType->getNameBegin();
     }
 
     std::string getNameEnd() const override {
         if (TARGET_IS_CODE(target))
-            return "[" + std::to_string(size->getValue()) + "]" + arrayType->getNameEnd();
+            return "[" + std::to_string(size) + "]" + arrayType->getNameEnd();
         
         return "unknown";
     }
-
-    bool isTemplate() const override {
-        return size->getValue() == 0;
-    }
     
     //Getters
-    inline Size* getSize() const {
+    inline uint32_t getSize() const {
         return size;
     }
 };
@@ -796,7 +719,7 @@ public:
         return new StructureType(*this);
     }
 
-    bool _equals(Type* other) override {
+    bool equals(Type* other) override {
         if (!other->isStructure())
             return false;
         StructureType* otherStruct = static_cast<StructureType*>(other);
@@ -845,7 +768,7 @@ public:
         return new FunctionType(*this);
     }
 
-    bool _equals(Type* other) override {
+    bool equals(Type* other) override {
         if (!other->isFunctionType())
             return false;
 
@@ -870,53 +793,6 @@ public:
             registerName += "_" + arg->getNameForRegister();
         
         return registerName;
-    }
-
-    Type* getSpecializedFunctionType(Type* other) {
-        if (!equals(other)) {
-            IRB_ERROR("types are not equal");
-            return nullptr;
-        }
-
-        FunctionType* otherFunctionType = static_cast<FunctionType*>(other);
-
-        Type* specializedType = nullptr;
-        for (uint32_t i = 0; i < arguments.size(); i++) {
-            Type* specializedArgType = arguments[i]->getSpecializedType(otherFunctionType->getArguments()[i]);
-            if (specializedArgType) {
-                if (!specializedType || specializedType->equals(specializedArgType))
-                    specializedType = specializedArgType;
-                else
-                    return nullptr;
-            }
-        }
-        Type* specializedReturnType = returnType->getSpecializedType(otherFunctionType->getReturnType());
-        if (specializedReturnType) {
-            if (specializedReturnType->isTemplate())
-                otherFunctionType->setReturnType(otherFunctionType->getReturnType()->specialize(specializedType));
-            else
-                return specializedReturnType;
-        }
-
-        if (!specializedType)
-            return new ScalarType(context, TypeID::Void, 0);
-        
-        return specializedType;
-    }
-
-    Type* specialize(Type* specializedType) override {
-        if (!specializedType->isTemplate()) {
-            IRB_ERROR("type is not a template");
-            return nullptr;
-        }
-
-        std::vector<irb::Type*> specializedArguments(arguments.size());
-        for (uint32_t i = 0; i < arguments.size(); i++)
-            specializedArguments[i] = arguments[i]->specialize(specializedType);
-
-        FunctionType* specializedFunctionType = new FunctionType(context, returnType->specialize(specializedType), specializedArguments);
-
-        return specializedFunctionType;
     }
 
     //TODO: make this different in case of code backends
@@ -949,15 +825,15 @@ public:
 class VectorType : public Type {
 private:
     Type* componentType;
-    Size* componentCount;
+    uint32_t componentCount;
 
 public:
-    VectorType(Context& aContext, Type* aComponentType, Size* aComponentCount) : Type(aContext, TypeID::Vector), componentType(aComponentType), componentCount(aComponentCount) {
+    VectorType(Context& aContext, Type* aComponentType, uint32_t aComponentCount) : Type(aContext, TypeID::Vector), componentType(aComponentType), componentCount(aComponentCount) {
         if (!componentType->isScalar()) {
             error("vectors cannot have non-scalar component type", "VectorType::VectorType");
             return;
         }
-        if (componentCount->getValue() != 0 && (componentCount->getValue() < 2 || componentCount->getValue() > 4)) {
+        if (componentCount < 2 || componentCount > 4) {
             error("vectors can only have component count of 2, 3 or 4", "VectorType::VectorType");
             return;
         }
@@ -969,22 +845,22 @@ public:
         return new VectorType(*this);
     }
 
-    bool _equals(Type* other) override {
+    bool equals(Type* other) override {
         if (!other->isVector())
             return false;
         VectorType* otherVector = static_cast<VectorType*>(other);
 
-        return (componentCount->equals(otherVector->getComponentCount()) && componentType->equals(otherVector->getBaseType()));
+        return (componentCount == otherVector->getComponentCount() && componentType->equals(otherVector->getBaseType()));
     }
 
     Value* getValue(IRBuilder* builder, bool decorate = false) override;
 
     std::string getNameForRegister() override {
-        return "vec_" + componentType->getNameForRegister() + "_" + std::to_string(componentCount->getValue());
+        return "vec_" + componentType->getNameForRegister() + "_" + std::to_string(componentCount);
     }
 
     uint32_t getBitCount(bool align = false) override {
-        uint8_t alignComponentCount = componentCount->getValue();
+        uint8_t alignComponentCount = componentCount;
         if (align && alignComponentCount == 3)
             alignComponentCount = 4;
         return componentType->getBitCount() * alignComponentCount;
@@ -1013,21 +889,6 @@ public:
         return "Unknown";
     }
 
-    Type* getSpecializedType(Type* other) override {
-        Type* specializedComponentType = componentType->getSpecializedType(other->getBaseType());
-        if (componentCount->getValue() == 0)
-            return new VectorType(context, specializedComponentType, static_cast<VectorType*>(other)->getComponentCount());
-
-        return specializedComponentType;
-    }
-
-    Type* specialize(Type* specializedType) override {
-        if (componentCount->getValue() == 0)
-            return specializedType;
-        
-        return new VectorType(context, componentType->specialize(specializedType), componentCount);
-    }
-
     Type* getBaseType() override {
         return componentType->copy();
     }
@@ -1041,7 +902,7 @@ public:
         switch (target) {
         case Target::Metal:
         case Target::HLSL:
-            return componentType->getName() + std::to_string(componentCount->getValue());
+            return componentType->getName() + std::to_string(componentCount);
         case Target::GLSL:
             switch (componentType->getTypeID()) {
             case TypeID::Integer:
@@ -1057,22 +918,18 @@ public:
                 break;
             }
             name += "vec";
-            name += std::to_string(componentCount->getValue());
+            name += std::to_string(componentCount);
 
             return name;
         case Target::AIR:
-            return "<" + std::to_string(componentCount->getValue()) + " x " + componentType->getName() + ">";
+            return "<" + std::to_string(componentCount) + " x " + componentType->getName() + ">";
         default:
             return "unknown";
         }
     }
 
-    bool isTemplate() const override {
-        return componentCount->getValue() == 0;
-    }
-
     //Getters
-    Size* getComponentCount() {
+    uint32_t getComponentCount() {
         return componentCount;
     }
 };
@@ -1094,7 +951,7 @@ public:
         return new TextureType(*this);
     }
 
-    bool _equals(Type* other) override {
+    bool equals(Type* other) override {
         if (!other->isTexture())
             return false;
         TextureType* otherTexture = static_cast<TextureType*>(other);
@@ -1114,14 +971,6 @@ public:
 
     Type* getBaseType() override {
         return type;
-    }
-
-    Type* getSpecializedType(Type* other) override {
-        return type->getSpecializedType(other->getBaseType());
-    }
-
-    Type* specialize(Type* specializedType) override {
-        return new TextureType(context, viewType, type->specialize(specializedType));
     }
 
     std::string getNameBegin() const override {
@@ -1157,7 +1006,7 @@ public:
         return new SamplerType(*this);
     }
 
-    bool _equals(Type* other) override {
+    bool equals(Type* other) override {
         if (!other->isSampler())
             return false;
         SamplerType* otherSampler = static_cast<SamplerType*>(other);
@@ -1175,10 +1024,6 @@ public:
         return 64; //TODO: check if this is correct
     }
 
-    Type* getSpecializedType(Type* other) override {
-        return nullptr;
-    }
-
     std::string getNameBegin() const override {
         //TODO: add template addguments
         if (TARGET_IS_IR(target))
@@ -1187,46 +1032,6 @@ public:
             return "SamplerState";
         else
             return "sampler";
-    }
-};
-
-class TemplateType : public Type {
-public:
-    TemplateType(Context& aContext, TypeID aTypeID = TypeID::All) : Type(aContext, aTypeID) {}
-
-    ~TemplateType() = default;
-
-    Type* copy() override {
-        return new TemplateType(*this);
-    }
-
-    bool _equals(Type* other) override {
-        return true;
-    }
-
-    Value* getValue(IRBuilder* builder, bool decorate = false) override {
-        return nullptr;
-    }
-
-    std::string getNameForRegister() override {
-        return "none";
-    }
-
-    Type* getSpecializedType(Type* other) override {
-        return other;
-    }
-
-    Type* specialize(Type* specializedType) override {
-        return specializedType;
-    }
-
-    bool isTemplate() const override {
-        return true;
-    }
-
-    //TODO: change this?
-    std::string getNameBegin() const override {
-        return "template<>";
     }
 };
 

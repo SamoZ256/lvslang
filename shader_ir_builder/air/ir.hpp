@@ -99,7 +99,7 @@ public:
 
         if (name == "sample") {
             //TODO: do error checks
-            functionType = new FunctionType(context, functionType->getReturnType(), {functionType->getArguments()[0], functionType->getArguments()[1], functionType->getArguments()[2], new ScalarType(context, TypeID::Bool, 8, false), new VectorType(context, new ScalarType(context, TypeID::Integer, 32, true), new NumberSize(2)), new ScalarType(context, TypeID::Bool, 8, false), new ScalarType(context, TypeID::Float, 32, true), new ScalarType(context, TypeID::Float, 32, true), new ScalarType(context, TypeID::Integer, 32, true)});
+            functionType = new FunctionType(context, functionType->getReturnType(), {functionType->getArguments()[0], functionType->getArguments()[1], functionType->getArguments()[2], new ScalarType(context, TypeID::Bool, 8, false), new VectorType(context, new ScalarType(context, TypeID::Integer, 32, true), 2), new ScalarType(context, TypeID::Bool, 8, false), new ScalarType(context, TypeID::Float, 32, true), new ScalarType(context, TypeID::Float, 32, true), new ScalarType(context, TypeID::Integer, 32, true)});
 
             return opFunctionDeclaration(functionType, "air.sample_texture_2d." + functionType->getReturnType()->getTemplateName());
         } else {
@@ -146,7 +146,7 @@ public:
         if (r->getType()->isVector() && l->getType()->isScalar())
             std::swap(l, r);
         if (l->getType()->isVector() && r->getType()->isScalar()) {
-            r = opVectorConstruct(static_cast<VectorType*>(type), std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount()->getValue(), r)); //TODO: check if the type is vector
+            r = opVectorConstruct(static_cast<VectorType*>(type), std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount(), r)); //TODO: check if the type is vector
         }
         
         bool needsOrd = (operation == Operation::GreaterThan || operation == Operation::GreaterThanEqual || operation == Operation::LessThan || operation == Operation::LessThanEqual);
@@ -315,7 +315,7 @@ public:
 
             return opFunctionCall(funcV, {val});
         } else if (val->getType()->isScalar() && type->isVector()) {
-            return opVectorConstruct(static_cast<VectorType*>(type), std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount()->getValue(), val));
+            return opVectorConstruct(static_cast<VectorType*>(type), std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount(), val));
         }
 
         //HACK: just ignore
@@ -325,7 +325,7 @@ public:
     Value* opSample(Value* funcV, Value* texture, Value* sampler, Value* coords, Value* lod = nullptr) override {
         //TODO: find out what are these arguments
         Value* argument4 = new ConstantBool(context, true);
-        Value* argument5 = opVectorConstruct(new VectorType(context, new ScalarType(context, TypeID::Integer, 32, true), new NumberSize(2)), {new ConstantInt(context, 0, 32, true), new ConstantInt(context, 0, 32, true)});
+        Value* argument5 = opVectorConstruct(new VectorType(context, new ScalarType(context, TypeID::Integer, 32, true), 2), {new ConstantInt(context, 0, 32, true), new ConstantInt(context, 0, 32, true)});
         Value* argument6 = new ConstantBool(context, false);
         Value* argument7 = new ConstantFloat(context, 0.0f, 32);
         Value* argument8 = new ConstantFloat(context, 0.0f, 32);

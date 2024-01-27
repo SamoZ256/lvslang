@@ -11,13 +11,13 @@ define %FragmentOut @testAdvancedFeatures() local_unnamed_addr #0 {
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
 define i1 @forwardDeclaredFunction(i32 %a0, <3 x i32> %b) local_unnamed_addr #0 {
-  %_58 = extractelement <3 x i32> %b, i64 0
-  %op = icmp eq i32 %_58, %a0
-  %_61 = extractelement <3 x i32> %b, i64 1
-  %op0 = icmp eq i32 %_61, %a0
+  %_270 = extractelement <3 x i32> %b, i64 0
+  %op = icmp eq i32 %_270, %a0
+  %_273 = extractelement <3 x i32> %b, i64 1
+  %op0 = icmp eq i32 %_273, %a0
   %op1 = or i1 %op, %op0
-  %_64 = extractelement <3 x i32> %b, i64 2
-  %op2 = icmp eq i32 %_64, %a0
+  %_276 = extractelement <3 x i32> %b, i64 2
+  %op2 = icmp eq i32 %_276, %a0
   %op3 = or i1 %op2, %op1
   ret i1 %op3
 }

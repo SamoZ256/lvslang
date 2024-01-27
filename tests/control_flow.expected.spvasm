@@ -1,7 +1,7 @@
 ; SPIR-V
 ; Version: 1.6
 ; Generator: Khronos SPIR-V Tools Assembler; 0
-; Bound: 158
+; Bound: 171
 ; Schema: 0
                OpCapability Shader
                OpCapability Float16
@@ -22,41 +22,41 @@
 
                ; Types, variables and constants
       %float = OpTypeFloat 32
-       %bool = OpTypeBool
     %v4float = OpTypeVector %float 4
+       %bool = OpTypeBool
   %_struct_7 = OpTypeStruct %v4float
   %_struct_6 = OpTypeStruct %float
        %void = OpTypeVoid
-         %19 = OpTypeFunction %void
+         %32 = OpTypeFunction %void
 %_ptr_Uniform__struct_6 = OpTypePointer Uniform %_struct_6
           %3 = OpVariable %_ptr_Uniform__struct_6 Uniform
 %_ptr_Output__struct_7 = OpTypePointer Output %_struct_7
           %4 = OpVariable %_ptr_Output__struct_7 Output
     %float_0 = OpConstant %float 0
     %float_1 = OpConstant %float 1
-         %33 = OpConstantComposite %v4float %float_1 %float_0 %float_0 %float_1
-         %34 = OpConstantComposite %v4float %float_0 %float_1 %float_0 %float_1
-         %35 = OpConstantComposite %v4float %float_0 %float_0 %float_1 %float_1
+         %46 = OpConstantComposite %v4float %float_1 %float_0 %float_0 %float_1
+         %47 = OpConstantComposite %v4float %float_0 %float_1 %float_0 %float_1
+         %48 = OpConstantComposite %v4float %float_0 %float_0 %float_1 %float_1
      %v4bool = OpTypeVector %bool 4
 
                ; Function 2
-          %2 = OpFunction %void None %19
-         %37 = OpLabel
-         %39 = OpLoad %_struct_6 %3
-        %118 = OpCompositeExtract %float %39 0
-        %119 = OpFOrdGreaterThan %bool %118 %float_0
-               OpSelectionMerge %128 None
-               OpBranchConditional %119 %120 %121
-        %120 = OpLabel
-               OpBranch %128
-        %121 = OpLabel
-        %124 = OpFOrdLessThan %bool %118 %float_0
-        %156 = OpCompositeConstruct %v4bool %124 %124 %124 %124
-        %157 = OpSelect %v4float %156 %34 %35
-               OpBranch %128
-        %128 = OpLabel
-        %147 = OpPhi %v4float %33 %120 %157 %121
-        %154 = OpCompositeConstruct %_struct_7 %147
-               OpStore %4 %154
+          %2 = OpFunction %void None %32
+         %50 = OpLabel
+         %52 = OpLoad %_struct_6 %3
+        %131 = OpCompositeExtract %float %52 0
+        %132 = OpFOrdGreaterThan %bool %131 %float_0
+               OpSelectionMerge %141 None
+               OpBranchConditional %132 %133 %134
+        %133 = OpLabel
+               OpBranch %141
+        %134 = OpLabel
+        %137 = OpFOrdLessThan %bool %131 %float_0
+        %169 = OpCompositeConstruct %v4bool %137 %137 %137 %137
+        %170 = OpSelect %v4float %169 %47 %48
+               OpBranch %141
+        %141 = OpLabel
+        %160 = OpPhi %v4float %46 %133 %170 %134
+        %167 = OpCompositeConstruct %_struct_7 %160
+               OpStore %4 %167
                OpReturn
                OpFunctionEnd

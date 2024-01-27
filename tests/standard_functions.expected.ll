@@ -30,9 +30,9 @@ declare float @air.cosh.f32(float) local_unnamed_addr
 
 declare <3 x float> @air.cross.f32(<3 x float>, <3 x float>) local_unnamed_addr
 
-declare float @air.distance.f32(<3 x float>, <3 x float>) local_unnamed_addr
+declare float @air.distance.f32(<2 x float>, <2 x float>) local_unnamed_addr
 
-declare float @air.dot.f32(<3 x float>, <3 x float>) local_unnamed_addr
+declare float @air.dot.f32(<2 x float>, <2 x float>) local_unnamed_addr
 
 declare float @air.exp.f32(float) local_unnamed_addr
 
@@ -46,7 +46,7 @@ declare i1 @air.isinf.f32(float) local_unnamed_addr
 
 declare i1 @air.isnan.f32(float) local_unnamed_addr
 
-declare float @air.length.f32(<3 x float>) local_unnamed_addr
+declare float @air.length.f32(<2 x float>) local_unnamed_addr
 
 declare float @air.log.f32(float) local_unnamed_addr
 
@@ -58,13 +58,13 @@ declare float @air.min.f32(float, float) local_unnamed_addr
 
 declare float @air.mix.f32(float, float, float) local_unnamed_addr
 
-declare <3 x float> @air.normalize.f32(<3 x float>) local_unnamed_addr
+declare <2 x float> @air.normalize.f32(<2 x float>) local_unnamed_addr
 
 declare float @air.pow.f32(float, float) local_unnamed_addr
 
-declare <3 x float> @air.reflect.f32(<3 x float>, <3 x float>) local_unnamed_addr
+declare <2 x float> @air.reflect.f32(<2 x float>, <2 x float>) local_unnamed_addr
 
-declare <3 x float> @air.refract.f32(<3 x float>, <3 x float>, float) local_unnamed_addr
+declare <2 x float> @air.refract.f32(<2 x float>, <2 x float>, float) local_unnamed_addr
 
 declare float @air.round.f32(float) local_unnamed_addr
 
@@ -89,48 +89,48 @@ declare float @air.tanh.f32(float) local_unnamed_addr
 declare half @convert.f.f16.f.f32(float) local_unnamed_addr
 
 define %FragmentOut @testStandardFunctions(ptr addrspace(1) nocapture readonly %testTexture, ptr addrspace(2) nocapture readonly %testSampler) local_unnamed_addr {
-  %_50 = tail call i32 @air.abs.i32(i32 0)
-  %_51 = tail call half @convert.f.f16.f.f32(float 0.000000e+00)
-  %_52 = tail call half @air.abs.f16(half %_51)
-  %_53 = tail call float @air.acos.f32(float 0.000000e+00)
-  %_54 = tail call float @air.acosh.f32(float 0.000000e+00)
-  %_55 = tail call float @air.asin.f32(float 0.000000e+00)
-  %_56 = tail call float @air.asinh.f32(float 0.000000e+00)
-  %_57 = tail call float @air.atan.f32(float 0.000000e+00)
-  %_58 = tail call float @air.atanh.f32(float 0.000000e+00)
-  %_59 = tail call float @air.ceil.f32(float 0.000000e+00)
-  %_60 = tail call float @air.clamp.f32(float 0.000000e+00, float 0.000000e+00, float 0.000000e+00)
-  %_61 = tail call float @air.cos.f32(float 0.000000e+00)
-  %_62 = tail call float @air.cosh.f32(float 0.000000e+00)
-  %_63 = tail call <3 x float> @air.cross.f32(<3 x float> zeroinitializer, <3 x float> zeroinitializer)
-  %_64 = tail call float @air.distance.f32(<3 x float> zeroinitializer, <3 x float> zeroinitializer)
-  %_65 = tail call float @air.dot.f32(<3 x float> zeroinitializer, <3 x float> zeroinitializer)
-  %_66 = tail call float @air.exp.f32(float 0.000000e+00)
-  %_67 = tail call float @air.exp2.f32(float 0.000000e+00)
-  %_68 = tail call float @air.floor.f32(float 0.000000e+00)
-  %_69 = tail call float @air.fract.f32(float 0.000000e+00)
-  %_70 = tail call i1 @air.isinf.f32(float 0.000000e+00)
-  %_71 = tail call i1 @air.isnan.f32(float 0.000000e+00)
-  %_72 = tail call float @air.length.f32(<3 x float> zeroinitializer)
-  %_73 = tail call float @air.log.f32(float 0.000000e+00)
-  %_74 = tail call float @air.log2.f32(float 0.000000e+00)
-  %_75 = tail call float @air.max.f32(float 0.000000e+00, float 0.000000e+00)
-  %_76 = tail call float @air.min.f32(float 0.000000e+00, float 0.000000e+00)
-  %_77 = tail call float @air.mix.f32(float 0.000000e+00, float 0.000000e+00, float 0.000000e+00)
-  %_78 = tail call <3 x float> @air.normalize.f32(<3 x float> zeroinitializer)
-  %_79 = tail call float @air.pow.f32(float 0.000000e+00, float 0.000000e+00)
-  %_80 = tail call <3 x float> @air.reflect.f32(<3 x float> zeroinitializer, <3 x float> zeroinitializer)
-  %_81 = tail call <3 x float> @air.refract.f32(<3 x float> zeroinitializer, <3 x float> zeroinitializer, float 0.000000e+00)
-  %_82 = tail call float @air.round.f32(float 0.000000e+00)
-  %_85 = tail call <4 x float> @air.sample_texture_2d.f32(ptr addrspace(1) nocapture readonly %testTexture, ptr addrspace(2) nocapture readonly %testSampler, <2 x float> zeroinitializer, i1 true, <2 x i32> zeroinitializer, i1 false, float 0.000000e+00, float 0.000000e+00, i32 0)
-  %_86 = tail call float @air.sign.f32(float 0.000000e+00)
-  %_87 = tail call float @air.sin.f32(float 0.000000e+00)
-  %_88 = tail call float @air.sinh.f32(float 0.000000e+00)
-  %_89 = tail call float @air.smoothstep.f32(float 0.000000e+00, float 0.000000e+00, float 0.000000e+00)
-  %_90 = tail call float @air.sqrt.f32(float 0.000000e+00)
-  %_91 = tail call float @air.step.f32(float 0.000000e+00, float 0.000000e+00)
-  %_92 = tail call float @air.tan.f32(float 0.000000e+00)
-  %_93 = tail call float @air.tanh.f32(float 0.000000e+00)
+  %_262 = tail call i32 @air.abs.i32(i32 0)
+  %_263 = tail call half @convert.f.f16.f.f32(float 0.000000e+00)
+  %_264 = tail call half @air.abs.f16(half %_263)
+  %_265 = tail call float @air.acos.f32(float 0.000000e+00)
+  %_266 = tail call float @air.acosh.f32(float 0.000000e+00)
+  %_267 = tail call float @air.asin.f32(float 0.000000e+00)
+  %_268 = tail call float @air.asinh.f32(float 0.000000e+00)
+  %_269 = tail call float @air.atan.f32(float 0.000000e+00)
+  %_270 = tail call float @air.atanh.f32(float 0.000000e+00)
+  %_271 = tail call float @air.ceil.f32(float 0.000000e+00)
+  %_272 = tail call float @air.clamp.f32(float 0.000000e+00, float 0.000000e+00, float 0.000000e+00)
+  %_273 = tail call float @air.cos.f32(float 0.000000e+00)
+  %_274 = tail call float @air.cosh.f32(float 0.000000e+00)
+  %_275 = tail call <3 x float> @air.cross.f32(<3 x float> zeroinitializer, <3 x float> zeroinitializer)
+  %_276 = tail call float @air.distance.f32(<3 x float> zeroinitializer, <3 x float> zeroinitializer)
+  %_277 = tail call float @air.dot.f32(<3 x float> zeroinitializer, <3 x float> zeroinitializer)
+  %_278 = tail call float @air.exp.f32(float 0.000000e+00)
+  %_279 = tail call float @air.exp2.f32(float 0.000000e+00)
+  %_280 = tail call float @air.floor.f32(float 0.000000e+00)
+  %_281 = tail call float @air.fract.f32(float 0.000000e+00)
+  %_282 = tail call i1 @air.isinf.f32(float 0.000000e+00)
+  %_283 = tail call i1 @air.isnan.f32(float 0.000000e+00)
+  %_284 = tail call float @air.length.f32(<3 x float> zeroinitializer)
+  %_285 = tail call float @air.log.f32(float 0.000000e+00)
+  %_286 = tail call float @air.log2.f32(float 0.000000e+00)
+  %_287 = tail call float @air.max.f32(float 0.000000e+00, float 0.000000e+00)
+  %_288 = tail call float @air.min.f32(float 0.000000e+00, float 0.000000e+00)
+  %_289 = tail call float @air.mix.f32(float 0.000000e+00, float 0.000000e+00, float 0.000000e+00)
+  %_290 = tail call <2 x float> @air.normalize.f32(<3 x float> zeroinitializer)
+  %_291 = tail call float @air.pow.f32(float 0.000000e+00, float 0.000000e+00)
+  %_292 = tail call <2 x float> @air.reflect.f32(<3 x float> zeroinitializer, <3 x float> zeroinitializer)
+  %_293 = tail call <2 x float> @air.refract.f32(<3 x float> zeroinitializer, <3 x float> zeroinitializer, float 0.000000e+00)
+  %_294 = tail call float @air.round.f32(float 0.000000e+00)
+  %_297 = tail call <4 x float> @air.sample_texture_2d.f32(ptr addrspace(1) nocapture readonly %testTexture, ptr addrspace(2) nocapture readonly %testSampler, <2 x float> zeroinitializer, i1 true, <2 x i32> zeroinitializer, i1 false, float 0.000000e+00, float 0.000000e+00, i32 0)
+  %_298 = tail call float @air.sign.f32(float 0.000000e+00)
+  %_299 = tail call float @air.sin.f32(float 0.000000e+00)
+  %_300 = tail call float @air.sinh.f32(float 0.000000e+00)
+  %_301 = tail call float @air.smoothstep.f32(float 0.000000e+00, float 0.000000e+00, float 0.000000e+00)
+  %_302 = tail call float @air.sqrt.f32(float 0.000000e+00)
+  %_303 = tail call float @air.step.f32(float 0.000000e+00, float 0.000000e+00)
+  %_304 = tail call float @air.tan.f32(float 0.000000e+00)
+  %_305 = tail call float @air.tanh.f32(float 0.000000e+00)
   ret %FragmentOut { <4 x float> <float 0.000000e+00, float 0.000000e+00, float 0.000000e+00, float 1.000000e+00> }
 }
 
