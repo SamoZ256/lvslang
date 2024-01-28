@@ -143,12 +143,12 @@ public:
             return nullptr;
         }
 
-        Value* value = new Value(context, type, context.popRegisterName());
         if (r->getType()->isVector() && l->getType()->isScalar())
             std::swap(l, r);
-        if (l->getType()->isVector() && r->getType()->isScalar()) {
+        if (l->getType()->isVector() && r->getType()->isScalar())
             r = opVectorConstruct(static_cast<VectorType*>(type), std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount(), r)); //TODO: check if the type is vector
-        }
+
+        Value* value = new Value(context, (type->getTypeID() == TypeID::Bool && l->getType()->isVector() ? new VectorType(context, type, static_cast<VectorType*>(l->getType())->getComponentCount()) : type), context.popRegisterName());
         
         bool needsOrd = (operation == Operation::GreaterThan || operation == Operation::GreaterThanEqual || operation == Operation::LessThan || operation == Operation::LessThanEqual);
         bool signSensitive = (operation == Operation::Divide || operation == Operation::Modulo || operation == Operation::Remainder || needsOrd);
@@ -165,6 +165,18 @@ public:
                 prefix = "i";
         }
         getAIRInsertBlock()->addCode(prefix + operationStr + " " + opKindName + l->getNameWithType() + ", " + r->getName(), value);
+
+        //"Unpack" the vector
+        if (type->getTypeID() == TypeID::Bool && value->getType()->isVector()) {
+            std::vector<Value*> resultComponents(static_cast<VectorType*>(value->getType())->getComponentCount());
+            for (uint8_t i = 0; i < resultComponents.size(); i++) {
+                context.pushRegisterName("vec_op_unpack");
+                resultComponents[i] = opVectorExtract(value, new ConstantInt(context, i, 32, true));
+            }
+            value = resultComponents[0];
+            for (uint8_t i = 1; i < resultComponents.size(); i++)
+                value = opOperation(value, resultComponents[i], type, operation);
+        }
 
         return value;
     }

@@ -315,10 +315,10 @@ public:
             return nullptr;
         }
 
-        Value* typeV = type->getValue(this);
-        Value* value = new Value(context, type, context.popRegisterName());
         if (r->getType()->isVector() && l->getType()->isScalar())
             std::swap(l, r);
+        Value* value = new Value(context, (type->getTypeID() == TypeID::Bool && l->getType()->isVector() ? new VectorType(context, type, static_cast<VectorType*>(l->getType())->getComponentCount()) : type), context.popRegisterName());
+        Value* typeV = value->getType()->getValue(this);
         if (l->getType()->isVector() && r->getType()->isScalar()) {
             if (operation == Operation::Multiply && type->getBaseType()->getTypeID() == TypeID::Float) {
                 getSPIRVInsertBlock()->addCode("OpVectorTimesScalar " + typeV->getName() + " " + l->getName() + " " + r->getName(), value);
@@ -328,14 +328,26 @@ public:
             }
         }
         
-        bool needsOrd = (operation == Operation::GreaterThan || operation == Operation::GreaterThanEqual || operation == Operation::LessThan || operation == Operation::LessThanEqual);
-        bool signSensitive = (operation == Operation::Divide || operation == Operation::Modulo || operation == Operation::Remainder || needsOrd);
-        bool needsPrefix = (operation == Operation::Add || operation == Operation::Subtract || operation == Operation::Multiply || operation == Operation::Divide || operation == Operation::Modulo || operation == Operation::Remainder || operation == Operation::Equal || operation == Operation::NotEqual || needsOrd);
+        bool needsOrd = (operation == Operation::GreaterThan || operation == Operation::GreaterThanEqual || operation == Operation::LessThan || operation == Operation::LessThanEqual || operation == Operation::Equal || operation == Operation::NotEqual);
+        bool signSensitive = (operation == Operation::Divide || operation == Operation::Modulo || operation == Operation::Remainder || operation == Operation::GreaterThan || operation == Operation::GreaterThanEqual || operation == Operation::LessThan || operation == Operation::LessThanEqual);
+        bool needsPrefix = (operation == Operation::Add || operation == Operation::Subtract || operation == Operation::Multiply || operation == Operation::Divide || operation == Operation::Modulo || operation == Operation::Remainder || needsOrd);
 
         GET_OPERATION_NAME(operation);
 
         //TODO: do not use l for getting op prefix?
         getSPIRVInsertBlock()->addCode("Op" + (needsPrefix ? l->getType()->getOpPrefix(signSensitive, needsOrd) : "") + operationStr + " " + typeV->getName() + " " + l->getName() + " " + r->getName(), value);
+
+        //"Unpack" the vector
+        if (type->getTypeID() == TypeID::Bool && value->getType()->isVector()) {
+            std::vector<Value*> resultComponents(static_cast<VectorType*>(value->getType())->getComponentCount());
+            for (uint8_t i = 0; i < resultComponents.size(); i++) {
+                context.pushRegisterName("vec_op_unpack");
+                resultComponents[i] = opVectorExtract(value, new ConstantInt(context, i, 32, true));
+            }
+            value = resultComponents[0];
+            for (uint8_t i = 1; i < resultComponents.size(); i++)
+                value = opOperation(value, resultComponents[i], type, operation);
+        }
 
         return value;
     }

@@ -128,8 +128,9 @@ int main(int argc, char* argv[]) {
     }
 
     addTest("basic");
-    addTest("standard_functions");
     addTest("control_flow");
+    addTest("vectors");
+    addTest("standard_functions");
     addTest("advanced_features");
 
     return 0;

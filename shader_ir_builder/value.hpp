@@ -283,7 +283,8 @@ public:
         switch (target) {
         case Target::SPIRV:
             switch (typeID) {
-            case TypeID::Bool: //TODO: return "Logical" in some cases?
+            case TypeID::Bool:
+                return "Logical";
             case TypeID::Integer:
                 if (signSensitive)
                     return (isSigned ? "S" : "U");
