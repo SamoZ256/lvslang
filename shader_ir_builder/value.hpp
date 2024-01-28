@@ -166,6 +166,8 @@ public:
     virtual std::string getNameEnd() const {
         return "";
     }
+
+    virtual std::string getDebugName() const = 0;
 };
 
 class Value {
@@ -528,6 +530,49 @@ public:
             return "";
         }
     }
+
+    std::string getDebugName() const override {
+        std::string strTmp;
+        switch (typeID) {
+        case TypeID::Void:
+            return "void";
+        case TypeID::Bool:
+            return "bool";
+        case TypeID::Integer:
+            switch (bitCount) {
+            case 8:
+                strTmp = "char";
+                break;
+            case 16:
+                strTmp = "short";
+                break;
+            case 32:
+                strTmp = "int";
+                break;
+            default:
+                IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of integer can only be 8, 16 or 32");
+                return nullptr;
+            }
+            if (!isSigned)
+                strTmp = "u" + strTmp;
+            
+            return strTmp;
+        case TypeID::Float:
+            switch (bitCount) {
+            case 16:
+                return "half";
+            case 32:
+                return "float";
+            default:
+                IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of float can only be 16 or 32");
+                return nullptr;
+            }
+        default:
+            break;
+        }
+
+        return "unknown";
+    }
 };
 
 class ConstantValue : public Value {
@@ -626,6 +671,10 @@ public:
         }
     }
 
+    std::string getDebugName() const override {
+        return _baseType->getDebugName() + "*";
+    }
+
     //Getters
     inline StorageClass getStorageClass() const {
         return storageClass;
@@ -698,6 +747,10 @@ public:
         
         return "unknown";
     }
+
+    std::string getDebugName() const override {
+        return arrayType->getNameBegin() + "[" + std::to_string(size) + "]";
+    }
     
     //Getters
     inline uint32_t getSize() const {
@@ -759,6 +812,10 @@ public:
             return name;
     }
 
+    std::string getDebugName() const override {
+        return "struct " + name;
+    }
+
     inline Structure* getStructure() {
         return structure;
     }
@@ -817,6 +874,11 @@ public:
     //TODO: make this different in case of code backends
     std::string getNameBegin() const override {
         return "ptr";
+    }
+
+    //TODO: implement this
+    std::string getDebugName() const override {
+        return "FUNCTION_TYPE";
     }
 
     //Getters
@@ -947,6 +1009,10 @@ public:
         }
     }
 
+    std::string getDebugName() const override {
+        return componentType->getName() + std::to_string(componentCount);
+    }
+
     //Getters
     uint32_t getComponentCount() {
         return componentCount;
@@ -1010,6 +1076,12 @@ public:
         return name;
     }
 
+    std::string getDebugName() const override {
+        GET_TEXTURE_NAME(viewType);
+
+        return viewTypeStr + "<" + type->getName() + ">";
+    }
+
     //Getters
     inline TextureViewType getViewType() {
         return viewType;
@@ -1060,6 +1132,10 @@ public:
             return "SamplerState";
         else
             return "sampler";
+    }
+
+    std::string getDebugName() const override {
+        return "sampler";
     }
 };
 

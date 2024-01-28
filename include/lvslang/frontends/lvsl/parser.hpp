@@ -1115,9 +1115,11 @@ bool mainLoop() {
         if (expression) {
             if (auto* value = expression->codegen()) {
                 std::string code = value->getRawName();
-                //TODO: check if it contains something
+                //HACK: check if it contains something
                 if (code.size() > 0)
                     context.codeMain += code + "\n\n";
+            } else {
+                success = false;
             }
         } else if (skipUntilBlockEnd) {
             int blocksToSkip = 1;

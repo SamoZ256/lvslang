@@ -164,6 +164,10 @@ public:
             return "unknown";
     }
 
+    std::string getDebugName() const override {
+        return "enum " + name;
+    }
+
     //Getters
     inline Enumeration* getEnum() {
         return enumeration;
@@ -299,7 +303,7 @@ public:
             } else if (requiredType->isVector()) {
                 type = requiredType->getBaseType();
             } else {
-                logError("cannot cast constant expression of type constant number to '" + requiredType->getName() + "'");
+                logError("cannot cast constant expression of type constant number to '" + requiredType->getDebugName() + "'");
                 return nullptr;
             }
         }
@@ -384,7 +388,7 @@ public:
 
             return value;
         } else {
-            logError(("Use of undeclared variable '" + _name + "'").c_str());
+            logError("Use of undeclared variable '" + _name + "'");
 
             return nullptr;
         }
@@ -413,6 +417,8 @@ public:
             lhs->setLoadOnCodegen(false);
         
         irb::Value* l = lhs->codegen();
+        if (!l)
+            return nullptr;
         irb::Type* lType = l->getType();
         if (op == "=") {
             if (auto* unloadedVector = dynamic_cast<UnloadedSwizzledVectorValue*>(l))
@@ -421,7 +427,7 @@ public:
                 lType = lType->getElementType();
         }
         irb::Value* r = rhs->codegen(lType);
-        if (!l || !r)
+        if (!r)
             return nullptr;
 
         if (op == "=") {
@@ -443,7 +449,7 @@ public:
                 } else {
                     if (!r->getType()->equals(l->getType()->getElementType())) {
                         //TODO: use @ref getDebugName instead of @ref getName
-                        logError("cannot assign to variable of type '" + l->getType()->getName() + "' from type '" + r->getType()->getName() + "'");
+                        logError("cannot assign to variable of type '" + l->getType()->getDebugName() + "' from type '" + r->getType()->getDebugName() + "'");
                         return nullptr;
                     }
                     builder->opStore(l, r);
@@ -951,8 +957,7 @@ public:
         
         //TODO: check for this
         if (false) {
-            logError(("Redefinition of function '" + declaration->name() + "'").c_str());
-
+            logError("Redefinition of function '" + declaration->name() + "'");
             return nullptr;
         }
         
@@ -1057,7 +1062,7 @@ public:
                 if (identifier != declaration->getIdentifier()) {
                     for (uint32_t i = 0; i < arguments.size(); i++) {
                         if (!argVs[i]->getType()->equals(declaration->arguments()[i].type)) {
-                            logError(("Argument " + std::to_string(i + 1) + " of function '" + callee + "' has type '" + declaration->arguments()[i].type->getName() + "', got '" + argVs[i]->getType()->getName() + "' instead").c_str());
+                            logError(("Argument " + std::to_string(i + 1) + " of function '" + callee + "' has type '" + declaration->arguments()[i].type->getDebugName() + "', got '" + argVs[i]->getType()->getDebugName() + "' instead").c_str());
                             return nullptr;
                         }
                     }
@@ -1110,7 +1115,7 @@ public:
                 return builder->opFunctionCall(declaration->getValue(), argVs);
             }
         } else {
-            logError(("Use of undeclared function '" + callee + "'").c_str());
+            logError("Use of undeclared function '" + callee + "'");
             return nullptr;
         }
     }
@@ -1375,8 +1380,7 @@ public:
                     return nullptr;
                 
                 if (type && !initV->getType()->equals(type)) {
-                    //TODO: use @ref getDebugName instead of @ref getName
-                    logError("cannot initialize variable of type '" + type->getName() + "' with value of type '" + initV->getType()->getName() + "'");
+                    logError("cannot initialize variable of type '" + type->getDebugName() + "' with value of type '" + initV->getType()->getDebugName() + "'");
                     return nullptr;
                 }
             } else if (!type) {
@@ -1536,7 +1540,7 @@ public:
             }
 
             if (!type) {
-                logError("structure '" + elementExprType->getName() + "' has no member named '" + memberName + "'");
+                logError("type '" + elementExprType->getDebugName() + "' has no member named '" + memberName + "'");
                 return nullptr;
             }
 
@@ -1783,7 +1787,7 @@ public:
                 return nullptr;
             }
         } else {
-            logError("cannot use initializer list to create a type '" + type->getName() + "'"); //TODO: get the name in a different way?
+            logError("cannot use initializer list to create a type '" + type->getDebugName() + "'"); //TODO: get the name in a different way?
             return nullptr;
         }
 
