@@ -251,8 +251,12 @@ public:
         setDebugInfo();
 
         irb::Value* value = _codegen(requiredType);
-        if (TARGET_IS_IR(irb::target) && requiredType)
-            return builder->opCast(value, requiredType);
+        if (requiredType) {
+            if (TARGET_IS_IR(irb::target))
+                return builder->opCast(value, requiredType);
+            else if (!value->getType()->equals(requiredType))
+                return new irb::Value(context, requiredType, requiredType->getName() + "(" + value->getRawName() + ")");
+        }
         
         return value;
     }
@@ -1416,7 +1420,7 @@ public:
     }
 };
 
-//TODO: get rid of this and replace it with @ref InitializerListAST?
+//TODO: get rid of this and replace it with @ref InitializerListExpressionAST?
 //Array
 class ArrayExpressionAST : public ExpressionAST {
 private:
@@ -1733,10 +1737,13 @@ public:
             irb::Value* component = expression->codegen();
             if (!component)
                 return nullptr;
-            if (TARGET_IS_IR(irb::target))
+            if (TARGET_IS_IR(irb::target) && component->getType()->isScalar())
                 component = builder->opCast(component, (type->isScalar() ? type : type->getBaseType()));
             components.push_back(component);
         }
+
+        //HACK: for code backends
+        std::vector<irb::Value*> originalComponents = components;
         
         //"Unpack" the vectors
         for (uint32_t i = 0; i < components.size(); i++) {
@@ -1805,11 +1812,10 @@ public:
             return nullptr;
         } else {
             std::string codeStr = type->getName() + "(";
-            for (uint32_t i = 0; i < expressions.size(); i++) {
-                irb::Value* value = expressions[i]->codegen(type->isScalar() ? type : type->getBaseType());
+            for (uint32_t i = 0; i < originalComponents.size(); i++) {
                 if (i != 0)
                     codeStr += ", ";
-                codeStr += value->getRawName();
+                codeStr += originalComponents[i]->getRawName();
             }
 
             return new irb::Value(context, type, codeStr + ")");
