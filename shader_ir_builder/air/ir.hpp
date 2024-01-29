@@ -67,7 +67,7 @@ public:
         return new Value(context, functionType, context.popRegisterName() + functionType->getTemplateName(), "@", false);
     }
 
-    Value* opFunctionDeclaration(FunctionType* functionType, const std::string& name) {
+    Value* opFunctionDeclaration(FunctionType* functionType, const std::string& name, const std::string& attributes = "") {
         if (auto* value = functionDeclarations[name])
             return value;
 
@@ -79,7 +79,7 @@ public:
                 code += ", ";
             code += functionType->getArguments()[i]->getName() + functionType->getArguments()[i]->getAttributes();
         }
-        code += ");\n\n";
+        code += ") " + attributes + "\n\n";
 
         functionDeclarations[name] = value;
 
@@ -92,19 +92,19 @@ public:
             IRB_INVALID_ARGUMENT_WITH_REASON("name", "there is no such standard function");
             return nullptr;
         }
+
+        const auto& standardFunctionInfo = standardFunctionLUT[name];
         
         //TODO: only add template name if there is at least one argument
         std::string fullName = "air." + name + "." + functionType->getArguments()[0]->getTemplateName();
-
-        const auto& standardFunctionInfo = standardFunctionLUT[fullName];
 
         if (name == "sample") {
             //TODO: do error checks
             functionType = new FunctionType(context, functionType->getReturnType(), {functionType->getArguments()[0], functionType->getArguments()[1], functionType->getArguments()[2], new ScalarType(context, TypeID::Bool, 8, false), new VectorType(context, new ScalarType(context, TypeID::Integer, 32, true), 2), new ScalarType(context, TypeID::Bool, 8, false), new ScalarType(context, TypeID::Float, 32, true), new ScalarType(context, TypeID::Float, 32, true), new ScalarType(context, TypeID::Integer, 32, true)});
 
-            return opFunctionDeclaration(functionType, "air.sample_texture_2d." + functionType->getReturnType()->getTemplateName());
+            return opFunctionDeclaration(functionType, "air.sample_texture_2d." + functionType->getReturnType()->getTemplateName(), standardFunctionInfo.air.attributes);
         } else {
-            return opFunctionDeclaration(functionType, fullName);
+            return opFunctionDeclaration(functionType, fullName, standardFunctionInfo.air.attributes);
         }
     }
 
@@ -334,7 +334,7 @@ public:
             }
             std::string functionName = "air.convert." + type->getOpPrefix(true, false) + "." + type->getTemplateName() + "." + castFromType->getOpPrefix(true, false) + "." + castFromType->getTemplateName();
 
-            Value* funcV = opFunctionDeclaration(functionType, functionName);
+            Value* funcV = opFunctionDeclaration(functionType, functionName, "nounwind willreturn memory(none)");
 
             return opFunctionCall(funcV, {val});
         } else if (val->getType()->isScalar() && type->isVector()) {

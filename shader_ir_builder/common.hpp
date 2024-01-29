@@ -428,6 +428,9 @@ struct StandardFunctionInfo {
         bool requiresOpExtInst = true;
         int32_t argumentIndexForSpecialization = -1;
     } spirv;
+    struct {
+        std::string attributes = "nounwind willreturn memory(none)";
+    } air;
 };
 
 static std::map<std::string, StandardFunctionInfo> standardFunctionLUT = {
@@ -464,7 +467,7 @@ static std::map<std::string, StandardFunctionInfo> standardFunctionLUT = {
     {"reflect", {{"Reflect"}}},
     {"refract", {{"Refract"}}},
     {"round", {{"Round"}}},
-    {"sample", {{"ImageSampleExplicitLod", false}}},
+    {"sample", {{"ImageSampleExplicitLod", false}, {"convergent nounwind willreturn memory(argmem: read)"}}},
     {"sign", {{"Sign", true, 0}}},
     {"sin", {{"Sin"}}},
     {"sinh", {{"Sinh"}}},

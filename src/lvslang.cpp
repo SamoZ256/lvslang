@@ -242,9 +242,9 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
         //Run optimizations
         MPM.run(*llvmModule, MAM);
 
-        //HACK: Remove the "memory(argmem: read)" attribute, since xcrun metallib would throw "LLVM ERROR: Invalid bitcode file!"
-        for (auto &function : *llvmModule)
-            function.removeFnAttr(llvm::Attribute::AttrKind::Memory);
+        //Remove the "memory(argmem: read)" attribute, since xcrun metallib would throw "LLVM ERROR: Invalid bitcode file!"
+        //for (auto &function : *llvmModule)
+        //    function.removeFnAttr(llvm::Attribute::AttrKind::Memory);
 
         llvm::raw_string_ostream stream(outputCode);
         if (options.outputAssembly) {
