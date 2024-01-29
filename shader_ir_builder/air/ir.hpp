@@ -321,14 +321,16 @@ public:
         if (type->isScalar() && castFromType->isScalar()) {
             FunctionType* functionType = new FunctionType(context, type, {castFromType});
 
-            //TODO: move the function selection based on type to @ref opSTDFunctionCall_EXT
+            //TODO: use fptrunc and fpext in case of float to half and half to float
             std::string functionName = "convert." + type->getOpPrefix(true, false) + "." + type->getTemplateName() + "." + castFromType->getOpPrefix(true, false) + "." + castFromType->getTemplateName();
 
             Value* funcV = opFunctionDeclaration(functionType, functionName);
 
             return opFunctionCall(funcV, {val});
         } else if (val->getType()->isScalar() && type->isVector()) {
-            return opVectorConstruct(static_cast<VectorType*>(type), std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount(), val));
+            VectorType* vectorType = static_cast<VectorType*>(type);
+
+            return opVectorConstruct(vectorType, std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount(), opCast(val, vectorType->getBaseType())));
         }
 
         //HACK: just ignore

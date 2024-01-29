@@ -324,7 +324,8 @@ public:
                 getSPIRVInsertBlock()->addCode("OpVectorTimesScalar " + typeV->getName() + " " + l->getName() + " " + r->getName(), value);
                 return value;
             } else {
-                r = opVectorConstruct(static_cast<VectorType*>(type), std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount(), r)); //TODO: check if the type is vector
+                VectorType* vectorType = static_cast<VectorType*>(l->getType());
+                r = opVectorConstruct(vectorType, std::vector<Value*>(vectorType->getComponentCount(), opCast(r, vectorType->getBaseType()))); //TODO: check if the type is vector
             }
         }
         
