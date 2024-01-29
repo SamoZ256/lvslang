@@ -4,12 +4,12 @@ target triple = "air64-apple-macosx14.0.0"
 
 %FragmentOut = type { <4 x float> }
 
-; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
+; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
 define %FragmentOut @testStandardFunctions.t1f32.sm(ptr addrspace(1) nocapture readonly %testTexture, ptr addrspace(2) nocapture readonly %testSampler) local_unnamed_addr #0 {
   ret %FragmentOut { <4 x float> <float 0.000000e+00, float 0.000000e+00, float 0.000000e+00, float 1.000000e+00> }
 }
 
-attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn memory(none) }
+attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4, !5, !6, !7, !8}
 !air.fragment = !{!9}

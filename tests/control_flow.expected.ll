@@ -4,7 +4,7 @@ target triple = "air64-apple-macosx14.0.0"
 
 %FragmentOut = type { <4 x float> }
 
-; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(argmem: read)
+; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
 define %FragmentOut @testControlFlow.psMyBuffer(ptr addrspace(2) nocapture noundef readonly "air-buffer-no-alias" %myBuffer) local_unnamed_addr #0 {
 end:
   %_281 = load float, ptr addrspace(2) %myBuffer, align 4
@@ -16,7 +16,7 @@ end:
   ret %FragmentOut %_297.fca.0.insert
 }
 
-attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn memory(argmem: read) }
+attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4, !5, !6, !7, !8}
 !air.fragment = !{!9}

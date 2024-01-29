@@ -4,12 +4,12 @@ target triple = "air64-apple-macosx14.0.0"
 
 %FragmentOut = type { <4 x float> }
 
-; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
+; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
 define %FragmentOut @testAdvancedFeatures() local_unnamed_addr #0 {
   ret %FragmentOut undef
 }
 
-; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(none)
+; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
 define i1 @forwardDeclaredFunction.i32.v3i32(i32 %a0, <3 x i32> %b) local_unnamed_addr #0 {
   %_288 = extractelement <3 x i32> %b, i64 0
   %op = icmp eq i32 %_288, %a0
@@ -22,7 +22,7 @@ define i1 @forwardDeclaredFunction.i32.v3i32(i32 %a0, <3 x i32> %b) local_unname
   ret i1 %op3
 }
 
-attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn memory(none) }
+attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4, !5, !6, !7, !8}
 !air.fragment = !{!9}

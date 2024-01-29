@@ -7,10 +7,10 @@ target triple = "air64-apple-macosx14.0.0"
 %Model = type { <2 x float>, <2 x float> }
 %FragmentOut = type { <4 x float> }
 
-; Function Attrs: convergent mustprogress nofree nounwind willreturn memory(argmem: read)
+; Function Attrs: convergent mustprogress nofree nounwind willreturn
 declare <4 x float> @air.sample_texture_2d.v4f32(ptr addrspace(1) nocapture readonly, ptr addrspace(2) nocapture readonly, <2 x float>, i1, <2 x i32>, i1, float, float, i32) local_unnamed_addr #0
 
-; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn memory(argmem: read)
+; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
 define %VertexOut @vertexMain.sVertexIn.psModel(%VertexIn %vertexIn, ptr addrspace(2) nocapture noundef readonly "air-buffer-no-alias" %model) local_unnamed_addr #1 {
   %vertexIn.fca.0.extract = extractvalue %VertexIn %vertexIn, 0
   %vertexIn.fca.1.extract = extractvalue %VertexIn %vertexIn, 1
@@ -26,7 +26,7 @@ define %VertexOut @vertexMain.sVertexIn.psModel(%VertexIn %vertexIn, ptr addrspa
   ret %VertexOut %_298.fca.1.insert
 }
 
-; Function Attrs: mustprogress nofree nounwind willreturn memory(argmem: read)
+; Function Attrs: mustprogress nofree nounwind willreturn
 define %FragmentOut @fragmentMain.sVertexOut.t1f32.sm(%VertexOut %fragmentIn, ptr addrspace(1) nocapture readonly %colorTexture, ptr addrspace(2) nocapture readonly %colorSampler) local_unnamed_addr #2 {
   %fragmentIn.fca.1.extract = extractvalue %VertexOut %fragmentIn, 1
   %_310 = tail call <4 x float> @air.sample_texture_2d.v4f32(ptr addrspace(1) nocapture readonly %colorTexture, ptr addrspace(2) nocapture readonly %colorSampler, <2 x float> %fragmentIn.fca.1.extract, i1 true, <2 x i32> zeroinitializer, i1 false, float 0.000000e+00, float 0.000000e+00, i32 0)
@@ -34,9 +34,9 @@ define %FragmentOut @fragmentMain.sVertexOut.t1f32.sm(%VertexOut %fragmentIn, pt
   ret %FragmentOut %_311.fca.0.insert
 }
 
-attributes #0 = { convergent mustprogress nofree nounwind willreturn memory(argmem: read) }
-attributes #1 = { mustprogress nofree norecurse nosync nounwind willreturn memory(argmem: read) }
-attributes #2 = { mustprogress nofree nounwind willreturn memory(argmem: read) }
+attributes #0 = { convergent mustprogress nofree nounwind willreturn }
+attributes #1 = { mustprogress nofree norecurse nosync nounwind willreturn }
+attributes #2 = { mustprogress nofree nounwind willreturn }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4, !5, !6, !7, !8}
 !air.vertex = !{!9}
