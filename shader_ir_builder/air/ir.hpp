@@ -321,7 +321,17 @@ public:
         if (type->isScalar() && castFromType->isScalar()) {
             FunctionType* functionType = new FunctionType(context, type, {castFromType});
 
-            //TODO: use fptrunc and fpext in case of float to half and half to float
+            if (type->getTypeID() == TypeID::Float && castFromType->getTypeID() == TypeID::Float) {
+                std::string instruction;
+                if (castFromType->getBitCount() > type->getBitCount()) 
+                    instruction = "fptrunc";
+                else
+                    instruction = "fpext";
+                Value* value = new Value(context, type);
+                getAIRInsertBlock()->addCode(instruction + " " + val->getNameWithType() + " to " + type->getName(), value);
+
+                return value;
+            }
             std::string functionName = "convert." + type->getOpPrefix(true, false) + "." + type->getTemplateName() + "." + castFromType->getOpPrefix(true, false) + "." + castFromType->getTemplateName();
 
             Value* funcV = opFunctionDeclaration(functionType, functionName);
