@@ -332,7 +332,7 @@ public:
 
                 return value;
             }
-            std::string functionName = "convert." + type->getOpPrefix(true, false) + "." + type->getTemplateName() + "." + castFromType->getOpPrefix(true, false) + "." + castFromType->getTemplateName();
+            std::string functionName = "air.convert." + type->getOpPrefix(true, false) + "." + type->getTemplateName() + "." + castFromType->getOpPrefix(true, false) + "." + castFromType->getTemplateName();
 
             Value* funcV = opFunctionDeclaration(functionType, functionName);
 
