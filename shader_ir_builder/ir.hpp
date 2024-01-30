@@ -110,7 +110,7 @@ public:
 
     virtual void opLoopMerge(Block* block1, Block* block2) = 0;
 
-    virtual Value* opVectorConstruct(VectorType* type, const std::vector<Value*>& components) = 0;
+    virtual Value* opConstruct(Type* type, const std::vector<Value*>& components) = 0;
 
     virtual Value* opVectorExtract(Value* vec, ConstantInt* index) = 0;
 

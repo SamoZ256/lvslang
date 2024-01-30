@@ -1020,7 +1020,7 @@ public:
     }
 
     //Getters
-    uint32_t getComponentCount() {
+    inline uint32_t getComponentCount() const {
         return componentCount;
     }
 };
@@ -1031,7 +1031,7 @@ private:
     uint32_t columnCount;
 
 public:
-    MatrixType(Context& aContext, VectorType* aComponentType, uint32_t aColumnCount) : Type(aContext, TypeID::Vector), componentType(aComponentType), columnCount(aColumnCount) {
+    MatrixType(Context& aContext, VectorType* aComponentType, uint32_t aColumnCount) : Type(aContext, TypeID::Matrix), componentType(aComponentType), columnCount(aColumnCount) {
         if (columnCount < 2 || columnCount > 4) {
             error("matrices can only have column count of 2, 3 or 4", "MatrixType::MatrixType");
             return;
@@ -1109,8 +1109,12 @@ public:
     }
 
     //Getters
-    uint32_t getColumnCount() {
+    inline uint32_t getColumnCount() const {
         return columnCount;
+    }
+
+    inline VectorType* getComponentType() const {
+        return componentType;
     }
 };
 

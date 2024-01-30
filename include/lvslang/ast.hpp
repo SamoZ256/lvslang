@@ -255,6 +255,8 @@ public:
         setDebugInfo();
 
         irb::Value* value = _codegen(requiredType);
+        if (!value)
+            return nullptr;
         if (requiredType) {
             if (TARGET_IS_IR(irb::target))
                 return builder->opCast(value, requiredType);
@@ -1608,7 +1610,7 @@ public:
                 if (loadOnCodegen) {
                     if (components.size() == 1)
                         return components[0];
-                    return builder->opVectorConstruct(static_cast<irb::VectorType*>(type), components);
+                    return builder->opConstruct(static_cast<irb::VectorType*>(type), components);
                 } else {
                     return new UnloadedSwizzledVectorValue(context, exprV, indices);
                 }
@@ -1750,17 +1752,19 @@ public:
         std::vector<irb::Value*> originalComponents = components;
         
         //"Unpack" the vectors
-        for (uint32_t i = 0; i < components.size(); i++) {
-            irb::Value* component = components[i];
-            if (auto vectorType = dynamic_cast<irb::VectorType*>(component->getType())) {
-                components.erase(components.begin() + i);
-                for (uint8_t j = 0; j < vectorType->getComponentCount(); j++) {
-                    irb::Value* vectorComponent;
-                    if (TARGET_IS_IR(irb::target))
-                        vectorComponent = builder->opCast(builder->opVectorExtract(component, new irb::ConstantInt(context, j, 32, true)), type->getBaseType());
-                    else
-                        vectorComponent = new irb::Value(context, vectorType->getBaseType(), component->getRawName() + "[" + std::to_string(j) + "]");
-                    components.insert(components.begin() + i + j, vectorComponent);
+        if (type->isVector()) {
+            for (uint32_t i = 0; i < components.size(); i++) {
+                irb::Value* component = components[i];
+                if (auto vectorType = dynamic_cast<irb::VectorType*>(component->getType())) {
+                    components.erase(components.begin() + i);
+                    for (uint8_t j = 0; j < vectorType->getComponentCount(); j++) {
+                        irb::Value* vectorComponent;
+                        if (TARGET_IS_IR(irb::target))
+                            vectorComponent = builder->opCast(builder->opVectorExtract(component, new irb::ConstantInt(context, j, 32, true)), type->getBaseType());
+                        else
+                            vectorComponent = new irb::Value(context, vectorType->getBaseType(), component->getRawName() + "[" + std::to_string(j) + "]");
+                        components.insert(components.begin() + i + j, vectorComponent);
+                    }
                 }
             }
         }
@@ -1786,8 +1790,18 @@ public:
                 logError("not enough components in initializer to construct a vector (got " + std::to_string(components.size()) + ", expected either " + std::to_string(componentCount) + " or 1)");
                 return nullptr;
             }
+        } else if (type->isMatrix()) {
+            uint32_t columnCount = static_cast<irb::MatrixType*>(type)->getColumnCount();
+            if (components.size() > columnCount) {
+                logError("matrix initializer cannot be larger than the matrix itself (" + std::to_string(components.size()) + " > " + std::to_string(columnCount) + ")");
+                return nullptr;
+            }
+            if (components.size() != columnCount && components.size() != 1) {
+                logError("not enough components in initializer to construct a matrix (got " + std::to_string(components.size()) + ", expected either " + std::to_string(columnCount) + " or 1)");
+                return nullptr;
+            }
         } else {
-            logError("cannot use initializer list to create a type '" + type->getDebugName() + "'"); //TODO: get the name in a different way?
+            logError("cannot use initializer list to create a type '" + type->getDebugName() + "'");
             return nullptr;
         }
 
@@ -1803,14 +1817,33 @@ public:
                 irb::VectorType* vectorType = static_cast<irb::VectorType*>(type);
                 //Fill the list in case it is just a one value initializer
                 if (components.size() == 1) {
-                    //TODO: do this in a more elegant way?
                     components.reserve(vectorType->getComponentCount());
-                    for (uint8_t i = 0; i < vectorType->getComponentCount() - 1; i++)
+                    for (uint8_t i = 1; i < vectorType->getComponentCount(); i++)
                         components.push_back(components[0]);
                 }
                 context.pushRegisterName("const_vector");
 
-                return builder->opVectorConstruct(vectorType, components);
+                return builder->opConstruct(vectorType, components);
+            }
+            if (type->isMatrix()) {
+                irb::MatrixType* matrixType = static_cast<irb::MatrixType*>(type);
+                //Fill the list in case it is just a one value initializer
+                if (components.size() == 1) {
+                    components.reserve(matrixType->getColumnCount());
+                    irb::Value* component;
+                    if (components[0]->getType()->isVector()) {
+                        component = components[0];
+                    } else if (components[0]->getType()->isScalar()) {
+                        component = builder->opConstruct(matrixType->getComponentType(), std::vector(matrixType->getComponentType()->getComponentCount(), components[0]));
+                    } else {
+                        logError("cannot initialize matrix with a value of type '" + components[0]->getType()->getDebugName() + "'");
+                        return nullptr;
+                    }
+                    for (uint8_t i = 1; i < matrixType->getColumnCount(); i++)
+                        components.push_back(component);
+                }
+
+                return builder->opConstruct(matrixType, components);
             }
 
             return nullptr;

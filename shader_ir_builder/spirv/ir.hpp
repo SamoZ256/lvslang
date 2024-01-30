@@ -325,7 +325,7 @@ public:
                 return value;
             } else {
                 VectorType* vectorType = static_cast<VectorType*>(l->getType());
-                r = opVectorConstruct(vectorType, std::vector<Value*>(vectorType->getComponentCount(), opCast(r, vectorType->getBaseType()))); //TODO: check if the type is vector
+                r = opConstruct(vectorType, std::vector<Value*>(vectorType->getComponentCount(), opCast(r, vectorType->getBaseType()))); //TODO: check if the type is vector
             }
         }
         
@@ -429,10 +429,17 @@ public:
         getSPIRVInsertBlock()->addCode("OpLoopMerge " + block1->getName() + " " + block2->getName() + " None");
     }
 
-    Value* opVectorConstruct(VectorType* type, const std::vector<Value*>& components) override {
-        if (components.size() != type->getComponentCount()) {
-            IRB_INVALID_ARGUMENT_WITH_REASON("components", "the number of components must match the number of components of the vector type");
-            return nullptr;
+    Value* opConstruct(Type* type, const std::vector<Value*>& components) override {
+        if (type->isVector()) {
+            if (components.size() != static_cast<VectorType*>(type)->getComponentCount()) {
+                IRB_INVALID_ARGUMENT_WITH_REASON("components", "the number of components must match the number of components of the vector type");
+                return nullptr;
+            }
+        } else if (type->isMatrix()) {
+            if (components.size() != static_cast<MatrixType*>(type)->getColumnCount()) {
+                IRB_INVALID_ARGUMENT_WITH_REASON("components", "the number of components must match the number of columns of the matrix type");
+                return nullptr;
+            }
         }
         Value* typeV = type->getValue(this);
         Value* value = new Value(context, type, context.popRegisterName());
@@ -447,6 +454,8 @@ public:
         for (auto* component : components)
             code += " " + component->getName();
         (isAllConstants ? blockTypesVariablesConstants : getSPIRVInsertBlock())->addCode(code, value);
+        if (isAllConstants)
+            value->setIsConstant(true);
 
         return value;
     }
@@ -518,11 +527,11 @@ public:
             for (uint8_t i = 0; i < components.size(); i++)
                 components[i] = opVectorExtract(val, new ConstantInt(context, i, 32, false));
             
-            return opVectorConstruct(dstVec, components);
+            return opConstruct(dstVec, components);
         } else if (opName == "VCS") { //Vector construct from scalar
             VectorType* dstVec = static_cast<VectorType*>(type);
 
-            return opVectorConstruct(dstVec, std::vector<Value*>(dstVec->getComponentCount(), val));
+            return opConstruct(dstVec, std::vector<Value*>(dstVec->getComponentCount(), val));
         }
 
         Value* typeV = type->getValue(this);

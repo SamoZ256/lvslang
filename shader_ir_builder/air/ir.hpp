@@ -146,7 +146,7 @@ public:
         if (r->getType()->isVector() && l->getType()->isScalar())
             std::swap(l, r);
         if (l->getType()->isVector() && r->getType()->isScalar())
-            r = opVectorConstruct(static_cast<VectorType*>(type), std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount(), r)); //TODO: check if the type is vector
+            r = opConstruct(static_cast<VectorType*>(type), std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount(), r)); //TODO: check if the type is vector
 
         Value* value = new Value(context, (type->getTypeID() == TypeID::Bool && l->getType()->isVector() ? new VectorType(context, type, static_cast<VectorType*>(l->getType())->getComponentCount()) : type), context.popRegisterName());
         
@@ -245,7 +245,7 @@ public:
     void opLoopMerge(Block* block1, Block* block2) override {
     }
 
-    Value* opVectorConstruct(VectorType* type, const std::vector<Value*>& components) override {
+    Value* opConstruct(Type* type, const std::vector<Value*>& components) override {
         context.popRegisterName();
         bool allComponentsAreConstant = true;
         for (uint8_t i = 0; i < components.size(); i++) {
@@ -255,19 +255,22 @@ public:
             }
         }
         if (allComponentsAreConstant) {
-            std::string code = "<";
+            std::string code = (type->isVector() ? "<" : "[");
             for (uint8_t i = 0; i < components.size(); i++) {
                 if (i != 0)
                     code += ", ";
                 code += components[i]->getNameWithType();
             }
-            code += ">";
-            return new Value(context, type, code, "", false);
+            code += (type->isVector() ? ">" : "]");
+
+            Value* value = new Value(context, type, code, "", false);
+            value->setIsConstant(true);
+
+            return value;
         } else {
             Value* value = new UndefinedValue(context, type);
-            for (uint8_t i = 0; i < components.size(); i++) {
+            for (uint8_t i = 0; i < components.size(); i++)
                 value = opVectorInsert(value, components[i], new ConstantInt(context, i, 32, true));
-            }
 
             return value;
         }
@@ -341,7 +344,7 @@ public:
         } else if (val->getType()->isScalar() && type->isVector()) {
             VectorType* vectorType = static_cast<VectorType*>(type);
 
-            return opVectorConstruct(vectorType, std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount(), opCast(val, vectorType->getBaseType())));
+            return opConstruct(vectorType, std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount(), opCast(val, vectorType->getBaseType())));
         }
 
         //HACK: just ignore
@@ -351,7 +354,7 @@ public:
     Value* opSample(Value* funcV, Value* texture, Value* sampler, Value* coords, Value* lod = nullptr) override {
         //TODO: find out what are these arguments
         Value* argument4 = new ConstantBool(context, true);
-        Value* argument5 = opVectorConstruct(new VectorType(context, new ScalarType(context, TypeID::Integer, 32, true), 2), {new ConstantInt(context, 0, 32, true), new ConstantInt(context, 0, 32, true)});
+        Value* argument5 = opConstruct(new VectorType(context, new ScalarType(context, TypeID::Integer, 32, true), 2), {new ConstantInt(context, 0, 32, true), new ConstantInt(context, 0, 32, true)});
         Value* argument6 = new ConstantBool(context, false);
         Value* argument7 = new ConstantFloat(context, 0.0f, 32);
         Value* argument8 = new ConstantFloat(context, 0.0f, 32);
