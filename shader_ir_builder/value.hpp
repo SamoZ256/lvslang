@@ -31,15 +31,18 @@ enum class TypeID {
     //Vector
     Vector    = 0x80,
 
+    //Matrix
+    Matrix    = 0x100,
+
     //Function
-    Function  = 0x100,
+    Function  = 0x200,
 
     //Builtin
-    Texture   = 0x200,
-    Sampler   = 0x400,
+    Texture   = 0x400,
+    Sampler   = 0x800,
 
     //Misc
-    Block     = 0x800,
+    Block     = 0x1000,
 
     Scalar    = Void | Bool | Integer | Float,
     All       = Scalar | Pointer | Array | Structure | Vector | Function | Texture | Sampler,
@@ -135,6 +138,10 @@ public:
 
     inline bool isVector() const {
         return typeID & TypeID::Vector;
+    }
+
+    inline bool isMatrix() const {
+        return typeID & TypeID::Matrix;
     }
 
     inline bool isTexture() const {
@@ -937,7 +944,7 @@ public:
     Value* getValue(IRBuilder* builder, bool decorate = false) override;
 
     std::string getNameForRegister() override {
-        return "vec_" + componentType->getNameForRegister() + "_" + std::to_string(componentCount);
+        return "vec" + std::to_string(componentCount) + componentType->getNameForRegister();
     }
 
     uint32_t getBitCount(bool align = false) override {
@@ -956,7 +963,7 @@ public:
     }
 
     std::string getCastOpName(Type* castFrom) override {
-        if (castFrom->getTypeID() == TypeID::Vector) {
+        if (castFrom->isVector()) {
             if (componentType->equals(castFrom->getBaseType()))
                 return "VC";
             //TODO: cast twice in other cases
@@ -998,8 +1005,7 @@ public:
             default:
                 break;
             }
-            name += "vec";
-            name += std::to_string(componentCount);
+            name += "vec" + std::to_string(componentCount);
 
             return name;
         case Target::AIR:
@@ -1016,6 +1022,99 @@ public:
     //Getters
     uint32_t getComponentCount() {
         return componentCount;
+    }
+};
+
+class MatrixType : public Type {
+private:
+    VectorType* componentType;
+    uint32_t columnCount;
+
+public:
+    MatrixType(Context& aContext, VectorType* aComponentType, uint32_t aColumnCount) : Type(aContext, TypeID::Vector), componentType(aComponentType), columnCount(aColumnCount) {
+        if (!componentType->isScalar()) {
+            error("matrices cannot have non-scalar component type", "MatrixType::MatrixType");
+            return;
+        }
+        if (columnCount < 2 || columnCount > 4) {
+            error("matrices can only have column count of 2, 3 or 4", "MatrixType::MatrixType");
+            return;
+        }
+    }
+
+    ~MatrixType() = default;
+
+    Type* copy() override {
+        return new MatrixType(*this);
+    }
+
+    bool equals(Type* other) override {
+        if (!other->isMatrix())
+            return false;
+        MatrixType* otherMatrix = static_cast<MatrixType*>(other);
+
+        return (columnCount == otherMatrix->getColumnCount() && componentType->equals(otherMatrix->getBaseType()));
+    }
+
+    Value* getValue(IRBuilder* builder, bool decorate = false) override;
+
+    std::string getNameForRegister() override {
+        return "mat" + std::to_string(columnCount) + componentType->getNameForRegister();
+    }
+
+    uint32_t getBitCount(bool align = false) override {
+        return componentType->getBitCount(align) * columnCount;
+    }
+
+    std::string getOpPrefix(bool signSensitive, bool needsOrd) override {
+        return componentType->getOpPrefix(signSensitive, needsOrd);
+    }
+
+    //TODO: check if this is correct
+    std::string getTemplateName() const override {
+        return "m" + std::to_string(columnCount) + componentType->getTemplateName();
+    }
+    
+    //TODO: implement this
+    std::string getCastOpName(Type* castFrom) override {
+        return "Unknown";
+    }
+
+    Type* getBaseType() override {
+        return componentType->copy();
+    }
+
+    bool isOperatorFriendly() override {
+        return true;
+    }
+
+    std::string getNameBegin() const override {
+        std::string name;
+        switch (target) {
+        case Target::Metal:
+        case Target::HLSL:
+            return componentType->getBaseType()->getName() + std::to_string(columnCount) + "x" + std::to_string(componentType->getComponentCount());
+        case Target::GLSL:
+            name += "mat" + std::to_string(columnCount);
+            if (columnCount != componentType->getComponentCount())
+                name += "x" + std::to_string(componentType->getComponentCount());
+
+            return name;
+        case Target::AIR:
+            //TODO: check if matrices in LLVM are column-major
+            return "<" + std::to_string(columnCount) + " x " + std::to_string(componentType->getComponentCount()) + " x " + componentType->getBaseType()->getName() + ">";
+        default:
+            return "unknown";
+        }
+    }
+
+    std::string getDebugName() const override {
+        return componentType->getBaseType()->getName() + std::to_string(columnCount) + "x" + std::to_string(componentType->getComponentCount());
+    }
+
+    //Getters
+    uint32_t getColumnCount() {
+        return columnCount;
     }
 };
 

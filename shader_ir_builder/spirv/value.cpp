@@ -112,6 +112,13 @@ Value* VectorType::getValue(IRBuilder* builder, bool decorate) {
     return static_cast<SPIRVBuilder*>(builder)->_addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), "vector(" + std::to_string(componentCount) + ") of " + componentType->getNameForRegister());
 }
 
+Value* MatrixType::getValue(IRBuilder* builder, bool decorate) {
+    Value* componentValue = componentType->getValue(builder);
+    std::string code = "OpTypeMatrix " + componentValue->getName() + " " + std::to_string(columnCount);
+    
+    return static_cast<SPIRVBuilder*>(builder)->_addCodeToTypesVariablesConstantsBlock(this, code, getNameForRegister(), "matrix(" + std::to_string(columnCount) + ") of " + componentType->getNameForRegister());
+}
+
 Value* TextureType::getValue(IRBuilder* builder, bool decorate) {
     GET_TEXTURE_NAME(viewType);
 

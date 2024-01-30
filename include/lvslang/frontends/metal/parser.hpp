@@ -203,6 +203,8 @@ irb::Type* _parseTypeExpression() {
         }
         if (componentCount != 0)
             type = new irb::VectorType(context, type, componentCount);
+        else if (columnCount != 0)
+            type = new irb::MatrixType(context, new irb::VectorType(context, type, rowCount), columnCount);
         getNextToken(); //Type or '>'
     } else {
         logError("unknown type '" + identifierStr + "'");

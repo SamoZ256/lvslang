@@ -12,6 +12,8 @@ namespace metal {
 
 int getTypeFromString(const std::string& strType) {
     componentCount = 0;
+    columnCount = 0;
+    rowCount = 0;
     if (strType == "void")
         return TOKEN_TYPE_VOID;
 
@@ -126,6 +128,82 @@ int getTypeFromString(const std::string& strType) {
         return TOKEN_TYPE_FLOAT;
     } if (strType == "float4") {
         componentCount = 4;
+        return TOKEN_TYPE_FLOAT;
+    }
+
+    if (strType == "half2x2") {
+        columnCount = 2;
+        rowCount = 2;
+        return TOKEN_TYPE_HALF;
+    } if (strType == "half2x3") {
+        columnCount = 2;
+        rowCount = 3;
+        return TOKEN_TYPE_HALF;
+    } if (strType == "half2x4") {
+        columnCount = 2;
+        rowCount = 4;
+        return TOKEN_TYPE_HALF;
+    } if (strType == "half3x2") {
+        columnCount = 3;
+        rowCount = 2;
+        return TOKEN_TYPE_HALF;
+    } if (strType == "half3x3") {
+        columnCount = 3;
+        rowCount = 3;
+        return TOKEN_TYPE_HALF;
+    } if (strType == "half3x4") {
+        columnCount = 3;
+        rowCount = 4;
+        return TOKEN_TYPE_HALF;
+    }  if (strType == "half4x2") {
+        columnCount = 4;
+        rowCount = 2;
+        return TOKEN_TYPE_HALF;
+    }  if (strType == "half4x3") {
+        columnCount = 4;
+        rowCount = 3;
+        return TOKEN_TYPE_HALF;
+    }  if (strType == "half4x4") {
+        columnCount = 4;
+        rowCount = 4;
+        return TOKEN_TYPE_HALF;
+    }
+
+    if (strType == "float2x2") {
+        columnCount = 2;
+        rowCount = 2;
+        return TOKEN_TYPE_FLOAT;
+    } if (strType == "float2x3") {
+        columnCount = 2;
+        rowCount = 3;
+        return TOKEN_TYPE_FLOAT;
+    } if (strType == "float2x4") {
+        columnCount = 2;
+        rowCount = 4;
+        return TOKEN_TYPE_FLOAT;
+    } if (strType == "float3x2") {
+        columnCount = 3;
+        rowCount = 2;
+        return TOKEN_TYPE_FLOAT;
+    } if (strType == "float3x3") {
+        columnCount = 3;
+        rowCount = 3;
+        return TOKEN_TYPE_FLOAT;
+    } if (strType == "float3x4") {
+        columnCount = 3;
+        rowCount = 4;
+        return TOKEN_TYPE_FLOAT;
+    }  if (strType == "float4x2") {
+        columnCount = 4;
+        rowCount = 2;
+        return TOKEN_TYPE_FLOAT;
+    }  if (strType == "float4x3") {
+        columnCount = 4;
+        rowCount = 3;
+        return TOKEN_TYPE_FLOAT;
+    }  if (strType == "float4x4") {
+        columnCount = 4;
+        rowCount = 4;
         return TOKEN_TYPE_FLOAT;
     }
     
