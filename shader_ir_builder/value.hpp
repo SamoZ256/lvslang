@@ -1032,10 +1032,6 @@ private:
 
 public:
     MatrixType(Context& aContext, VectorType* aComponentType, uint32_t aColumnCount) : Type(aContext, TypeID::Vector), componentType(aComponentType), columnCount(aColumnCount) {
-        if (!componentType->isScalar()) {
-            error("matrices cannot have non-scalar component type", "MatrixType::MatrixType");
-            return;
-        }
         if (columnCount < 2 || columnCount > 4) {
             error("matrices can only have column count of 2, 3 or 4", "MatrixType::MatrixType");
             return;
@@ -1102,7 +1098,7 @@ public:
             return name;
         case Target::AIR:
             //TODO: check if matrices in LLVM are column-major
-            return "<" + std::to_string(columnCount) + " x " + std::to_string(componentType->getComponentCount()) + " x " + componentType->getBaseType()->getName() + ">";
+            return "[" + std::to_string(columnCount) + " x " + componentType->getName() + "]";
         default:
             return "unknown";
         }

@@ -12,6 +12,8 @@ namespace lvsl {
 
 int getTypeFromString(const std::string& strType) {
     componentCount = 0;
+    columnCount = 0;
+    rowCount = 0;
     if (strType == "void")
         return TOKEN_TYPE_VOID;
 

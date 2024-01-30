@@ -295,6 +295,7 @@ public:
         //HACK: set the address space
         elementType->setAddressSpace(static_cast<PointerType*>(ptr->getType())->getAddressSpace());
         Value* value = new Value(context, elementType, context.popRegisterName());
+        //TODO: check if this is correct
         std::string code = "getelementptr inbounds " + ptr->getType()->getElementType()->getName() + ", " + ptr->getNameWithType() + ", i32 0";
         for (uint32_t i = 0; i < indexes.size(); i++)
             code += ", " + indexes[i]->getNameWithType();

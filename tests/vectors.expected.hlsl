@@ -1,26 +1,18 @@
 
 
-struct MyBuffer {
-	float a;
-};
-
 struct FragmentOut {
 	float4 outColor : SV_Target0;
 };
 
-FragmentOut testControlFlow(MyBuffer myBuffer);
-
-cbuffer myBuffer_Uniform : register(b0) {
-	MyBuffer myBuffer;
-};
+FragmentOut testVectors();
 
 struct FragmentOut_Output {
 	FragmentOut output : TEXCOORD0;
 };
 
-FragmentOut_Output _testControlFlow() {
+FragmentOut_Output _testVectors() {
 	//Entry point call
-	FragmentOut _entryPointOutput = testControlFlow(myBuffer);
+	FragmentOut _entryPointOutput = testVectors();
 
 	//Output
 	FragmentOut_Output __output;
@@ -29,7 +21,7 @@ FragmentOut_Output _testControlFlow() {
 	return __output;
 }
 
-FragmentOut testControlFlow(MyBuffer myBuffer) {
+FragmentOut testVectors() {
 	FragmentOut fragmentOut;
 	fragmentOut.outColor = float4(0.000000, 0.000000, 0.000000, 1.000000);
 	float4 vec1 = float4(1.000000, 2.000000, 3.000000, 4.000000);

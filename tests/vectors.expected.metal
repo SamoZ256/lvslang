@@ -1,15 +1,11 @@
 #include <metal_stdlib>
 using namespace metal;
 
-struct MyBuffer {
-	float a;
-};
-
 struct FragmentOut {
 	float4 outColor [[color(0)]];
 };
 
-fragment FragmentOut testControlFlow(constant MyBuffer* myBuffer [[buffer(0)]]) {
+fragment FragmentOut testVectors() {
 	FragmentOut fragmentOut;
 	fragmentOut.outColor = float4(0.000000, 0.000000, 0.000000, 1.000000);
 	float4 vec1 = float4(1.000000, 2.000000, 3.000000, 4.000000);

@@ -1,16 +1,12 @@
-struct MyBuffer {
-    float a;
-};
-
 struct FragmentOut {
     float4 outColor [[color(0)]];
 };
 
-fragment struct FragmentOut testControlFlow(constant struct MyBuffer* myBuffer [[descriptor_set(0, 0)]]) {
+fragment struct FragmentOut testVectors() {
     struct FragmentOut fragmentOut;
     fragmentOut.outColor = float4(0.0, 0.0, 0.0, 1.0);
 
-    //Initialize
+    //Initialization
     float4 vec1 = float4(1.0, 2.0, 3.0, 4.0);
     float4 vec2 = float4(5.0, 6.0, 7.0, 8.0);
 

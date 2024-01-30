@@ -130,6 +130,7 @@ int main(int argc, char* argv[]) {
     addTest("basic");
     addTest("control_flow");
     addTest("vectors");
+    addTest("matrices");
     addTest("standard_functions");
     addTest("advanced_features");
 

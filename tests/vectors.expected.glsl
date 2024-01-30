@@ -1,18 +1,10 @@
 #version 450
 
-struct MyBuffer {
-	float a;
-};
-
 struct FragmentOut {
 	vec4 outColor;
 };
 
-FragmentOut testControlFlow(MyBuffer myBuffer);
-
-layout (set = 0, binding = 0) uniform myBuffer_Uniform {
-	MyBuffer myBuffer;
-};
+FragmentOut testVectors();
 
 layout (location = 0) out vec4 outColor;
 
@@ -20,13 +12,13 @@ void main() {
 	//Input
 
 	//Entry point call
-	FragmentOut _entryPointOutput = testControlFlow(myBuffer);
+	FragmentOut _entryPointOutput = testVectors();
 
 	//Output
 	outColor = _entryPointOutput.outColor;
 }
 
-FragmentOut testControlFlow(MyBuffer myBuffer) {
+FragmentOut testVectors() {
 	FragmentOut fragmentOut;
 	fragmentOut.outColor = vec4(0.000000, 0.000000, 0.000000, 1.000000);
 	vec4 vec1 = vec4(1.000000, 2.000000, 3.000000, 4.000000);
