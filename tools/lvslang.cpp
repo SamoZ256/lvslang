@@ -81,30 +81,35 @@ int main(int argc, char* argv[]) {
     params.add_parameter(options.outputAssembly, "--output-assembly", "-S").nargs(0).help("Output assembly instead of bytecode (SPIR-V and AIR only)");
     params.add_parameter(options.optimizationLevel, "--O0")
         .nargs(0)
+        .default_value(options.optimizationLevel)
         .action([&](auto& target, const std::string& value) {
             target = lvslang::OptimizationLevel::O0;
         })
         .help("Disable optimizations.");
     params.add_parameter(options.optimizationLevel, "--O1")
         .nargs(0)
+        .default_value(options.optimizationLevel)
         .action([&](auto& target, const std::string& value) {
             target = lvslang::OptimizationLevel::O1;
         })
         .help("Small optimizations.");
     params.add_parameter(options.optimizationLevel, "--O2")
         .nargs(0)
+        .default_value(options.optimizationLevel)
         .action([&](auto& target, const std::string& value) {
             target = lvslang::OptimizationLevel::O2;
         })
         .help("Regular optimizations.");
     params.add_parameter(options.optimizationLevel, "--O3")
         .nargs(0)
+        .default_value(options.optimizationLevel)
         .action([&](auto& target, const std::string& value) {
             target = lvslang::OptimizationLevel::O3;
         })
         .help("All optimizations.");
     params.add_parameter(options.optimizationLevel, "--Os")
         .nargs(0)
+        .default_value(options.optimizationLevel)
         .action([&](auto& target, const std::string& value) {
             target = lvslang::OptimizationLevel::Os;
         })
