@@ -30,7 +30,6 @@ fragment struct FragmentOut fragmentMain(struct VertexOut fragmentIn [[input]],
                                          texture2d<half> colorTexture [[descriptor_set(0, 1)]],
                                          sampler colorSampler [[descriptor_set(1, 0)]]) {
     struct FragmentOut fragmentOut;
-    //fragmentIn.texCoord.y = abs(int(fragmentIn.texCoord.y));
     fragmentOut.outColor = float4(sample(colorTexture, colorSampler, fragmentIn.texCoord));
 
     return fragmentOut;

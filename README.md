@@ -27,45 +27,44 @@ This is a compiler for various shading languages. It compiles into other shading
 
 ## Usage
 
-The code can be compiled with `lvslang --spirv /path/to/your/shader.lvsl -o output.spvasm`. This would emit SPIRV, but there are other viable backends as well. Use `--help` to display all options (not working right now). Here is an example code:
+The code can be compiled with `lvslang --[desired output] /path/to/your/shader.[metal or lvsl] -o output.[output extension]`. This would emit SPIRV, but there are other viable backends as well. Use `--help`o r `-h` to display all options. Here is an example code:
 ```rs
 struct Model {
-    member pos: float2
-    member scale: float2
-}
+    float2 pos;
+    float2 scale;
+};
 
 struct VertexIn {
-    member pos: float2 [[location(0)]]
-    member texCoord: float2 [[location(1)]]
-}
+    float2 pos [[location(0)]];
+    float2 texCoord [[location(1)]];
+};
 
 struct VertexOut {
-    member pos: float4 [[position]]
-    member texCoord: float2
-}
+    float4 pos [[position]];
+    float2 texCoord;
+};
 
-vertex vertexMain(vertexIn: struct VertexIn [[input]],
-                  model: constant buffer struct Model* [[descriptor_set(0, 0)]]) -> struct VertexOut {
-    var vertexOut: struct VertexOut
-    vertexOut.pos = float4(model->pos.x + vertexIn.pos.x * model->scale.x, model->pos.y + vertexIn.pos.y * model->scale.y, 0.0, 1.0)
-    vertexOut.texCoord = vertexIn.texCoord
+vertex struct VertexOut vertexMain(struct VertexIn vertexIn [[input]],
+                                   constant struct Model* model [[descriptor_set(0, 0)]]) {
+    struct VertexOut vertexOut;
+    vertexOut.pos = float4(model->pos + vertexIn.pos * model->scale, 0.0, 1.0);
+    vertexOut.texCoord = vertexIn.texCoord;
 
-    return vertexOut
-}
+    return vertexOut;
+};
 
 struct FragmentOut {
-    member color: float4
+    float4 outColor [[color(0)]];
+};
+
+fragment struct FragmentOut fragmentMain(struct VertexOut fragmentIn [[input]],
+                                         texture2d<half> colorTexture [[descriptor_set(0, 1)]],
+                                         sampler colorSampler [[descriptor_set(1, 0)]]) {
+    struct FragmentOut fragmentOut;
+    fragmentOut.outColor = float4(sample(colorTexture, colorSampler, fragmentIn.texCoord));
+
+    return fragmentOut;
 }
-
-fragment fragmentMain(fragmentIn: struct VertexOut [[input]],
-                      colorTexture: texture2D<float> [[descriptor_set(0, 1)]],
-                      colorSampler: sampler [[descriptor_set(1, 0)]]) -> struct FragmentOut {
-    var fragmentOut: struct FragmentOut
-    fragmentOut.color = sample(colorTexture, colorSampler, fragmentIn.texCoord)
-
-    return fragmentOut
-}
-
 ```
 
 Here are the outputs for each backend:
