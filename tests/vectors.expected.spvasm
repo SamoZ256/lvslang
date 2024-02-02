@@ -13,24 +13,24 @@
                OpExecutionMode %2 OriginUpperLeft
 
                ; Annotations
-               OpDecorate %_struct_5 Block
-               OpMemberDecorate %_struct_5 0 Location 0
+               OpDecorate %_struct_4 Block
+               OpMemberDecorate %_struct_4 0 Location 0
 
                ; Types, variables and constants
       %float = OpTypeFloat 32
     %v4float = OpTypeVector %float 4
-  %_struct_5 = OpTypeStruct %v4float
+  %_struct_4 = OpTypeStruct %v4float
        %void = OpTypeVoid
-         %32 = OpTypeFunction %void
-%_ptr_Output__struct_5 = OpTypePointer Output %_struct_5
-          %3 = OpVariable %_ptr_Output__struct_5 Output
+         %31 = OpTypeFunction %void
+%_ptr_Output__struct_4 = OpTypePointer Output %_struct_4
+          %3 = OpVariable %_ptr_Output__struct_4 Output
     %float_1 = OpConstant %float 1
         %236 = OpConstantComposite %v4float %float_1 %float_1 %float_1 %float_1
-        %241 = OpConstantComposite %_struct_5 %236
+        %241 = OpConstantComposite %_struct_4 %236
 
                ; Function 2
-          %2 = OpFunction %void None %32
-         %55 = OpLabel
+          %2 = OpFunction %void None %31
+         %54 = OpLabel
                OpStore %3 %241
                OpReturn
                OpFunctionEnd

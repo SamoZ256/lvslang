@@ -231,7 +231,7 @@ public:
     }
 
     void opName(Value* value, const std::string& name) override {
-        if (!dynamic_cast<StandardFunctionValue*>(value))
+        if (includeDebugInformation && !dynamic_cast<StandardFunctionValue*>(value))
             blockDebug->addCode("OpName " + value->getName() + " \"" + name + "\"");
     }
 
