@@ -28,7 +28,7 @@ This is a compiler for various shading languages. It compiles into other shading
 ## Usage
 
 The code can be compiled with `lvslang --[desired output] /path/to/your/shader.[metal or lvsl] -o output.[output extension]`. This would emit SPIRV, but there are other viable backends as well. Use `--help`o r `-h` to display all options. Here is an example code:
-```rs
+```c++
 struct Model {
     float2 pos;
     float2 scale;
