@@ -38,8 +38,9 @@ int main(int argc, char* argv[]) {
     auto parser = argumentum::argument_parser{};
     auto params = parser.params();
     parser.config().program(argv[0]).description("LVSLANG compiler");
-    params.add_parameter(outputName, "-o").nargs(1).help("Output file");
-    params.add_parameter(options.inputName, "N").nargs(1).help("Input file");
+    parser.config().usage("lvslang [options] input-file");
+    params.add_parameter(outputName, "--output", "-o").nargs(1).help("Output file");
+    params.add_parameter(options.inputName, "input-file").nargs(1).required().help("Input file");
     params.add_parameter(options.target, "--msl")
         .nargs(0)
         .action([&](auto& target, const std::string& value) {
@@ -70,7 +71,7 @@ int main(int argc, char* argv[]) {
             target = irb::Target::AIR;
         })
         .help("Output Metal's AIR");
-    params.add_parameter(options.outputAssembly, "-S").nargs(0).help("Output assembly");
+    params.add_parameter(options.outputAssembly, "--output-assembly", "-S").nargs(0).help("Output assembly instead of bytecode (SPIR-V and AIR only)");
     params.add_parameter(options.optimizationLevel, "--O0")
         .nargs(0)
         .action([&](auto& target, const std::string& value) {
