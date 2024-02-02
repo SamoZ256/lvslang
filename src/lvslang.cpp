@@ -69,6 +69,12 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
         break;
     }
 
+    //Extensions
+    //TODO: enable them only if needed
+    enableExtension(irb::Extension::_8bit_storage);
+    enableExtension(irb::Extension::_16bit_storage);
+    enableExtension(irb::Extension::explicit_arithmetic_types);
+
     if (irb::target == irb::Target::SPIRV) {
         builder->opImportSTD_EXT("GLSL.std.450");
         builder->opMemoryModel();
@@ -83,12 +89,6 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
     } else {
         throw std::runtime_error("unsupported output file extension '" + extension + "'");
     }
-
-    //Extensions
-    //TODO: enable them only if needed
-    enableExtension(irb::Extension::_8bit_storage);
-    enableExtension(irb::Extension::_16bit_storage);
-    enableExtension(irb::Extension::explicit_arithmetic_types);
     
     std::string languageName;
     uint32_t languageVersionMajor, languageVersionMinor, languageVersionPatch;
