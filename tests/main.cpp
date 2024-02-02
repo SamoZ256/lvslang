@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
     auto parser = argumentum::argument_parser{};
     auto params = parser.params();
     parser.config().program(argv[0]).description("LVSLANG tests");
-    params.add_parameter(outputExpected, "--output-expected").nargs(0).help("Write results to expected files");
+    params.add_parameter(outputExpected, "--output-expected").nargs(0).help("Write results to expected files.");
 
     if (!parser.parse_args(argc, argv, 1))
         return 1;
