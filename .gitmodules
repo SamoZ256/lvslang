@@ -4,3 +4,6 @@
 [submodule "SPIRV-Headers"]
 	path = SPIRV-Headers
 	url = https://github.com/KhronosGroup/SPIRV-Headers.git
+[submodule "argumentum"]
+	path = argumentum
+	url = https://github.com/mmahnic/argumentum.git
