@@ -166,7 +166,7 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
         }
 
         switch (options.optimizationLevel) {
-        case OptimizationLevel::None:
+        case OptimizationLevel::O0:
             break;
         //TODO: differentiate between these?
         case OptimizationLevel::O1:
@@ -221,7 +221,7 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
         //CreatePassManager
         llvm::OptimizationLevel optLevel;
         switch (options.optimizationLevel) {
-        case OptimizationLevel::None:
+        case OptimizationLevel::O0:
             optLevel = llvm::OptimizationLevel::O0;
             break;
         case OptimizationLevel::O1:

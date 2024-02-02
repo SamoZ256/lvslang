@@ -6,7 +6,7 @@
 namespace lvslang {
 
 enum class OptimizationLevel {
-    None,
+    O0,
     O1,
     O2,
     O3,

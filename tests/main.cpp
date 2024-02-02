@@ -2,6 +2,8 @@
 #include <sstream>
 #include <fstream>
 
+#include <argumentum/argparse.h>
+
 #include "lvslang/lvslang.hpp"
 
 std::string readFile(const std::string& filename) {
@@ -118,14 +120,13 @@ void addTest(const std::string& testName) {
 }
 
 int main(int argc, char* argv[]) {
-    for (uint32_t i = 1; i < argc; i++) {
-        std::string arg(argv[i]);
-        if (arg == "--output-expected") {
-            outputExpected = true;
-        } else {
-            throw std::runtime_error("unknown option '" + arg + "'");
-        }
-    }
+    auto parser = argumentum::argument_parser{};
+    auto params = parser.params();
+    parser.config().program(argv[0]).description("LVSLANG tests");
+    params.add_parameter(outputExpected, "--output-expected").nargs(0).help("Write results to expected files");
+
+    if (!parser.parse_args(argc, argv, 1))
+        return 1;
 
     addTest("basic");
     addTest("control_flow");

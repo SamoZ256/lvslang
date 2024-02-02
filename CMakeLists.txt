@@ -8,10 +8,13 @@ option(BUILD_TESTS "Build tests" OFF)
 set(CMAKE_CXX_STANDARD 17)
 
 # -------- Main library and tools --------
+
+# SPIRV-Tools
 set(SPIRV-Headers_SOURCE_DIR ${PROJECT_SOURCE_DIR}/SPIRV-Headers)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/SPIRV-Tools)
 
+# LLVM
 if (USE_LLVM)
     find_package(LLVM REQUIRED CONFIG)
 
@@ -20,15 +23,21 @@ if (USE_LLVM)
     add_compile_definitions(LVSLANG_USE_LLVM)
 endif()
 
+# argumentum
+set(ARGUMENTUM_BUILD_STATIC_LIBS ON)
+
+add_subdirectory(${PROJECT_SOURCE_DIR}/argumentum)
+
+# LVSLANG
 add_library(lvslang_lib SHARED
     shader_ir_builder/common.cpp
     shader_ir_builder/spirv/value.cpp
     src/lvslang.cpp
 )
 
-target_include_directories(lvslang_lib PRIVATE ${PROJECT_SOURCE_DIR}/SPIRV-Tools/include ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(lvslang_lib PRIVATE ${PROJECT_SOURCE_DIR}/SPIRV-Tools/include ${PROJECT_SOURCE_DIR}/argumentum/include ${PROJECT_SOURCE_DIR}/include)
 
-target_link_libraries(lvslang_lib PUBLIC SPIRV-Tools SPIRV-Tools-opt)
+target_link_libraries(lvslang_lib PUBLIC SPIRV-Tools SPIRV-Tools-opt Argumentum::argumentum)
 
 if (USE_LLVM)
     target_include_directories(lvslang_lib PRIVATE ${LLVM_INCLUDE_DIRS})
@@ -54,7 +63,6 @@ function (run_embed_standard_library name)
         COMMENT "Embedding standard library ${name}"
     )
 
-    # Add a custom target that depends on the custom command
     add_custom_target(
         run_embed_standard_library_${name} ALL
         DEPENDS ${PATH_WITHOUT_EXTENSION}.inc

@@ -2,9 +2,9 @@
 #include <sstream>
 #include <fstream>
 
-#include "lvslang/lvslang.hpp"
+#include <argumentum/argparse.h>
 
-#define INVALID_COMMAND_LINE_ARGUMENT(arg) std::cout << "Invalid command line argument '" + std::string(arg) + "'" << std::endl;
+#include "lvslang/lvslang.hpp"
 
 std::string readFile(const std::string& filename) {
     std::string content;
@@ -31,91 +31,101 @@ void writeToFile(const std::string& filename, const std::string& source) {
     file.close();
 }
 
-enum class Modifier {
-    None,
-    Output,
-    SPIRVVersion,
-    GLSLVersion,
-
-    MaxEnum
-};
-
 int main(int argc, char* argv[]) {
     lvslang::CompileOptions options;
     std::string outputName;
-    Modifier modifier = Modifier::None;
-    std::string spirvVersionStr;
-    std::string glslVersionStr;
-    for (uint32_t i = 1; i < argc; i++) {
-        std::string arg(argv[i]);
 
-        //Option
-        if (arg[0] == '-') {
-            if (arg.size() == 1)
-                throw std::runtime_error("'-' must be followed by an option");
-            if (arg[1] == '-') {
-                if (arg.size() == 2)
-                    throw std::runtime_error("'--' must be followed by an option");
-
-                if (arg == "--msl") {
-                    options.target = irb::Target::Metal;
-                } else if (arg == "--hlsl") {
-                    options.target = irb::Target::HLSL;
-                } else if (arg == "--glsl") {
-                    options.target = irb::Target::GLSL;
-                } else if (arg == "--spirv") {
-                    options.target = irb::Target::SPIRV;
-                } else if (arg == "--air") {
-                    options.target = irb::Target::AIR;
-                } else if (arg == "--spirv-version") {
-                    modifier = Modifier::SPIRVVersion;
-                } else if (arg == "--glsl-version") {
-                    modifier = Modifier::GLSLVersion;
-                } else {
-                    INVALID_COMMAND_LINE_ARGUMENT(arg);
-                    return 1;
-                }
-            } else {
-                if (arg == "-o") {
-                    modifier = Modifier::Output;
-                } else if (arg == "-S") {
-                    options.outputAssembly = true;
-                } else if (arg == "-O0") {
-                    options.optimizationLevel = lvslang::OptimizationLevel::None;
-                } else if (arg == "-O1") {
-                    options.optimizationLevel = lvslang::OptimizationLevel::O1;
-                } else if (arg == "-O2") {
-                    options.optimizationLevel = lvslang::OptimizationLevel::O2;
-                } else if (arg == "-O3") {
-                    options.optimizationLevel = lvslang::OptimizationLevel::O3;
-                } else if (arg == "-Os") {
-                    options.optimizationLevel = lvslang::OptimizationLevel::Os;
-                } else {
-                    INVALID_COMMAND_LINE_ARGUMENT(arg);
-                    return 1;
+    auto parser = argumentum::argument_parser{};
+    auto params = parser.params();
+    parser.config().program(argv[0]).description("LVSLANG compiler");
+    params.add_parameter(outputName, "-o").nargs(1).help("Output file");
+    params.add_parameter(options.inputName, "N").nargs(1).help("Input file");
+    params.add_parameter(options.target, "--msl")
+        .nargs(0)
+        .action([&](auto& target, const std::string& value) {
+            target = irb::Target::Metal;
+        })
+        .help("Output Metal Shading Language");
+    params.add_parameter(options.target, "--hlsl")
+        .nargs(0)
+        .action([&](auto& target, const std::string& value) {
+            target = irb::Target::HLSL;
+        })
+        .help("Output HLSL");
+    params.add_parameter(options.target, "--glsl")
+        .nargs(0)
+        .action([&](auto& target, const std::string& value) {
+            target = irb::Target::GLSL;
+        })
+        .help("Output GLSL");
+    params.add_parameter(options.target, "--spirv")
+        .nargs(0)
+        .action([&](auto& target, const std::string& value) {
+            target = irb::Target::SPIRV;
+        })
+        .help("Output Vulkan SPIRV");
+    params.add_parameter(options.target, "--air")
+        .nargs(0)
+        .action([&](auto& target, const std::string& value) {
+            target = irb::Target::AIR;
+        })
+        .help("Output Metal's AIR");
+    params.add_parameter(options.outputAssembly, "-S").nargs(0).help("Output assembly");
+    params.add_parameter(options.optimizationLevel, "--O0")
+        .nargs(0)
+        .action([&](auto& target, const std::string& value) {
+            target = lvslang::OptimizationLevel::O0;
+        })
+        .help("Disable optimizations");
+    params.add_parameter(options.optimizationLevel, "--O1")
+        .nargs(0)
+        .action([&](auto& target, const std::string& value) {
+            target = lvslang::OptimizationLevel::O1;
+        })
+        .help("Small optimizations");
+    params.add_parameter(options.optimizationLevel, "--O2")
+        .nargs(0)
+        .action([&](auto& target, const std::string& value) {
+            target = lvslang::OptimizationLevel::O2;
+        })
+        .help("Regular optimizations");
+    params.add_parameter(options.optimizationLevel, "--O3")
+        .nargs(0)
+        .action([&](auto& target, const std::string& value) {
+            target = lvslang::OptimizationLevel::O3;
+        })
+        .help("Enable all optimizations");
+    params.add_parameter(options.optimizationLevel, "--Os")
+        .nargs(0)
+        .action([&](auto& target, const std::string& value) {
+            target = lvslang::OptimizationLevel::Os;
+        })
+        .help("Optimize for size");
+    params.add_parameter(options.spirvVersion, "--spirv-version")
+        .nargs(1)
+        .action([&](auto& target, const std::string& value) {
+            for (auto& it : irb::spirvVersionMap) {
+                if (it.second == value) {
+                    options.spirvVersion = it.first;
+                    break;
                 }
             }
-        } else {
-            switch (modifier) {
-            case Modifier::None: //Input
-                options.inputName = arg;
-                break;
-            case Modifier::Output: //Output
-                outputName = arg;
-                break;
-            case Modifier::SPIRVVersion: //SPIRVVersion
-                spirvVersionStr = arg;
-                break;
-            case Modifier::GLSLVersion: //GLSLVersion
-                glslVersionStr = arg;
-                break;
-            default:
-                break;
+        })
+        .help("SPIR-V version");
+    params.add_parameter(options.glslVersion, "--glsl-version")
+        .nargs(1)
+        .action([&](auto& target, const std::string& value) {
+            for (auto& it : lvslang::glslVersionMap) {
+                if (it.second == value) {
+                    target = it.first;
+                    break;
+                }
             }
+        })
+        .help("GLSL version");
 
-            modifier = Modifier::None;
-        }
-    }
+    if (!parser.parse_args(argc, argv, 1))
+        return 1;
 
     if (options.inputName == "") {
         LVSLANG_ERROR("no input sources specified");
@@ -123,32 +133,6 @@ int main(int argc, char* argv[]) {
     }
     options.inputName = std::filesystem::absolute(options.inputName).string();
     options.source = readFile(options.inputName);
-    
-    if (spirvVersionStr != "") {
-        bool found = false;
-        for (auto& it : irb::spirvVersionMap) {
-            if (it.second == spirvVersionStr) {
-                options.spirvVersion = it.first;
-                found = true;
-                break;
-            }
-        }
-        if (!found)
-            INVALID_COMMAND_LINE_ARGUMENT("spirv version");
-    }
-    
-    if (glslVersionStr != "") {
-        bool found = false;
-        for (auto& it : lvslang::glslVersionMap) {
-            if (it.second == glslVersionStr) {
-                options.glslVersion = it.first;
-                found = true;
-                break;
-            }
-        }
-        if (!found)
-            INVALID_COMMAND_LINE_ARGUMENT("glsl version");
-    }
     
     std::string code;
     if (!lvslang::compile(options, code))
