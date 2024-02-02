@@ -33,6 +33,7 @@ add_library(lvslang_lib SHARED
     shader_ir_builder/common.cpp
     shader_ir_builder/air/ir.cpp
     shader_ir_builder/spirv/value.cpp
+    shader_ir_builder/spirv/ir.cpp
     src/common.cpp
     src/ast.cpp
     src/lvslang.cpp
