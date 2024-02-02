@@ -21,6 +21,7 @@ struct CompileOptions {
     GLSLVersion glslVersion = GLSLVersion::_3_30;
     bool outputAssembly = false;
     OptimizationLevel optimizationLevel = OptimizationLevel::O2;
+    bool includeDebugInformation = true;
 };
 
 bool compile(const CompileOptions& options, std::string& outputCode);

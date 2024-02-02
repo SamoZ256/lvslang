@@ -78,6 +78,12 @@ int main(int argc, char* argv[]) {
             target = irb::Target::AIR;
         })
         .help("Output Metal's AIR.");
+    params.add_parameter(options.includeDebugInformation, "--no-debug-info")
+        .nargs(0)
+        .action([&](auto& target, const std::string& value) {
+            target = false;
+        })
+        .help("Dont't include debug information in the output.");
     params.add_parameter(options.outputAssembly, "--output-assembly", "-S").nargs(0).help("Output assembly instead of bytecode (SPIR-V and AIR only)");
     params.add_parameter(options.optimizationLevel, "--O0")
         .nargs(0)

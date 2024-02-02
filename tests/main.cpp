@@ -109,6 +109,7 @@ void addTest(const std::string& testName) {
     options.spirvVersion = irb::SPIRVVersion::_1_6;
     options.glslVersion = lvslang::GLSLVersion::_4_50;
     options.outputAssembly = true;
+    options.includeDebugInformation = false;
     for (uint32_t i = 0; i < sizeof(frontendNames) / sizeof(std::string); i++) {
         if (!outputExpected || i == 0) {
             for (uint32_t j = 0; j < sizeof(targets) / sizeof(irb::Target); j++) {

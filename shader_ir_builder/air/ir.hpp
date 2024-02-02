@@ -23,7 +23,7 @@ private:
     std::vector<AIREntryPoint> entryPoints;
 
 public:
-    AIRBuilder(Context& aContext, bool aIncludeDebugInformation = false) : IRBuilder(aContext, aIncludeDebugInformation) {
+    AIRBuilder(Context& aContext, const std::string& aCompilerName, bool aIncludeDebugInformation = false) : IRBuilder(aContext, aCompilerName, aIncludeDebugInformation) {
     }
 
     void opExtension(const std::string& extensionName) override {
@@ -373,7 +373,7 @@ public:
         return value;
     }
 
-    void createMetadata();
+    void createMetadata(const std::string& languageName, uint32_t languageVersionMajor, uint32_t languageVersionMinor, uint32_t languageVersionPatch, const std::string& sourceFilenameStr);
 
     //Getters
     std::string getCode() override {
@@ -425,7 +425,7 @@ public:
 const std::string functionNames[3] = {"vertex", "fragment", "kernel"};
 
 //TODO: support other values whenever there is a 'TODO: here' comment
-void AIRBuilder::createMetadata() {
+void AIRBuilder::createMetadata(const std::string& languageName, uint32_t languageVersionMajor, uint32_t languageVersionMinor, uint32_t languageVersionPatch, const std::string& sourceFilenameStr) {
     MetadataBlock* block = new MetadataBlock(context);
 
     MetadataValue* sdkVersion = new MetadataValue(context);
@@ -590,18 +590,27 @@ void AIRBuilder::createMetadata() {
     MetadataValue* denorms = new MetadataValue(context);
     MetadataValue* fastMath = new MetadataValue(context);
     MetadataValue* framebufferFetch = new MetadataValue(context);
-    MetadataValue* identification = new MetadataValue(context);
+    MetadataValue* identification;
+    if (includeDebugInformation)
+        identification = new MetadataValue(context);
     MetadataValue* version = new MetadataValue(context);
-    MetadataValue* languageVersion = new MetadataValue(context);
-    MetadataValue* sourceFilename = new MetadataValue(context);
+    MetadataValue* languageVersion;
+    MetadataValue* sourceFilename;
+    if (includeDebugInformation) {
+        languageVersion = new MetadataValue(context);
+        sourceFilename = new MetadataValue(context);
+    }
 
     block->addCode("!{!\"air.compile.denorms_disable\"}", denorms); //TODO: here
     block->addCode("!{!\"air.compile.fast_math_disable\"}", fastMath); //TODO: here
     block->addCode("!{!\"air.compile.framebuffer_fetch_enable\"}", framebufferFetch); //TODO: here
-    block->addCode("!{!\"Lvslang\"}", identification); //TODO: here
+    if (includeDebugInformation)
+        block->addCode("!{!\"" + compilerName + "\"}", identification);
     block->addCode("!{i32 2, i32 6, i32 0}", version); //TODO: here
-    block->addCode("!{!\"LVSL\", i32 0, i32 7, i32 0}", languageVersion); //TODO: here
-    block->addCode("!{!\"/Users/samuliak/Desktop/lvslang/test.lvsl\"}", sourceFilename); //TODO: here
+    if (includeDebugInformation) {
+        block->addCode("!{!\"" + languageName + "\", i32 " + std::to_string(languageVersionMajor) + ", i32 " + std::to_string(languageVersionMinor) + ", i32 " + std::to_string(languageVersionPatch) + "}", languageVersion);
+        block->addCode("!{!\"" + sourceFilenameStr + "\"}", sourceFilename);
+    }
 
     MetadataValue* llvmModuleFlags = new MetadataValue(context, "llvm.module.flags");
     MetadataValue* airFunctions[3] = {nullptr};
@@ -629,10 +638,13 @@ void AIRBuilder::createMetadata() {
         }
     }
     block->addCodeToBeginning("!{" + denorms->getName() + ", " + fastMath->getName() + ", " + framebufferFetch->getName() + "}", airCompileOptions);
-    block->addCodeToBeginning("!{" + identification->getName() + "}", llvmIdent);
+    if (includeDebugInformation)
+        block->addCodeToBeginning("!{" + identification->getName() + "}", llvmIdent);
     block->addCodeToBeginning("!{" + version->getName() + "}", airVersion);
-    block->addCodeToBeginning("!{" + languageVersion->getName() + "}", airLanguageVersion);
-    block->addCodeToBeginning("!{" + sourceFilename->getName() + "}", airSourceFilename);
+    if (includeDebugInformation) {
+        block->addCodeToBeginning("!{" + languageVersion->getName() + "}", airLanguageVersion);
+        block->addCodeToBeginning("!{" + sourceFilename->getName() + "}", airSourceFilename);
+    }
 
     code += block->getCode();
 }

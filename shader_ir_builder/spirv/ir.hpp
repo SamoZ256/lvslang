@@ -44,17 +44,18 @@ private:
     }
 
 public:
-    SPIRVBuilder(Context& aContext, bool aIncludeDebugInformation = false) : IRBuilder(aContext, aIncludeDebugInformation) {
+    SPIRVBuilder(Context& aContext, const std::string& aCompilerName, bool aIncludeDebugInformation = false) : IRBuilder(aContext, aCompilerName, aIncludeDebugInformation) {
         blockHeader = new SPIRVBlock(context);
         blockDebug = new SPIRVBlock(context);
         blockAnnotations = new SPIRVBlock(context);
         blockTypesVariablesConstants = new SPIRVBlock(context);
         blockMain = new SPIRVBlock(context);
 
+        //TODO: do not hardcode these values
         blockHeader->addCodeRawToBeginning(
 "; SPIR-V\n" \
 "; Version:   " + spirvVersionMap[spirvVersion] + "\n" \
-"; Generator: Lvslang; 11\n" \
+"; Generator: " + compilerName + "; 11\n" \
 "; Bound:     385\n" \
 "; Schema:    0\n" \
 "\n");

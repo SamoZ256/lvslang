@@ -11,10 +11,11 @@ protected:
     Function* function = nullptr;
     Value* importV;
 
+    std::string compilerName;
     bool includeDebugInformation;
 
 public:
-    IRBuilder(Context& aContext, bool aIncludeDebugInformation) : context(aContext), includeDebugInformation(aIncludeDebugInformation) {}
+    IRBuilder(Context& aContext, const std::string& aCompilerName, bool aIncludeDebugInformation) : context(aContext), compilerName(aCompilerName), includeDebugInformation(aIncludeDebugInformation) {}
 
     //Header
     /**
