@@ -54,20 +54,14 @@ bool _addTest(lvslang::CompileOptions& options, const std::string& testName, con
             writeToFile(expectedFilename, code);
         } else {
             std::string expected = readFile(expectedFilename);
-            size_t beginningIndex = 0;
-            size_t expectedBeginningIndex = 0;
-            if (options.target == irb::Target::AIR) {
-                beginningIndex = code.find("\n");
-                expectedBeginningIndex = expected.find("\n");
-            }
-            if (code.substr(beginningIndex) == expected.substr(expectedBeginningIndex)) {
+            if (code == expected) {
                 printTestPassed(testName);
             } else {
                 printTestFailed(testName);
-                size_t oldPos = beginningIndex;
-                size_t pos = beginningIndex;
-                size_t oldPos2 = expectedBeginningIndex;
-                size_t pos2 = expectedBeginningIndex;
+                size_t oldPos = 0;
+                size_t pos = 0;
+                size_t oldPos2 = 0;
+                size_t pos2 = 0;
                 while (true) {
                     pos = code.find("\n", pos + 1);
                     pos2 = expected.find("\n", pos2 + 1);
