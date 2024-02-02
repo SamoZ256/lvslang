@@ -71,299 +71,219 @@ Here are the outputs for each backend:
 
 SPIRV:
 ```assembly
-
-
 ; SPIR-V
-; Version:   1.0
-; Generator: Lvslang; 11
-; Bound:     385
-; Schema:    0
+; Version: 1.6
+; Generator: Khronos SPIR-V Tools Assembler; 0
+; Bound: 186
+; Schema: 0
+               OpCapability Shader
+               OpCapability Float16
+               OpCapability Int8
+               OpCapability Int16
+               OpExtension "SPV_KHR_8bit_storage"
+               OpExtension "SPV_KHR_16bit_storage"
+               OpExtension "SPV_AMD_gpu_shader_int16"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %2 "vertexMain" %3 %4 %5 %gl_Position
+               OpEntryPoint Fragment %7 "fragmentMain" %8 %9 %10 %11
+               OpExecutionMode %7 OriginUpperLeft
 
-                      OpCapability Shader
-                      OpCapability Float16
-                      OpCapability Int8
-                      OpCapability Int16
-                      OpExtension "SPV_KHR_8bit_storage"
-                      OpExtension "SPV_KHR_16bit_storage"
-                      OpExtension "SPV_AMD_gpu_shader_int16"
-            %import = OpExtInstImport "GLSL.std.450"
-                      OpMemoryModel Logical GLSL450
-                      OpEntryPoint Vertex %vertexMain0 "vertexMain" %13 %16 %vertexMain_output %position
-                      OpEntryPoint Fragment %fragmentMain0 "fragmentMain" %47 %50 %53 %fragmentMain_output
-                      OpExecutionMode %fragmentMain0 OriginLowerLeft
+               ; Annotations
+               OpMemberDecorate %_struct_12 0 Location 0
+               OpMemberDecorate %_struct_12 1 Location 1
+               OpMemberDecorate %_struct_12 0 Offset 0
+               OpMemberDecorate %_struct_12 1 Offset 8
+               OpDecorate %_struct_12 Block
+               OpDecorate %4 DescriptorSet 0
+               OpDecorate %4 Binding 0
+               OpMemberDecorate %_struct_13 0 Offset 0
+               OpMemberDecorate %_struct_13 1 Offset 8
+               OpDecorate %_struct_13 Block
+               OpDecorate %_struct_14 Block
+               OpDecorate %5 Location 0
+               OpDecorate %gl_Position BuiltIn Position
+               OpDecorate %8 Location 0
+               OpDecorate %9 DescriptorSet 0
+               OpDecorate %9 Binding 1
+               OpDecorate %10 DescriptorSet 1
+               OpDecorate %10 Binding 0
+               OpDecorate %_struct_15 Block
+               OpMemberDecorate %_struct_15 0 Location 0
 
-; Debug information
-                      OpName %vertexMain "vertexMain("
-                      OpName %fragmentMain "fragmentMain("
+               ; Types, variables and constants
+        %int = OpTypeInt 32 1
+       %half = OpTypeFloat 16
+     %v4half = OpTypeVector %half 4
+      %float = OpTypeFloat 32
+    %v2float = OpTypeVector %float 2
+    %v4float = OpTypeVector %float 4
+ %_struct_14 = OpTypeStruct %v4float %v2float
+ %_struct_12 = OpTypeStruct %v2float %v2float
+ %_struct_13 = OpTypeStruct %v2float %v2float
+       %void = OpTypeVoid
+         %44 = OpTypeFunction %void
+%_ptr_Input__struct_12 = OpTypePointer Input %_struct_12
+          %3 = OpVariable %_ptr_Input__struct_12 Input
+%_ptr_Uniform__struct_13 = OpTypePointer Uniform %_struct_13
+          %4 = OpVariable %_ptr_Uniform__struct_13 Uniform
+%_ptr_Output__struct_14 = OpTypePointer Output %_struct_14
+          %5 = OpVariable %_ptr_Output__struct_14 Output
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+%gl_Position = OpVariable %_ptr_Output_v4float Output
+      %int_0 = OpConstant %int 0
+    %float_0 = OpConstant %float 0
+    %float_1 = OpConstant %float 1
+ %_struct_15 = OpTypeStruct %v4float
+         %56 = OpTypeImage %half 2D 0 0 0 1 Unknown
+         %58 = OpTypeSampler
+%_ptr_Input__struct_14 = OpTypePointer Input %_struct_14
+          %8 = OpVariable %_ptr_Input__struct_14 Input
+%_ptr_UniformConstant_56 = OpTypePointer UniformConstant %56
+          %9 = OpVariable %_ptr_UniformConstant_56 UniformConstant
+%_ptr_UniformConstant_58 = OpTypePointer UniformConstant %58
+         %10 = OpVariable %_ptr_UniformConstant_58 UniformConstant
+%_ptr_Output__struct_15 = OpTypePointer Output %_struct_15
+         %11 = OpVariable %_ptr_Output__struct_15 Output
+         %66 = OpTypeSampledImage %56
+%_ptr_Input_v2float = OpTypePointer Input %v2float
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
 
-; Annotations (non-debug)
-                      OpMemberDecorate %struct_VertexIn 0 Location 0
-                      OpMemberDecorate %struct_VertexIn 1 Location 1
-                      OpMemberDecorate %struct_VertexIn 0 Offset 0
-                      OpMemberDecorate %struct_VertexIn 1 Offset 8
-                      OpDecorate %struct_VertexIn Block
-                      OpDecorate %16 DescriptorSet 0
-                      OpDecorate %16 Binding 0
-                      OpMemberDecorate %struct_Model 0 Offset 0
-                      OpMemberDecorate %struct_Model 1 Offset 8
-                      OpDecorate %struct_Model Block
-                      OpDecorate %struct_VertexOut Block
-                      OpDecorate %vertexMain_output Location 0
-                      OpDecorate %position BuiltIn Position
-                      OpDecorate %47 Location 0
-                      OpDecorate %50 DescriptorSet 0
-                      OpDecorate %50 Binding 1
-                      OpDecorate %53 DescriptorSet 1
-                      OpDecorate %53 Binding 0
-                      OpDecorate %struct_FragmentOut Block
-                      OpMemberDecorate %struct_FragmentOut 0 Location 0
+               ; Function 2
+          %2 = OpFunction %void None %44
+         %67 = OpLabel
+         %70 = OpLoad %_struct_12 %3
+         %71 = OpLoad %_struct_13 %4
+        %132 = OpCompositeExtract %v2float %71 0
+        %134 = OpCompositeExtract %v2float %70 0
+        %136 = OpCompositeExtract %v2float %71 1
+        %138 = OpExtInst %v2float %1 Fma %134 %136 %132
+        %139 = OpCompositeExtract %float %138 0
+        %140 = OpCompositeExtract %float %138 1
+        %141 = OpCompositeConstruct %v4float %139 %140 %float_0 %float_1
+        %144 = OpCompositeExtract %v2float %70 1
+        %179 = OpCompositeConstruct %_struct_14 %141 %144
+               OpStore %5 %179
+         %74 = OpAccessChain %_ptr_Output_v4float %5 %int_0
+         %75 = OpLoad %v4float %74
+               OpStore %gl_Position %75
+               OpReturn
+               OpFunctionEnd
 
-; All types, variables, and constants
-           %float32 = OpTypeFloat 32                  ; 32-bit float32
-     %vec_float32_4 = OpTypeVector %float32 4         ; vector(4) of float32
-     %vec_float32_2 = OpTypeVector %float32 2         ; vector(2) of float32
-  %struct_VertexOut = OpTypeStruct %vec_float32_4 %vec_float32_2; VertexOut
-   %struct_VertexIn = OpTypeStruct %vec_float32_2 %vec_float32_2; VertexIn
-%ptr_Function_struct_VertexIn = OpTypePointer Function %struct_VertexIn; struct_VertexIn*
-      %struct_Model = OpTypeStruct %vec_float32_2 %vec_float32_2; Model
-%ptr_Function_struct_Model = OpTypePointer Function %struct_Model; struct_Model*
-%func_struct_VertexOut_ptr_Function_struct_VertexIn_ptr_Function_struct_Model = OpTypeFunction %struct_VertexOut %ptr_Function_struct_VertexIn %ptr_Function_struct_Model; struct_VertexOut (ptr_Function_struct_VertexIn, ptr_Function_struct_Model)
-              %void = OpTypeVoid                      ; 0-bit void
-         %func_void = OpTypeFunction %void            ; void ()
-%ptr_Input_struct_VertexIn = OpTypePointer Input %struct_VertexIn; struct_VertexIn*
-                %13 = OpVariable %ptr_Input_struct_VertexIn Input
-%ptr_Uniform_struct_Model = OpTypePointer Uniform %struct_Model; struct_Model*
-                %16 = OpVariable %ptr_Uniform_struct_Model Uniform
-%ptr_Output_struct_VertexOut = OpTypePointer Output %struct_VertexOut; struct_VertexOut*
- %vertexMain_output = OpVariable %ptr_Output_struct_VertexOut Output
-%ptr_Output_vec_float32_4 = OpTypePointer Output %vec_float32_4; vec_float32_4*
-          %position = OpVariable %ptr_Output_vec_float32_4 Output
-             %int32 = OpTypeInt 32 1                  ; 32-bit int32
-                %21 = OpConstant %int32 0
-%ptr_Function_struct_VertexOut = OpTypePointer Function %struct_VertexOut; struct_VertexOut*
-%ptr_Function_vec_float32_4 = OpTypePointer Function %vec_float32_4; vec_float32_4*
-%ptr_Function_vec_float32_2 = OpTypePointer Function %vec_float32_2; vec_float32_2*
-                %31 = OpConstant %int32 1
-            %const5 = OpConstant %float32 0.000000
-            %const7 = OpConstant %float32 1.000000
-%struct_FragmentOut = OpTypeStruct %vec_float32_4     ; FragmentOut
- %texture_1_float32 = OpTypeImage %float32 2D 0 0 0 1 Unknown; image
-%ptr_Function_texture_1_float32 = OpTypePointer Function %texture_1_float32; texture_1_float32*
-           %sampler = OpTypeSampler                   ; sampler
-%ptr_Function_sampler = OpTypePointer Function %sampler; sampler*
-%func_struct_FragmentOut_ptr_Function_struct_VertexOut_ptr_Function_texture_1_float32_ptr_Function_sampler = OpTypeFunction %struct_FragmentOut %ptr_Function_struct_VertexOut %ptr_Function_texture_1_float32 %ptr_Function_sampler; struct_FragmentOut (ptr_Function_struct_VertexOut, ptr_Function_texture_1_float32, ptr_Function_sampler)
-%ptr_Input_struct_VertexOut = OpTypePointer Input %struct_VertexOut; struct_VertexOut*
-                %47 = OpVariable %ptr_Input_struct_VertexOut Input
-%ptr_UniformConstant_texture_1_float32 = OpTypePointer UniformConstant %texture_1_float32; texture_1_float32*
-                %50 = OpVariable %ptr_UniformConstant_texture_1_float32 UniformConstant
-%ptr_UniformConstant_sampler = OpTypePointer UniformConstant %sampler; sampler*
-                %53 = OpVariable %ptr_UniformConstant_sampler UniformConstant
-%ptr_Output_struct_FragmentOut = OpTypePointer Output %struct_FragmentOut; struct_FragmentOut*
-%fragmentMain_output = OpVariable %ptr_Output_struct_FragmentOut Output
-%ptr_Function_struct_FragmentOut = OpTypePointer Function %struct_FragmentOut; struct_FragmentOut*
-  %sampledImageType = OpTypeSampledImage %texture_1_float32
-
-; All functions
-       %vertexMain0 = OpFunction %void None %func_void; %vertexMain0
-
-                %12 = OpLabel
-                %14 = OpVariable %ptr_Function_struct_VertexIn Function
-                %17 = OpVariable %ptr_Function_struct_Model Function
-                %15 = OpLoad %struct_VertexIn %13
-                      OpStore %14 %15
-                %18 = OpLoad %struct_Model %16
-                      OpStore %17 %18
-                %20 = OpFunctionCall %struct_VertexOut %vertexMain %14 %17
-                      OpStore %vertexMain_output %20
-                %22 = OpAccessChain %ptr_Output_vec_float32_4 %vertexMain_output %21
-                %23 = OpLoad %vec_float32_4 %22
-                      OpStore %position %23
-                      OpReturn
-
-                      OpFunctionEnd
-
-
-        %vertexMain = OpFunction %struct_VertexOut None %func_struct_VertexOut_ptr_Function_struct_VertexIn_ptr_Function_struct_Model; %vertexMain
-          %vertexIn = OpFunctionParameter %ptr_Function_struct_VertexIn
-             %model = OpFunctionParameter %ptr_Function_struct_Model
-
-                %25 = OpLabel
-         %vertexOut = OpVariable %ptr_Function_struct_VertexOut Function
-                %26 = OpAccessChain %ptr_Function_vec_float32_4 %vertexOut %21
-                %27 = OpAccessChain %ptr_Function_vec_float32_2 %model %21
-                %28 = OpLoad %vec_float32_2 %27
-                %29 = OpAccessChain %ptr_Function_vec_float32_2 %vertexIn %21
-                %30 = OpLoad %vec_float32_2 %29
-                %32 = OpAccessChain %ptr_Function_vec_float32_2 %model %31
-                %33 = OpLoad %vec_float32_2 %32
-                %op = OpFMul %vec_float32_2 %30 %33
-               %op0 = OpFAdd %vec_float32_2 %28 %op
-                %34 = OpCompositeExtract %float32 %op0 0
-                %35 = OpCompositeExtract %float32 %op0 1
-      %const_vector = OpCompositeConstruct %vec_float32_4 %34 %35 %const5 %const7
-                      OpStore %26 %const_vector
-                %36 = OpAccessChain %ptr_Function_vec_float32_2 %vertexOut %31
-                %37 = OpAccessChain %ptr_Function_vec_float32_2 %vertexIn %31
-                %38 = OpLoad %vec_float32_2 %37
-                      OpStore %36 %38
-                %39 = OpLoad %struct_VertexOut %vertexOut
-                      OpReturnValue %39
-
-                      OpFunctionEnd
-
-
-     %fragmentMain0 = OpFunction %void None %func_void; %fragmentMain0
-
-                %46 = OpLabel
-                %48 = OpVariable %ptr_Function_struct_VertexOut Function
-                %51 = OpVariable %ptr_Function_texture_1_float32 Function
-                %54 = OpVariable %ptr_Function_sampler Function
-                %49 = OpLoad %struct_VertexOut %47
-                      OpStore %48 %49
-                %52 = OpLoad %texture_1_float32 %50
-                      OpStore %51 %52
-                %55 = OpLoad %sampler %53
-                      OpStore %54 %55
-                %57 = OpFunctionCall %struct_FragmentOut %fragmentMain %48 %51 %54
-                      OpStore %fragmentMain_output %57
-                      OpReturn
-
-                      OpFunctionEnd
-
-
-      %fragmentMain = OpFunction %struct_FragmentOut None %func_struct_FragmentOut_ptr_Function_struct_VertexOut_ptr_Function_texture_1_float32_ptr_Function_sampler; %fragmentMain
-        %fragmentIn = OpFunctionParameter %ptr_Function_struct_VertexOut
-      %colorTexture = OpFunctionParameter %ptr_Function_texture_1_float32
-      %colorSampler = OpFunctionParameter %ptr_Function_sampler
-
-                %59 = OpLabel
-       %fragmentOut = OpVariable %ptr_Function_struct_FragmentOut Function
-                %60 = OpAccessChain %ptr_Function_vec_float32_4 %fragmentOut %21
-                %61 = OpLoad %texture_1_float32 %colorTexture
-                %62 = OpLoad %sampler %colorSampler
-                %63 = OpAccessChain %ptr_Function_vec_float32_2 %fragmentIn %31
-                %64 = OpLoad %vec_float32_2 %63
-     %samplerTexTmp = OpSampledImage %sampledImageType %61 %62
-                %65 = OpImageSampleExplicitLod %vec_float32_4 %samplerTexTmp %64 Lod %const5
-                      OpStore %60 %65
-                %66 = OpLoad %struct_FragmentOut %fragmentOut
-                      OpReturnValue %66
-
-                      OpFunctionEnd
+               ; Function 7
+          %7 = OpFunction %void None %44
+         %96 = OpLabel
+        %184 = OpAccessChain %_ptr_Input_v2float %8 %uint_1
+        %185 = OpLoad %v2float %184
+        %101 = OpLoad %56 %9
+        %102 = OpLoad %58 %10
+        %154 = OpSampledImage %66 %101 %102
+        %155 = OpImageSampleExplicitLod %v4half %154 %185 Lod %float_0
+        %156 = OpCompositeExtract %half %155 0
+        %157 = OpFConvert %float %156
+        %158 = OpCompositeExtract %half %155 1
+        %159 = OpFConvert %float %158
+        %160 = OpCompositeExtract %half %155 2
+        %161 = OpFConvert %float %160
+        %162 = OpCompositeExtract %half %155 3
+        %163 = OpFConvert %float %162
+        %164 = OpCompositeConstruct %v4float %157 %159 %161 %163
+        %180 = OpCompositeConstruct %_struct_15 %164
+               OpStore %11 %180
+               OpReturn
+               OpFunctionEnd
 ```
 
 AIR:
 ```ll
-source_filename = "example.metal"
 target datalayout = "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v24:32:32-v32:32:32-v48:64:64-v64:64:64-v96:128:128-v128:128:128-v192:256:256-v256:256:256-v512:512:512-v1024:1024:1024-n8:16:32"
 target triple = "air64-apple-macosx14.0.0"
 
-%Model = type { <2 x float>, <2 x float> }
-
-%VertexIn = type { <2 x float>, <2 x float> }
-
 %VertexOut = type { <4 x float>, <2 x float> }
-
-define %VertexOut @vertexMain(%VertexIn noundef %vertexIn, ptr addrspace(2) noundef %model) {
-	%_4 = alloca %VertexIn, align 4
-	store %VertexIn %vertexIn, ptr %_4, align 4
-	%_5 = alloca ptr addrspace(2), align 4
-	store ptr addrspace(2) %model, ptr %_5, align 4
-	%vertexOut = alloca %VertexOut, align 4
-
-	%_7 = getelementptr inbounds %VertexOut, ptr %vertexOut, i32 0
-	%_8 = load ptr addrspace(2), ptr %_5, align 4
-	%_9 = getelementptr inbounds %Model, ptr addrspace(2) %_8, i32 0
-	%_10 = load <2 x float>, ptr addrspace(2) %_9, align 4
-	%_11 = getelementptr inbounds %VertexIn, ptr %_4, i32 0
-	%_12 = load <2 x float>, ptr %_11, align 4
-	%_13 = load ptr addrspace(2), ptr %_5, align 4
-	%_14 = getelementptr inbounds %Model, ptr addrspace(2) %_13, i32 1
-	%_15 = load <2 x float>, ptr addrspace(2) %_14, align 4
-	%op = fmul <2 x float> %_12, %_15
-	%op0 = fadd <2 x float> %_10, %op
-	%_16 = extractelement <2 x float> %op0, i32 0
-	%_17 = extractelement <2 x float> %op0, i32 1
-	%_18 = insertelement <4 x float> undef, float %_16, i32 0
-	%_19 = insertelement <4 x float> %_18, float %_17, i32 1
-	%_20 = insertelement <4 x float> %_19, float 0x0, i32 2
-	%_21 = insertelement <4 x float> %_20, float 0x3ff0000000000000, i32 3
-	store <4 x float> %_21, ptr %_7, align 4
-	%_22 = getelementptr inbounds %VertexOut, ptr %vertexOut, i32 1
-	%_23 = getelementptr inbounds %VertexIn, ptr %_4, i32 1
-	%_24 = load <2 x float>, ptr %_23, align 4
-	store <2 x float> %_24, ptr %_22, align 4
-	%_25 = load %VertexOut, ptr %vertexOut, align 4
-	ret %VertexOut %_25
-}
-
+%VertexIn = type { <2 x float>, <2 x float> }
+%Model = type { <2 x float>, <2 x float> }
 %FragmentOut = type { <4 x float> }
 
-declare <4 x float> @air.sample_texture_2d.v4f32(ptr addrspace(1), ptr addrspace(2), <2 x float>, i1, <2 x i32>, i1, float, float, i32);
+; Function Attrs: convergent mustprogress nofree nounwind willreturn
+declare <4 x half> @air.sample_texture_2d.v4f16(ptr addrspace(1) nocapture readonly, ptr addrspace(2) nocapture readonly, <2 x float>, i1, <2 x i32>, i1, float, float, i32) local_unnamed_addr #0
 
-define %FragmentOut @fragmentMain(%VertexOut noundef %fragmentIn, ptr addrspace(1) %colorTexture, ptr addrspace(2) %colorSampler) {
-	%_28 = alloca %VertexOut, align 4
-	store %VertexOut %fragmentIn, ptr %_28, align 4
-	%_29 = alloca ptr addrspace(1), align 4
-	store ptr addrspace(1) %colorTexture, ptr %_29, align 4
-	%_30 = alloca ptr addrspace(2), align 4
-	store ptr addrspace(2) %colorSampler, ptr %_30, align 4
-	%fragmentOut = alloca %FragmentOut, align 4
-
-	%_32 = getelementptr inbounds %FragmentOut, ptr %fragmentOut, i32 0
-	%_33 = load ptr addrspace(1), ptr %_29, align 4
-	%_34 = load ptr addrspace(2), ptr %_30, align 4
-	%_35 = getelementptr inbounds %VertexOut, ptr %_28, i32 1
-	%_36 = load <2 x float>, ptr %_35, align 4
-	%_37 = call <4 x float> @air.sample_texture_2d.v4f32(ptr addrspace(1) %_33, ptr addrspace(2) %_34, <2 x float> %_36, i1 1, <2 x i32> <i32 0, i32 0>, i1 0, float 0x0, float 0x0, i32 0)
-	store <4 x float> %_37, ptr %_32, align 4
-	%_38 = load %FragmentOut, ptr %fragmentOut, align 4
-	ret %FragmentOut %_38
+; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
+define %VertexOut @vertexMain.sVertexIn.psModel(%VertexIn %vertexIn, ptr addrspace(2) nocapture noundef readonly "air-buffer-no-alias" %model) local_unnamed_addr #1 {
+  %vertexIn.fca.0.extract = extractvalue %VertexIn %vertexIn, 0
+  %vertexIn.fca.1.extract = extractvalue %VertexIn %vertexIn, 1
+  %_283 = load <2 x float>, ptr addrspace(2) %model, align 4
+  %_287 = getelementptr inbounds %Model, ptr addrspace(2) %model, i64 0, i32 1
+  %_288 = load <2 x float>, ptr addrspace(2) %_287, align 4
+  %op = fmul <2 x float> %vertexIn.fca.0.extract, %_288
+  %op0 = fadd <2 x float> %_283, %op
+  %1 = shufflevector <2 x float> %op0, <2 x float> poison, <4 x i32> <i32 0, i32 1, i32 poison, i32 poison>
+  %_294 = shufflevector <4 x float> %1, <4 x float> <float poison, float poison, float 0.000000e+00, float 1.000000e+00>, <4 x i32> <i32 0, i32 1, i32 6, i32 7>
+  %_298.fca.0.insert = insertvalue %VertexOut poison, <4 x float> %_294, 0
+  %_298.fca.1.insert = insertvalue %VertexOut %_298.fca.0.insert, <2 x float> %vertexIn.fca.1.extract, 1
+  ret %VertexOut %_298.fca.1.insert
 }
 
+; Function Attrs: mustprogress nofree nounwind willreturn
+define %FragmentOut @fragmentMain.sVertexOut.t1f16.sm(%VertexOut %fragmentIn, ptr addrspace(1) nocapture readonly %colorTexture, ptr addrspace(2) nocapture readonly %colorSampler) local_unnamed_addr #2 {
+  %fragmentIn.fca.1.extract = extractvalue %VertexOut %fragmentIn, 1
+  %_310 = tail call <4 x half> @air.sample_texture_2d.v4f16(ptr addrspace(1) nocapture readonly %colorTexture, ptr addrspace(2) nocapture readonly %colorSampler, <2 x float> %fragmentIn.fca.1.extract, i1 true, <2 x i32> zeroinitializer, i1 false, float 0.000000e+00, float 0.000000e+00, i32 0)
+  %_311 = extractelement <4 x half> %_310, i64 0
+  %_312 = fpext half %_311 to float
+  %_313 = extractelement <4 x half> %_310, i64 1
+  %_314 = fpext half %_313 to float
+  %_315 = extractelement <4 x half> %_310, i64 2
+  %_316 = fpext half %_315 to float
+  %_317 = extractelement <4 x half> %_310, i64 3
+  %_318 = fpext half %_317 to float
+  %_319 = insertelement <4 x float> undef, float %_312, i64 0
+  %_320 = insertelement <4 x float> %_319, float %_314, i64 1
+  %_321 = insertelement <4 x float> %_320, float %_316, i64 2
+  %_322 = insertelement <4 x float> %_321, float %_318, i64 3
+  %_323.fca.0.insert = insertvalue %FragmentOut poison, <4 x float> %_322, 0
+  ret %FragmentOut %_323.fca.0.insert
+}
 
-!llvm.module.flags = !{!40, !41, !42, !43, !44, !45, !46, !47, !48}
-!air.vertex = !{!49}
-!air.fragment = !{!58}
-!air.compile_options = !{!66, !67, !68}
-!llvm.ident = !{!69}
-!air.version = !{!70}
-!air.language_version = !{!71}
-!air.source_file_name = !{!72}
+attributes #0 = { convergent mustprogress nofree nounwind willreturn }
+attributes #1 = { mustprogress nofree norecurse nosync nounwind willreturn }
+attributes #2 = { mustprogress nofree nounwind willreturn }
 
-!40 = !{i32 2, !"SDK Version", [2 x i32] [i32 14, i32 0]}
-!41 = !{i32 1, !"wchar_size", i32 4}
-!42 = !{i32 7, !"frame-pointer", i32 2}
-!43 = !{i32 7, !"air.max_device_buffers", i32 31}
-!44 = !{i32 7, !"air.max_constant_buffers", i32 31}
-!45 = !{i32 7, !"air.max_threadgroup_buffers", i32 31}
-!46 = !{i32 7, !"air.max_textures", i32 128}
-!47 = !{i32 7, !"air.max_read_write_textures", i32 8}
-!48 = !{i32 7, !"air.max_samplers", i32 16}
-!49 = !{ptr @vertexMain, !50, !51}
-!50 = !{!52, !53}
-!51 = !{!54, !55, !56}
-!52 = !{!"air.position", !"air.arg_type_name", !"<4 x float>", !"air.arg_name", !"pos"}
-!53 = !{!"air.vertex_output", !"generated(randomstuff)", !"air.arg_type_name", !"<2 x float>", !"air.arg_name", !"texCoord"}
-!54 = !{i32 0, !"air.vertex_input", !"air.location_index", i32 0, i32 1, !"air.arg_type_name", !"<2 x float>", !"air.arg_name", !"pos"}
-!55 = !{i32 1, !"air.vertex_input", !"air.location_index", i32 1, i32 1, !"air.arg_type_name", !"<2 x float>", !"air.arg_name", !"texCoord"}
-!56 = !{i32 2, !"air.buffer", !"air.location_index", i32 0, i32 1, !"air.read", !"air.address_space", i32 2, !"air.struct_type_info", !57, !"air.arg_type_size", i32 16, !"air.arg_type_align_size", i32 8, !"air.arg_type_name", !"ptr addrspace(2)", !"air.arg_name", !"model"}
-!57 = !{i32 0, i32 8, i32 0, !"<2 x float>", !"pos", i32 8, i32 8, i32 0, !"<2 x float>", !"scale"}
-!58 = !{ptr @fragmentMain, !59, !60}
-!59 = !{!61}
-!60 = !{!62, !63, !64, !65}
-!61 = !{!"air.render_target", i32 0, i32 0, !"air.arg_type_name", !"<4 x float>", !"air.arg_name", !"outColor"}
-!62 = !{i32 0, !"air.position", !"air.center", !"air.no_perspective", !"air.arg_type_name", !"<4 x float>", !"air.arg_name", !"pos"}
-!63 = !{i32 1, !"air.fragment_input", !"generated(randomstuff)", !"air.center", !"air.perspective", !"air.arg_type_name", !"<2 x float>", !"air.arg_name", !"texCoord"}
-!64 = !{i32 2, !"air.texture", !"air.location_index", i32 0, i32 1, !"air.sample", !"air.arg_type_name", !"ptr addrspace(1)", !"air.arg_name", !"colorTexture"}
-!65 = !{i32 3, !"air.sampler", !"air.location_index", i32 0, i32 1, !"air.arg_type_name", !"ptr addrspace(2)", !"air.arg_name", !"colorSampler"}
-!66 = !{!"air.compile.denorms_disable"}
-!67 = !{!"air.compile.fast_math_disable"}
-!68 = !{!"air.compile.framebuffer_fetch_enable"}
-!69 = !{!"Lvslang"}
-!70 = !{i32 2, i32 6, i32 0}
-!71 = !{!"LVSL", i32 0, i32 7, i32 0}
-!72 = !{!"/Users/samuliak/Desktop/lvslang/test.lvsl"}
+!llvm.module.flags = !{!0, !1, !2, !3, !4, !5, !6, !7, !8}
+!air.vertex = !{!9}
+!air.fragment = !{!18}
+!air.compile_options = !{!26, !27, !28}
+!air.version = !{!29}
+
+!0 = !{i32 2, !"SDK Version", [2 x i32] [i32 14, i32 0]}
+!1 = !{i32 1, !"wchar_size", i32 4}
+!2 = !{i32 7, !"frame-pointer", i32 2}
+!3 = !{i32 7, !"air.max_device_buffers", i32 31}
+!4 = !{i32 7, !"air.max_constant_buffers", i32 31}
+!5 = !{i32 7, !"air.max_threadgroup_buffers", i32 31}
+!6 = !{i32 7, !"air.max_textures", i32 128}
+!7 = !{i32 7, !"air.max_read_write_textures", i32 8}
+!8 = !{i32 7, !"air.max_samplers", i32 16}
+!9 = !{ptr @vertexMain.sVertexIn.psModel, !10, !13}
+!10 = !{!11, !12}
+!11 = !{!"air.position", !"air.arg_type_name", !"<4 x float>", !"air.arg_name", !"pos"}
+!12 = !{!"air.vertex_output", !"generated(randomstuff)", !"air.arg_type_name", !"<2 x float>", !"air.arg_name", !"texCoord"}
+!13 = !{!14, !15, !16}
+!14 = !{i32 0, !"air.vertex_input", !"air.location_index", i32 0, i32 1, !"air.arg_type_name", !"<2 x float>", !"air.arg_name", !"pos"}
+!15 = !{i32 1, !"air.vertex_input", !"air.location_index", i32 1, i32 1, !"air.arg_type_name", !"<2 x float>", !"air.arg_name", !"texCoord"}
+!16 = !{i32 2, !"air.buffer", !"air.location_index", i32 0, i32 1, !"air.read", !"air.address_space", i32 2, !"air.struct_type_info", !17, !"air.arg_type_size", i32 16, !"air.arg_type_align_size", i32 8, !"air.arg_type_name", !"ptr addrspace(2)", !"air.arg_name", !"model"}
+!17 = !{i32 0, i32 8, i32 0, !"<2 x float>", !"pos", i32 8, i32 8, i32 0, !"<2 x float>", !"scale"}
+!18 = !{ptr @fragmentMain.sVertexOut.t1f16.sm, !19, !21}
+!19 = !{!20}
+!20 = !{!"air.render_target", i32 0, i32 0, !"air.arg_type_name", !"<4 x float>", !"air.arg_name", !"outColor"}
+!21 = !{!22, !23, !24, !25}
+!22 = !{i32 0, !"air.position", !"air.center", !"air.no_perspective", !"air.arg_type_name", !"<4 x float>", !"air.arg_name", !"pos"}
+!23 = !{i32 1, !"air.fragment_input", !"generated(randomstuff)", !"air.center", !"air.perspective", !"air.arg_type_name", !"<2 x float>", !"air.arg_name", !"texCoord"}
+!24 = !{i32 2, !"air.texture", !"air.location_index", i32 0, i32 1, !"air.sample", !"air.arg_type_name", !"ptr addrspace(1)", !"air.arg_name", !"colorTexture"}
+!25 = !{i32 3, !"air.sampler", !"air.location_index", i32 0, i32 1, !"air.arg_type_name", !"ptr addrspace(2)", !"air.arg_name", !"colorSampler"}
+!26 = !{!"air.compile.denorms_disable"}
+!27 = !{!"air.compile.fast_math_disable"}
+!28 = !{!"air.compile.framebuffer_fetch_enable"}
+!29 = !{i32 2, i32 6, i32 0}
 ```
 
 Metal Shading Language:
@@ -397,15 +317,17 @@ struct FragmentOut {
 	float4 outColor [[color(0)]];
 };
 
-fragment FragmentOut fragmentMain(VertexOut fragmentIn [[stage_in]], texture2d<float> colorTexture [[texture(0)]], sampler colorSampler [[sampler(0)]]) {
+fragment FragmentOut fragmentMain(VertexOut fragmentIn [[stage_in]], texture2d<half> colorTexture [[texture(0)]], sampler colorSampler [[sampler(0)]]) {
 	FragmentOut fragmentOut;
-	fragmentOut.outColor = colorTexture.sample(colorSampler, fragmentIn.texCoord);
+	fragmentOut.outColor = float4(colorTexture.sample(colorSampler, fragmentIn.texCoord));
 	return fragmentOut;
 }
 ```
 
 HLSL:
 ```c++
+
+
 struct Model {
 	float2 pos;
 	float2 scale;
@@ -455,9 +377,9 @@ struct FragmentOut {
 	float4 outColor : SV_Target0;
 };
 
-FragmentOut fragmentMain(VertexOut fragmentIn, Texture2D colorTexture, SamplerState colorSampler);
+FragmentOut fragmentMain(VertexOut fragmentIn, Texture2D<min16float> colorTexture, SamplerState colorSampler);
 
-Texture2D colorTexture : register(t0);
+Texture2D<min16float> colorTexture : register(t0);
 
 SamplerState colorSampler : register(s0);
 
@@ -476,9 +398,9 @@ FragmentOut_Output _fragmentMain(VertexOut fragmentIn) {
 	return __output;
 }
 
-FragmentOut fragmentMain(VertexOut fragmentIn, Texture2D colorTexture, SamplerState colorSampler) {
+FragmentOut fragmentMain(VertexOut fragmentIn, Texture2D<min16float> colorTexture, SamplerState colorSampler) {
 	FragmentOut fragmentOut;
-	fragmentOut.outColor = colorTexture.SampleLevel(colorSampler, fragmentIn.texCoord, 0.0f);
+	fragmentOut.outColor = float4(colorTexture.SampleLevel(colorSampler, fragmentIn.texCoord, 0.0f));
 	return fragmentOut;
 }
 ```
@@ -572,7 +494,7 @@ void main() {
 
 FragmentOut fragmentMain(VertexOut fragmentIn, texture2D colorTexture, sampler colorSampler) {
 	FragmentOut fragmentOut;
-	fragmentOut.outColor = texture(sampler2D(colorTexture, colorSampler), fragmentIn.texCoord);
+	fragmentOut.outColor = vec4(texture(sampler2D(colorTexture, colorSampler), fragmentIn.texCoord));
 	return fragmentOut;
 }
 ```

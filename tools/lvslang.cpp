@@ -80,6 +80,7 @@ int main(int argc, char* argv[]) {
         .help("Output Metal's AIR.");
     params.add_parameter(options.includeDebugInformation, "--no-debug-info")
         .nargs(0)
+        .default_value(options.includeDebugInformation)
         .action([&](auto& target, const std::string& value) {
             target = false;
         })
