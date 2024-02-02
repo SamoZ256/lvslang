@@ -31,8 +31,13 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/argumentum)
 # LVSLANG
 add_library(lvslang_lib SHARED
     shader_ir_builder/common.cpp
+    shader_ir_builder/air/ir.cpp
     shader_ir_builder/spirv/value.cpp
+    src/common.cpp
+    src/ast.cpp
     src/lvslang.cpp
+    src/frontends/lvsl/lexer.cpp
+    src/frontends/metal/lexer.cpp
 )
 
 target_include_directories(lvslang_lib PRIVATE ${PROJECT_SOURCE_DIR}/SPIRV-Tools/include ${PROJECT_SOURCE_DIR}/argumentum/include ${PROJECT_SOURCE_DIR}/include)
@@ -55,7 +60,7 @@ target_link_libraries(lvslang PUBLIC lvslang_lib)
 add_executable(embed_standard_library src/embed_standard_library.cpp)
 
 function (run_embed_standard_library name)
-    set(PATH_WITHOUT_EXTENSION ${PROJECT_SOURCE_DIR}/include/lvslang/frontends/${name}/standard_library)
+    set(PATH_WITHOUT_EXTENSION ${PROJECT_SOURCE_DIR}/src/frontends/${name}/standard_library)
     add_custom_command(
         OUTPUT ${PATH_WITHOUT_EXTENSION}.inc
         COMMAND embed_standard_library ${PATH_WITHOUT_EXTENSION}.${name} ${PATH_WITHOUT_EXTENSION}.inc

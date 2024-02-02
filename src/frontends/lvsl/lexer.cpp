@@ -1,10 +1,7 @@
-#ifndef LVSLANG_LVSL_LEXER_H
-#define LVSLANG_LVSL_LEXER_H
+#include "lexer.hpp"
 
 #include "../../common.hpp"
-#include "../../../../shader_ir_builder/value.hpp"
-
-#include "token.hpp"
+#include "../../../shader_ir_builder/value.hpp"
 
 namespace lvslang {
 
@@ -327,7 +324,11 @@ int getOperatorFromString(const std::string& operatorStr) {
     return 0;
 }
 
-static int lastChar;
+int lastChar = ' ';
+
+void resetLastChar() {
+    lastChar = ' ';
+}
 
 int _getNextToken() {
     //Whitespace
@@ -548,5 +549,3 @@ int getNextToken() {
 } //namespace lvsl
 
 } //namespace lvslang
-
-#endif

@@ -17,8 +17,8 @@
 #include "llvm/Bitcode/BitcodeWriter.h"
 #endif
 
-#include "lvslang/frontends/lvsl/parser.hpp"
-#include "lvslang/frontends/metal/parser.hpp"
+#include "frontends/lvsl/parser.hpp"
+#include "frontends/metal/parser.hpp"
 
 namespace lvslang {
 
@@ -29,11 +29,11 @@ void reset() {
     context.structures.clear();
     context.codeMain = "";
     currentIndentation = 0;
-    functionDeclarations.clear();
 }
 
 bool compile(const CompileOptions& options, std::string& outputCode) {
     reset();
+    functionDeclarations.clear();
     context.codeHeader = "";
     source = Source{};
 
@@ -69,6 +69,11 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
         break;
     }
 
+    if (irb::target == irb::Target::SPIRV) {
+        builder->opImportSTD_EXT("GLSL.std.450");
+        builder->opMemoryModel();
+    }
+
     std::string extension = options.inputName.substr(options.inputName.find_last_of('.'));
     bool success;
     if (extension == ".lvsl") {
@@ -79,18 +84,11 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
         throw std::runtime_error("unsupported output file extension '" + extension + "'");
     }
 
-    reset();
-
     //Extensions
     //TODO: enable them only if needed
     enableExtension(irb::Extension::_8bit_storage);
     enableExtension(irb::Extension::_16bit_storage);
     enableExtension(irb::Extension::explicit_arithmetic_types);
-
-    if (irb::target == irb::Target::SPIRV) {
-        builder->opImportSTD_EXT("GLSL.std.450");
-        builder->opMemoryModel();
-    }
     
     std::string languageName;
     uint32_t languageVersionMajor, languageVersionMinor, languageVersionPatch;

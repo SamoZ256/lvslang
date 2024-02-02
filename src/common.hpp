@@ -1,7 +1,7 @@
 #ifndef LVSLANG_COMMON_H
 #define LVSLANG_COMMON_H
 
-#include "../../shader_ir_builder/common.hpp"
+#include "../shader_ir_builder/common.hpp"
 
 namespace lvslang {
 
@@ -56,7 +56,7 @@ enum class GLSLVersion {
     MaxEnum
 };
 
-std::map<GLSLVersion, std::string> glslVersionMap = {
+static std::map<GLSLVersion, std::string> glslVersionMap = {
     {GLSLVersion::_1_10, "110"},
     {GLSLVersion::_1_20, "120"},
     {GLSLVersion::_1_30, "130"},
@@ -85,9 +85,9 @@ struct Source {
     std::vector<std::string> source;
 };
 
-static Source source{};
+extern Source source;
 
-void setSource(const std::string& aSource) {
+inline void setSource(const std::string& aSource) {
     uint32_t lineStart = 0;
     for (uint32_t i = 0; i < aSource.size(); i++) {
         if (aSource[i] == '\n' || aSource[i] == '\r') {
@@ -97,19 +97,19 @@ void setSource(const std::string& aSource) {
     }
 }
 
-int crntToken;
+extern int crntToken;
 
-std::string identifierStr;
-std::string operatorStr;
+extern std::string identifierStr;
+extern std::string operatorStr;
 
-uint8_t componentCount = 0;
-uint8_t columnCount = 0;
-uint8_t rowCount = 0;
+extern uint8_t componentCount;
+extern uint8_t columnCount;
+extern uint8_t rowCount;
 
-double numValueD;
-long numValueL;
-unsigned long numValueU;
-char numTypeStr;
+extern double numValueD;
+extern long numValueL;
+extern unsigned long numValueU;
+extern char numTypeStr;
 
 //TODO: support custom error callbacks
 inline void logError(const char* msg) {
@@ -125,7 +125,7 @@ inline void logError(std::string msg) {
     logError(msg.c_str());
 }
 
-char getEscapedVersionOfChar(char src) {
+inline char getEscapedVersionOfChar(char src) {
     static char escChar[]= { '\a','\b','\f','\n','\r','\t','\v', '\\', '\0'};
     static char esscStr[]= {  'a', 'b', 'f', 'n', 'r', 't', 'v', '\\',  '0'};
     for (uint8_t i = 0; i < sizeof(escChar) / sizeof(char); i++) {
@@ -136,7 +136,7 @@ char getEscapedVersionOfChar(char src) {
     return src;
 }
 
-bool charIsOperator(char c) {
+inline bool charIsOperator(char c) {
     static char operators[] = {
         '&', '|', '!', '<', '>',
         '+', '-', '*', '/',
@@ -151,7 +151,7 @@ bool charIsOperator(char c) {
     return false;
 }
 
-char getNextChar() {
+inline char getNextChar() {
     if (source.crntLine >= source.source.size())
         return 0; //EOF
     if (source.stringPos == source.source[source.crntLine].size()) {

@@ -1,12 +1,12 @@
-#ifndef LVSLANG_LVSL_PARSER_H
-#define LVSLANG_LVSL_PARSER_H
+#ifndef LVSLANG_METAL_PARSER_H
+#define LVSLANG_METAL_PARSER_H
 
 #include "lexer.hpp"
 #include "../../ast.hpp"
 
 namespace lvslang {
 
-namespace lvsl {
+namespace metal {
 
 int getIntTypeFromNumStr(char numTypeStr) {
     switch (numTypeStr) {
@@ -105,7 +105,7 @@ irb::Attribute getAttributeFromToken(int attrib) {
 //Binop precedence
 static std::map<int, int> binopPrecedence;
 
-static int getTokenPrecedence() {
+inline int getTokenPrecedence() {
     //if (!isascii(crntToken))
     //    return -1;
     
@@ -255,6 +255,85 @@ irb::Type* _parseTypeExpression() {
     return type;
 }
 
+void _setAttributesFromList(const std::vector<irb::Attribute>& attribs, irb::Attributes* attributes) {
+    for (const auto& attrib : attribs) {
+        switch (attrib.attrib) {
+        case irb::Attribute::Enum::AddressSpace:
+            attributes->addressSpace = attrib.values[0];
+            break;
+        case irb::Attribute::Enum::DescriptorSet:
+            attributes->bindings.set = attrib.values[0];
+            attributes->bindings.binding = attrib.values[1];
+            break;
+        case irb::Attribute::Enum::Position:
+            attributes->isPosition = true;
+            break;
+        case irb::Attribute::Enum::Input:
+            attributes->isInput = true;
+            break;
+        case irb::Attribute::Enum::Location:
+            attributes->locationIndex = attrib.values[0];
+            break;
+        case irb::Attribute::Enum::Color:
+            attributes->colorIndex = attrib.values[0];
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+void _parseAttributes(irb::Attributes* attributes) {
+    std::vector<irb::Attribute> attribs;
+    while (crntToken == '[') {
+        getNextToken(); // '['
+        if (!attributes) {
+            logError("cannot use attribute on this expression");
+            return;
+        }
+        /*
+        if (getNextToken() != '[') {
+            logError("expected double '[' in an attribute");
+            return nullptr;
+        }
+        */
+        getNextToken(); // '['
+        if (!tokenIsAttrib(crntToken)) {
+            logError("unknown attribute '" + std::to_string(crntToken) + "'");
+            return;
+        }
+        irb::Attribute attrib{getAttributeFromToken(crntToken)};
+        if (getNextToken() == '(') {
+            do {
+                if (getNextToken() != TOKEN_NUMBER) {
+                    logError("");
+                    return;
+                }
+                attrib.values.push_back(numValueU);
+            } while (getNextToken() == ',');
+            if (crntToken != ')') {
+                logError("expected ')' to match the '('");
+                return;
+            }
+            getNextToken(); // ')'
+        }
+
+        for (uint8_t i = 0; i < 2; i++) {
+            if (crntToken != ']') {
+                logError("expected ']' to match the '[' in attribute");
+                return;
+            }
+            getNextToken(); // ']'
+        }
+        attribs.push_back(attrib);
+
+        if (crntToken != '[')
+            break;
+    }
+
+    _setAttributesFromList(attribs, attributes);
+}
+
 irb::Type* _parseTypeWithAttributesExpression(irb::Attributes* attributes = nullptr) {
     std::vector<irb::Attribute> attribs;
     while (/*crntToken == '['*/tokenIsAttrib(crntToken)) {
@@ -302,81 +381,18 @@ irb::Type* _parseTypeWithAttributesExpression(irb::Attributes* attributes = null
 
     irb::Type* type = _parseTypeExpression();
 
-    while (crntToken == '[') {
-        if (!attributes) {
-            logError("cannot use attribute on this expression");
-            return nullptr;
-        }
-        /*
-        if (getNextToken() != '[') {
-            logError("expected double '[' in an attribute");
-            return nullptr;
-        }
-        */
-        getNextToken(); // '['
-        if (!tokenIsAttrib(crntToken)) {
-            logError("unknown attribute '" + std::to_string(crntToken) + "'");
-            return nullptr;
-        }
-        irb::Attribute attrib{getAttributeFromToken(crntToken)};
-        if (getNextToken() == '(') {
-            do {
-                if (getNextToken() != TOKEN_NUMBER) {
-                    logError("");
-                    return nullptr;
-                }
-                attrib.values.push_back(numValueU);
-            } while (getNextToken() == ',');
-            if (crntToken != ')') {
-                logError("expected ')' to match the '('");
-                return nullptr;
-            }
-            getNextToken(); // ')'
-        }
-
-        for (uint8_t i = 0; i < 2; i++) {
-            if (crntToken != ']') {
-                logError("expected ']' to match the '[' in attribute");
-                return nullptr;
-            }
-            getNextToken(); // ']'
-        }
-        attribs.push_back(attrib);
-
-        if (crntToken != '[')
-            break;
-        getNextToken(); // '['
-    }
-
-    if (attributes) {
-        for (const auto& attrib : attribs) {
-            switch (attrib.attrib) {
-            case irb::Attribute::Enum::AddressSpace:
-                attributes->addressSpace = attrib.values[0];
-                break;
-            case irb::Attribute::Enum::DescriptorSet:
-                attributes->bindings.set = attrib.values[0];
-                attributes->bindings.binding = attrib.values[1];
-                break;
-            case irb::Attribute::Enum::Position:
-                attributes->isPosition = true;
-                break;
-            case irb::Attribute::Enum::Input:
-                attributes->isInput = true;
-                break;
-            case irb::Attribute::Enum::Location:
-                attributes->locationIndex = attrib.values[0];
-                break;
-            case irb::Attribute::Enum::Color:
-                attributes->colorIndex = attrib.values[0];
-                break;
-            default:
-                break;
-            }
-        }
-    }
+    _setAttributesFromList(attribs, attributes);
 
     return type;
+}
+
+void _consumeSemicolons(ExpressionAST* lastExpression) {
+    if (!dynamic_cast<IfExpressionAST*>(lastExpression) && !dynamic_cast<WhileExpressionAST*>(lastExpression) && !dynamic_cast<BlockExpressionAST*>(lastExpression) && crntToken != TOKEN_SKIP) {
+        logError("expected ';' after expression");
+        return;
+    }
+    while (crntToken == TOKEN_SKIP)
+        getNextToken();
 }
 
 //Number
@@ -423,9 +439,7 @@ BlockExpressionAST* parseBracesExpression() {
             return nullptr;
 
         //Get rid of semicolons
-        while (crntToken == TOKEN_SKIP) {
-            getNextToken();
-        }
+        _consumeSemicolons(expr);
         
         expressions.push_back(expr);
     }
@@ -436,6 +450,7 @@ BlockExpressionAST* parseBracesExpression() {
 }
 
 //TODO: support constant array declarations as well
+//TODO: move this into @ref parseBracesExpression
 //Square brackets
 ExpressionAST* parseSquareBracketsExpression() {
     getNextToken(); // '['
@@ -539,6 +554,7 @@ IfThenBlock* _parseIfThenBlock() {
     ifThenBlock->block = parseExpression();
     if (!ifThenBlock->block)
         return nullptr;
+    _consumeSemicolons(ifThenBlock->block);
 
     return ifThenBlock;
 }
@@ -588,40 +604,22 @@ ExpressionAST* parseWhileExpression() {
     ExpressionAST* block = parseExpression();
     if (!block)
         return nullptr;
+    _consumeSemicolons(block);
 
     return new WhileExpressionAST(condition, block, false);
 }
 
 //Variable declaration
-ExpressionAST* parseVariableDeclarationExpression(bool isGlobal = false) {
-    bool isConstant = false;
-    if (crntToken == TOKEN_CONST) {
-        isConstant = true;
-        getNextToken(); // 'const'
-    }
-
-    if (crntToken != TOKEN_VAR) {
-        logError("Expected 'var' in a variable declaration");
-        return nullptr;
-    }
-    getNextToken(); // 'var'
-
+ExpressionAST* parseVariableDeclarationExpression(irb::Type* type, bool isConstant = false, bool isGlobal = false) {
     std::vector<VariableDeclaration> variableNames;
 
-    if (crntToken != TOKEN_IDENTIFIER) {
-        logError("expected variable name after 'var'");
-
-        return nullptr;
-    }
-
     while (true) {
-        std::string name = identifierStr;
-
-        irb::Type* type = nullptr;
-        if (getNextToken() == ':') {
-            getNextToken(); // ':'
-            type = _parseTypeWithAttributesExpression();
+        if (crntToken != TOKEN_IDENTIFIER) {
+            logError("expected variable name after variable type");
+            return nullptr;
         }
+        std::string name = identifierStr;
+        getNextToken(); // variable name
 
         ExpressionAST* initExpr = nullptr;
         if (crntToken == TOKEN_OPERATOR_ASSIGNMENT_ASSIGN) {
@@ -644,15 +642,9 @@ ExpressionAST* parseVariableDeclarationExpression(bool isGlobal = false) {
             break;
         
         getNextToken(); // ','
-
-        if (crntToken != TOKEN_IDENTIFIER) {
-            logError("expected variable name in variable declaration list");
-
-            return nullptr;
-        }
     }
 
-    return new VariableDeclarationExpressinAST(variableNames, isGlobal, isConstant);
+    return new VariableDeclarationExpressionAST(variableNames, isGlobal, isConstant);
 }
 
 //Reference
@@ -678,6 +670,7 @@ ReferenceExpressionAST* parseReferenceExpression() {
 */
 
 //Single quote
+/*
 ExpressionAST* parseCharExpression() {
     NumberExpressionAST* expression = new NumberExpressionAST(numValueL, numValueL, numValueL, createScalarType(0));
     getNextToken(); //String
@@ -696,6 +689,7 @@ ExpressionAST* parseStringExpression() {
 
     return expression;
 }
+*/
 
 /*
 RegisterExpressionAST* parseRegisterExpression() {
@@ -727,25 +721,26 @@ RegisterExpressionAST* parseRegisterExpression() {
 }
 */
 
-InitializerListExpressionAST* parseTypeExpression() {
+//TODO: support the 'auto' keyword
+ExpressionAST* parseTypeExpression() {
     irb::Type* type = _parseTypeExpression(); //TODO: parse with attributes as well?
-    if (crntToken != '(') {
-        logError("expected '(' after type");
-        return nullptr;
-    }
-    std::vector<ExpressionAST*> expressions;
-    do {
-        getNextToken(); // '(' or ','
-        expressions.push_back(parseExpression());
-    } while (crntToken == ',');
-    if (crntToken != ')') {
-        logError("expected ')' after initializer list to match the '('");
-        return nullptr;
-    }
-    getNextToken(); // ')'
-    InitializerListExpressionAST* expression = new InitializerListExpressionAST(type, expressions);
+    if (crntToken == '(') {
+        std::vector<ExpressionAST*> expressions;
+        do {
+            getNextToken(); // '(' or ','
+            expressions.push_back(parseExpression());
+        } while (crntToken == ',');
+        if (crntToken != ')') {
+            logError("expected ')' after initializer list to match the '('");
+            return nullptr;
+        }
+        getNextToken(); // ')'
+        InitializerListExpressionAST* expression = new InitializerListExpressionAST(type, expressions);
 
-    return expression;
+        return expression;
+    } else {
+        return parseVariableDeclarationExpression(type);
+    }
 }
 
 //Main parse
@@ -760,27 +755,21 @@ ExpressionAST* parseMain() {
     case TOKEN_FOR:
         logError("'for' is not supported yet");
         return nullptr;
-    case TOKEN_VAR:
-    case TOKEN_CONST:
-        return parseVariableDeclarationExpression();
-    case TOKEN_REGISTER:
-        //return parseRegisterExpression();
-        logError("'register' is not supported yet");
-        return nullptr;
     case TOKEN_IDENTIFIER:
         return parseIdentifierExpression();
     case TOKEN_NUMBER:
         return parseNumberExpression();
-    case TOKEN_CHAR:
-        return parseCharExpression();
-    case TOKEN_STRING:
-        return parseStringExpression();
+    //case TOKEN_CHAR:
+    //    return parseCharExpression();
+    //case TOKEN_STRING:
+    //    return parseStringExpression();
     case '(':
         return parseParenthesisExpression();
     case '{':
         return parseBracesExpression();
     case '[':
         return parseSquareBracketsExpression();
+    case TOKEN_CONST:
     case TOKEN_TYPE_ENUM_MIN ... TOKEN_TYPE_ENUM_MAX:
         return parseTypeExpression();
     default:
@@ -839,6 +828,9 @@ ExpressionAST* parseBinOpRHS(int expressionPrecedence, ExpressionAST* lhs) {
 
 //Function declaration
 FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, bool isSTDFunction = false, irb::FunctionRole functionRole = irb::FunctionRole::Normal) {
+    irb::Attributes attributes;
+    irb::Type* functionType = _parseTypeWithAttributesExpression(&attributes);
+    
     if (crntToken != TOKEN_IDENTIFIER) {
         logError("excpected function name");
 
@@ -855,51 +847,26 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, bool isSTDF
 
     std::vector<irb::Argument> arguments;
     do {
-        std::string name;
-        if (getNextToken() == TOKEN_IDENTIFIER) {
-            name = identifierStr;
-            if (getNextToken() == ':') {
-                getNextToken(); // ':'
-            } else {
-                logError("expected argument type");
-                return nullptr;
-            }
-        } else if (!(tokenIsType(crntToken) || tokenIsAttrib(crntToken))) {
+        getNextToken(); // '(' or ','
+        if (crntToken == ')')
             break;
-        }
         irb::Attributes argAttributes;
         irb::Type* type = _parseTypeWithAttributesExpression(&argAttributes);
         if (!type)
             return nullptr;
+        std::string name;
+        if (crntToken == TOKEN_IDENTIFIER) {
+            name = identifierStr;
+            getNextToken(); // argument name
+        }
+        _parseAttributes(&argAttributes);
         arguments.push_back(irb::Argument{name, type, argAttributes});
     } while (crntToken == ',');
     if (crntToken != ')') {
         logError("expected ')' to match the '('");
         return nullptr;
     }
-
-    irb::Type* functionType = createScalarType(TOKEN_TYPE_VOID);
-    irb::Attributes attributes;
-    if (getNextToken() == TOKEN_OPERATOR_FUNCTION_RETURN_TYPE) {
-        /*
-        if (getNextToken() != '>') {
-            logError(("use of unexpected '-" + std::string(1, char(crntToken)) + "' after function prototype").c_str());
-
-            return nullptr;
-        }
-        */
-
-        getNextToken(); // '->'
-
-        /*
-        if (!tokenIsType(crntToken)) {
-            logError("expected function type");
-
-            return nullptr;
-        }
-        */
-        functionType = _parseTypeWithAttributesExpression(&attributes);
-    }
+    getNextToken(); // ')'
 
     return new FunctionPrototypeAST(functionName, functionType, arguments/*, attributes*/, isDefined, isSTDFunction, functionRole);
 }
@@ -907,7 +874,6 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, bool isSTDF
 //TODO: support forward declarations
 //Function definition
 ExpressionAST* parseFunctionDefinition(bool isSTDFunction = false, irb::FunctionRole functionRole = irb::FunctionRole::Normal) {
-    getNextToken(); // 'func', 'vertex', 'fragment' or 'kernel'
     FunctionPrototypeAST* declaration = parseFunctionPrototype(true, isSTDFunction, functionRole);
     if (!declaration)
         return nullptr;
@@ -949,22 +915,24 @@ StructureDefinitionAST* parseStructureDeclaration() {
     getNextToken(); // '{'
 
     std::vector<irb::StructureMember> members;
-    while (crntToken == TOKEN_MEMBER) {
-        if (getNextToken() != TOKEN_IDENTIFIER) {
-            logError("expected member name after 'member'");
+    while (tokenIsType(crntToken)) {
+        irb::Attributes attributes;
+        irb::Type* memberType = _parseTypeWithAttributesExpression(&attributes);
+        if (crntToken != TOKEN_IDENTIFIER) {
+            logError("expected member name after member type");
             return nullptr;
         }
         std::string memberName = identifierStr;
+        getNextToken(); // member name
 
-        if (getNextToken() != ':') {
-            logError("expected ':' after member name");
-            return nullptr;
-        }
-        getNextToken(); // ':'
-        irb::Attributes attributes;
-        irb::Type* memberType = _parseTypeWithAttributesExpression(&attributes);
+        _parseAttributes(&attributes);
+
         members.push_back({memberName, memberType, attributes});
 
+        if (crntToken != TOKEN_SKIP) {
+            logError("expected ';' after structure member");
+            return nullptr;
+        }
         while (crntToken == TOKEN_SKIP)
             getNextToken(); //Skip
     }
@@ -974,6 +942,11 @@ StructureDefinitionAST* parseStructureDeclaration() {
         return nullptr;
     }
     getNextToken(); // '}'
+    if (crntToken != TOKEN_SKIP) {
+        logError("expected ';' after structure definition");
+        return nullptr;
+    }
+    getNextToken(); // ';'
 
     return new StructureDefinitionAST(structName, members);
 }
@@ -1053,10 +1026,6 @@ EnumDefinitionAST* parseEnumDeclaration() {
 }
 
 ExpressionAST* parseExpression(int expressionPrecedence) {
-    while (crntToken == TOKEN_SKIP) {
-        getNextToken(); //Skip
-    }
-
     ExpressionAST* lhs = parseMain();
     if (!lhs)
         return nullptr;
@@ -1066,8 +1035,16 @@ ExpressionAST* parseExpression(int expressionPrecedence) {
     return expr;
 }
 
+ExpressionAST* parseTopLevelTypeExpression() {
+    //TODO: support more?
+    return parseFunctionDefinition();
+}
+
 //Main loop
 bool mainLoop() {
+    //Reset
+    resetLastChar();
+
     getNextToken();
     bool success = true;
     while (true) {
@@ -1080,34 +1057,35 @@ bool mainLoop() {
             getNextToken(); // ';'
             skipUntilBlockEnd = false;
             break;
-        case TOKEN_FUNC:
-            expression = parseFunctionDefinition();
-            break;
         case TOKEN_VERTEX:
+            getNextToken(); // 'vertex'
             expression = parseFunctionDefinition(false, irb::FunctionRole::Vertex);
             break;
         case TOKEN_FRAGMENT:
+            getNextToken(); // 'fragment'
             expression = parseFunctionDefinition(false, irb::FunctionRole::Fragment);
             break;
         case TOKEN_KERNEL:
+            getNextToken(); // 'kernel'
             expression = parseFunctionDefinition(false, irb::FunctionRole::Kernel);
             break;
         case TOKEN_EXTERN:
             expression = parseExtern();
             break;
-        case TOKEN_VAR:
-        case TOKEN_CONST:
-            expression = parseVariableDeclarationExpression(true);
-            break;
-        case TOKEN_TYPE_STRUCT:
-            expression = parseStructureDeclaration();
-            break;
-        case TOKEN_TYPE_ENUM:
-            expression = parseEnumDeclaration();
+        case TOKEN_ATTRIB_CONSTANT:
+            expression = parseVariableDeclarationExpression(_parseTypeWithAttributesExpression(), true, true);
             break;
         case TOKEN_STD_FUNCTION:
             getNextToken(); // 'STD_FUNCTION'
             expression = parseFunctionDefinition(true, irb::FunctionRole::Normal);
+            break;
+        case TOKEN_TYPE_ENUM_MIN ... TOKEN_TYPE_ENUM_MAX:
+            if (crntToken == TOKEN_TYPE_STRUCT)
+                expression = parseStructureDeclaration();
+            else if (crntToken == TOKEN_TYPE_ENUM)
+                expression = parseEnumDeclaration();
+            else
+                expression = parseTopLevelTypeExpression();
             break;
         default:
             logError("unknown top level token '" + std::to_string(crntToken) + "'");
@@ -1156,9 +1134,6 @@ bool compileStandardLibrary() {
 }
 
 bool compile(const std::string& source) {
-    //Reset
-    lastChar = ' ';
-
     binopPrecedence[TOKEN_OPERATOR_LOGICAL_AND                      ] = 8;
     binopPrecedence[TOKEN_OPERATOR_LOGICAL_OR                       ] = 8;
     //binopPrecedence[TOKEN_OPERATOR_NOT                              ] = 0;

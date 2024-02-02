@@ -1,7 +1,7 @@
 #ifndef LVSLANG_H
 #define LVSLANG_H
 
-#include "common.hpp"
+#include "../src/common.hpp"
 
 namespace lvslang {
 
