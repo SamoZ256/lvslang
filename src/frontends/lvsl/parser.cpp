@@ -1128,6 +1128,7 @@ bool mainLoop() {
                 success = false;
             }
         } else if (skipUntilBlockEnd) {
+            //TODO: set it to 0 if outside of block
             int blocksToSkip = 1;
             while (true) {
                 getNextToken();
