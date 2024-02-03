@@ -1,5 +1,3 @@
-
-
 struct FragmentOut {
 	float4 outColor : SV_Target0;
 };

@@ -1,5 +1,3 @@
-
-
 struct Model {
 	float2 pos;
 	float2 scale;

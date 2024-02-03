@@ -115,7 +115,7 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
 
     if (irb::target == irb::Target::AIR)
         static_cast<irb::AIRBuilder*>(builder)->createMetadata(languageName, languageVersionMajor, languageVersionMinor, languageVersionPatch, options.inputName);
-    std::string code = context.codeHeader + "\n\n" + (TARGET_IS_IR(irb::target) ? builder->getCode() : context.codeMain);
+    std::string code = context.codeHeader + (context.codeHeader.empty() ? "" : "\n\n") + (TARGET_IS_IR(irb::target) ? builder->getCode() : context.codeMain);
     
     //Assemble and optimize
     if (irb::target == irb::Target::SPIRV) {

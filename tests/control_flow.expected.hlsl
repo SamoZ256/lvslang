@@ -1,5 +1,3 @@
-
-
 struct MyBuffer {
 	float a;
 };

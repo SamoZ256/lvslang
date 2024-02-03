@@ -326,8 +326,6 @@ fragment FragmentOut fragmentMain(VertexOut fragmentIn [[stage_in]], texture2d<h
 
 HLSL:
 ```c++
-
-
 struct Model {
 	float2 pos;
 	float2 scale;

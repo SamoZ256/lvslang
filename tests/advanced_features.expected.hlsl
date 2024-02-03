@@ -1,5 +1,3 @@
-
-
 bool forwardDeclaredFunction(int a, int3 b);
 
 struct FragmentOut {
