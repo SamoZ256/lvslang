@@ -38,7 +38,9 @@ add_library(lvslang_lib SHARED
     src/ast.cpp
     src/lvslang.cpp
     src/frontends/lvsl/lexer.cpp
+    src/frontends/lvsl/parser.cpp
     src/frontends/metal/lexer.cpp
+    src/frontends/metal/parser.cpp
 )
 
 target_include_directories(lvslang_lib PRIVATE ${PROJECT_SOURCE_DIR}/SPIRV-Tools/include ${PROJECT_SOURCE_DIR}/argumentum/include ${PROJECT_SOURCE_DIR}/include)

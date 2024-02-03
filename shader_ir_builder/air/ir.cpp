@@ -145,6 +145,12 @@ void AIRBuilder::opStore(Value* ptr, Value* v) {
 }
 
 void AIRBuilder::opReturn(Value* v) {
+    AIRBlock* block = getAIRInsertBlock();
+    if (block->hasReturned()) {
+        IRB_ERROR("cannot have more than 1 return instruction in a single block");
+        return;
+    }
+
     if (v)
         getAIRInsertBlock()->addCode("ret " + v->getNameWithType());
     else

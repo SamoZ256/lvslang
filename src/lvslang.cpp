@@ -17,6 +17,8 @@
 #include "llvm/Bitcode/BitcodeWriter.h"
 #endif
 
+#include "ast.hpp"
+
 #include "frontends/lvsl/parser.hpp"
 #include "frontends/metal/parser.hpp"
 

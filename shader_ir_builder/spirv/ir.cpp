@@ -334,7 +334,7 @@ void SPIRVBuilder::opStore(Value* ptr, Value* v)  {
 void SPIRVBuilder::opReturn(Value* v)  {
     SPIRVBlock* block = getSPIRVInsertBlock();
     if (block->hasReturned()) {
-        IRB_ERROR("cannot have more than 1 return instructions in a single block");
+        IRB_ERROR("cannot have more than 1 return instruction in a single block");
         return;
     }
 
