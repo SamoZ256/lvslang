@@ -5,18 +5,6 @@
 #include "spirv-tools/libspirv.hpp"
 #include "spirv-tools/optimizer.hpp"
 
-#ifdef LVSLANG_USE_LLVM
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Verifier.h"
-#include "llvm/IR/PassManager.h"
-#include "llvm/Passes/PassBuilder.h"
-#include "llvm/Passes/PassPlugin.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/IRReader/IRReader.h"
-#include "llvm/Bitcode/BitcodeWriter.h"
-#endif
-
 #include "ast.hpp"
 
 #include "frontends/lvsl/parser.hpp"
@@ -24,17 +12,9 @@
 
 namespace lvslang {
 
-void reset() {
-    //TODO: move this to @ref context.reset()
-    context.crntRegisterNumber = 0;
-    context.registerNames.clear();
-    context.structures.clear();
-    context.codeMain = "";
-    currentIndentation = 0;
-}
-
 bool compile(const CompileOptions& options, std::string& outputCode) {
-    reset();
+    context.reset();
+    currentIndentation = 0;
     functionDeclarations.clear();
     context.codeHeader = "";
     source = Source{};
@@ -113,9 +93,9 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
     if (!success)
         return false;
 
+    std::string code = context.codeHeader + (context.codeHeader.empty() ? "" : (irb::target == irb::Target::AIR ? "\n" : "\n\n")) + (TARGET_IS_IR(irb::target) ? builder->getCode((irb::OptimizationLevel)options.optimizationLevel, options.outputAssembly) : context.codeMain);
     if (irb::target == irb::Target::AIR)
-        static_cast<irb::AIRBuilder*>(builder)->createMetadata(languageName, languageVersionMajor, languageVersionMinor, languageVersionPatch, options.inputName);
-    std::string code = context.codeHeader + (context.codeHeader.empty() ? "" : "\n\n") + (TARGET_IS_IR(irb::target) ? builder->getCode() : context.codeMain);
+        code += static_cast<irb::AIRBuilder*>(builder)->createMetadata(languageName, languageVersionMajor, languageVersionMinor, languageVersionPatch, options.inputName);
     
     //Assemble and optimize
     if (irb::target == irb::Target::SPIRV) {
@@ -203,77 +183,6 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
             outputCode = std::string((const char*)binary.data(), binary.size() * sizeof(binary[0]) / sizeof(char));
         }
         //}
-    } else if (irb::target == irb::Target::AIR) {
-        //std::cout << code << std::endl;
-#ifdef LVSLANG_USE_LLVM
-        llvm::LLVMContext llvmContext;
-        std::unique_ptr<llvm::MemoryBuffer> buffer = llvm::MemoryBuffer::getMemBuffer(llvm::StringRef(code));
-        llvm::SMDiagnostic error;
-        std::unique_ptr<llvm::Module> llvmModule = llvm::parseIR(buffer->getMemBufferRef(), error, llvmContext);
-        if (!llvmModule) {
-            error.print(options.inputName.c_str(), llvm::errs());
-            return false;
-        }
-
-        llvm::LoopAnalysisManager LAM;
-        llvm::FunctionAnalysisManager FAM;
-        llvm::CGSCCAnalysisManager CGAM;
-        llvm::ModuleAnalysisManager MAM;
-
-        llvm::PassBuilder PB;
-
-        //Register passes
-        PB.registerModuleAnalyses(MAM);
-        PB.registerCGSCCAnalyses(CGAM);
-        PB.registerFunctionAnalyses(FAM);
-        PB.registerLoopAnalyses(LAM);
-        PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
-
-        //CreatePassManager
-        llvm::OptimizationLevel optLevel;
-        switch (options.optimizationLevel) {
-        case OptimizationLevel::O0:
-            optLevel = llvm::OptimizationLevel::O0;
-            break;
-        case OptimizationLevel::O1:
-            optLevel = llvm::OptimizationLevel::O1;
-            break;
-        case OptimizationLevel::O2:
-            optLevel = llvm::OptimizationLevel::O2;
-            break;
-        case OptimizationLevel::O3:
-            optLevel = llvm::OptimizationLevel::O3;
-            break;
-        case OptimizationLevel::Os:
-            optLevel = llvm::OptimizationLevel::Os;
-            break;
-        }
-        llvm::ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(optLevel);
-
-        //Run optimizations
-        MPM.run(*llvmModule, MAM);
-
-        //Remove the "memory" attribute, since xcrun metallib would throw "LLVM ERROR: Invalid bitcode file!"
-        for (auto &function : *llvmModule)
-            function.removeFnAttr(llvm::Attribute::AttrKind::Memory);
-
-        llvm::raw_string_ostream stream(outputCode);
-        if (options.outputAssembly) {
-            stream << *llvmModule;
-            stream.flush();
-        } else {
-            llvm::WriteBitcodeToFile(*llvmModule, stream);
-        }
-#else
-        if (!options.outputAssembly) {
-            LVSLANG_ERROR("cannot output LLVM binary when lvslang wasn't build with LLVM enabled");
-            return false;
-        }
-        if (options.optimizationLevel != OptimizationLevel::O0) {
-            LVSLANG_WARN("cannot optimize LLVM binary when lvslang wasn't build with LLVM enabled");
-        }
-        outputCode = code;
-#endif
     } else {
         outputCode = code;
     }

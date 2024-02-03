@@ -60,6 +60,8 @@ inline TypeID operator|(TypeID l, TypeID r) {
 
 class Type {
 protected:
+    llvm::Type* handle = nullptr;
+
     Context& context;
     TypeID typeID;
 
@@ -112,6 +114,7 @@ public:
     }
 
     inline void addAttribute(const std::string& attr) {
+        //TODO: make this actually do something
         if (target == Target::AIR)
             attributesStr += attr;
     }
@@ -156,6 +159,14 @@ public:
         return false;
     }
 
+    //Getters
+    llvm::Type* getHandle() {
+        if (!handle)
+            IRB_ERROR("handle is null");
+        
+        return handle;
+    }
+
     virtual bool getIsSigned() {
         return false;
     }
@@ -179,6 +190,8 @@ public:
 
 class Value {
 protected:
+    llvm::Value* handle = nullptr;
+
     Context& context;
 
     Type* type;
@@ -208,6 +221,13 @@ public:
     }
 
     //Getters
+    inline llvm::Value* getHandle() {
+        if (!handle)
+            IRB_ERROR("handle is null");
+        
+        return handle;
+    }
+
     Type* getType() {
         return type;
     }
@@ -234,6 +254,10 @@ public:
     }
 
     //Setters
+    void setHandle(llvm::Value* aHandle) {
+        handle = aHandle;
+    }
+
     void setIsConstant(bool aIsConstant) {
         _isConstant = aIsConstant;
     }
@@ -241,7 +265,10 @@ public:
 
 class UndefinedValue : public Value {
 public:
-    UndefinedValue(Context& aContext, Type* aType) : Value(aContext, aType, "undef", "", false) {}
+    UndefinedValue(Context& aContext, Type* aType) : Value(aContext, aType, "undef", "", false) {
+        if (target == Target::AIR)
+            handle = llvm::UndefValue::get(aType->getHandle());
+    }
 };
 
 class ScalarType : public Type {
@@ -250,7 +277,28 @@ private:
     bool isSigned;
 
 public:
-    ScalarType(Context& aContext, TypeID aTypeID, uint32_t aBitCount, bool aIsSigned = true) : Type(aContext, aTypeID), bitCount(aBitCount), isSigned(aIsSigned) {}
+    ScalarType(Context& aContext, TypeID aTypeID, uint32_t aBitCount, bool aIsSigned = true) : Type(aContext, aTypeID), bitCount(aBitCount), isSigned(aIsSigned) {
+        if (target == Target::AIR) {
+            switch (typeID) {
+            case TypeID::Bool:
+                handle = llvm::Type::getInt1Ty(*context.handle);
+                break;
+            case TypeID::Integer:
+                handle = llvm::Type::getIntNTy(*context.handle, bitCount);
+                break;
+            case TypeID::Float:
+                if (bitCount == 32)
+                    handle = llvm::Type::getFloatTy(*context.handle);
+                else if (bitCount == 16)
+                    handle = llvm::Type::getHalfTy(*context.handle);
+                else
+                    IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of float can only be 16 or 32");
+                break;
+            default:
+                break;
+            }
+        }
+    }
 
     ~ScalarType() = default;
 
@@ -511,28 +559,6 @@ public:
                 break;
             }
             return "";
-        case Target::AIR:
-            switch (typeID) {
-            case TypeID::Void:
-                return "void";
-            case TypeID::Bool:
-                return "i1";
-            case TypeID::Integer:
-                return "i" + std::to_string(bitCount);
-            case TypeID::Float:
-                switch (bitCount) {
-                case 16:
-                    return "half";
-                case 32:
-                    return "float";
-                default:
-                    IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of float can only be 16 or 32");
-                    return nullptr;
-                }
-            default:
-                break;
-            }
-            return "";
         default:
             return "";
         }
@@ -602,17 +628,26 @@ public:
 
 class ConstantBool : public ConstantValue {
 public:
-    ConstantBool(Context& aContext, bool value) : ConstantValue(aContext, new ScalarType(aContext, TypeID::Bool, 8, false), TARGET_IS_IR(target) ? std::to_string(value) : (value ? "true" : "false")) {}
+    ConstantBool(Context& aContext, bool value) : ConstantValue(aContext, new ScalarType(aContext, TypeID::Bool, 8, false), TARGET_IS_IR(target) ? std::to_string(value) : (value ? "true" : "false")) {
+        if (target == Target::AIR)
+            handle = llvm::ConstantInt::get(*context.handle, llvm::APInt(1, value, false));
+    }
 };
 
 class ConstantInt : public ConstantValue {
 public:
-    ConstantInt(Context& aContext, long value, uint8_t bitCount, bool isSigned) : ConstantValue(aContext, new ScalarType(aContext, TypeID::Integer, bitCount, isSigned), std::to_string(value)) {}
+    ConstantInt(Context& aContext, long value, uint8_t bitCount, bool isSigned) : ConstantValue(aContext, new ScalarType(aContext, TypeID::Integer, bitCount, isSigned), std::to_string(value)) {
+        if (target == Target::AIR)
+            handle = llvm::ConstantInt::get(*context.handle, llvm::APInt(bitCount, value, isSigned));
+    }
 };
 
 class ConstantFloat : public ConstantValue {
 public:
-    ConstantFloat(Context& aContext, float value, uint8_t bitCount) : ConstantValue(aContext, new ScalarType(aContext, TypeID::Float, bitCount, true), target == Target::AIR ? doubleToHEX(value) : std::to_string(value)) {}
+    ConstantFloat(Context& aContext, float value, uint8_t bitCount) : ConstantValue(aContext, new ScalarType(aContext, TypeID::Float, bitCount, true), target == Target::AIR ? doubleToHEX(value) : std::to_string(value)) {
+        if (target == Target::AIR)
+            handle = llvm::ConstantFP::get(*context.handle, llvm::APFloat(value));
+    }
 };
 
 class PointerType : public Type {
@@ -621,10 +656,12 @@ private:
     StorageClass storageClass;
     int addressSpace = -1;
 
-    std::string attributesStr;
-
 public:
-    PointerType(Context& aContext, Type* aBaseType, StorageClass aStorageClass) : Type(aContext, TypeID::Pointer), _baseType(aBaseType), storageClass(aStorageClass) {}
+    PointerType(Context& aContext, Type* aBaseType, StorageClass aStorageClass) : Type(aContext, TypeID::Pointer), _baseType(aBaseType), storageClass(aStorageClass) {
+        //TODO: set the adress space correctly
+        if (target == Target::AIR)
+            handle = llvm::PointerType::get(*context.handle, 0u);
+    }
 
     ~PointerType() = default;
 
@@ -668,11 +705,6 @@ public:
     std::string getNameBegin() const override {
         if (TARGET_IS_CODE(target)) {
             return _baseType->getName() + "*";
-        } else if (target == Target::AIR) {
-            if (target == Target::AIR && addressSpace != -1)
-                return "ptr addrspace(" + std::to_string(addressSpace) + ")";
-            else
-                return "ptr";
         } else {
             return "unknown";
         }
@@ -693,6 +725,7 @@ public:
 
     //Setters
     inline void setAddressSpace(int aAddressSpace) {
+        //TODO: set the address space
         addressSpace = aAddressSpace;
     }
 };
@@ -703,7 +736,10 @@ private:
     uint32_t size;
 
 public:
-    ArrayType(Context& aContext, Type* aArrayType, uint32_t aSize) : Type(aContext, TypeID::Array), arrayType(aArrayType), size(aSize) {}
+    ArrayType(Context& aContext, Type* aArrayType, uint32_t aSize) : Type(aContext, TypeID::Array), arrayType(aArrayType), size(aSize) {
+        if (target == Target::AIR)
+            handle = llvm::ArrayType::get(arrayType->getHandle(), size);
+    }
 
     ~ArrayType() = default;
 
@@ -742,10 +778,7 @@ public:
     }
 
     std::string getNameBegin() const override {
-        if (TARGET_IS_IR(target))
-            return "[" + std::to_string(size) + " x " + arrayType->getName() + "]";
-        else
-            return arrayType->getNameBegin();
+        return arrayType->getNameBegin();
     }
 
     std::string getNameEnd() const override {
@@ -778,6 +811,17 @@ public:
         //    nameBegin = "struct ";
         if (!structure)
             error("use of undeclared structure '" + name + "'", "StructureType::StructureType");
+        
+        if (target == Target::AIR) {
+            if (!structure->handle) {
+                std::vector<llvm::Type*> members;
+                members.reserve(structure->members.size());
+                for (auto& member : structure->members)
+                    members.push_back(member.type->getHandle());
+                structure->handle = llvm::StructType::create(members, name);
+            }
+            handle = structure->handle;
+        }
     }
 
     ~StructureType() = default;
@@ -813,10 +857,7 @@ public:
     }
 
     std::string getNameBegin() const override {
-        if (target == Target::AIR)
-            return "%" + name;
-        else
-            return name;
+        return name;
     }
 
     std::string getDebugName() const override {
@@ -835,7 +876,15 @@ private:
     Value* returnV = nullptr;
 
 public:
-    FunctionType(Context& aContext, Type* aReturnType, const std::vector<Type*>& aArguments) : Type(aContext, TypeID::Function), returnType(aReturnType), arguments(aArguments) {}
+    FunctionType(Context& aContext, Type* aReturnType, const std::vector<Type*>& aArguments) : Type(aContext, TypeID::Function), returnType(aReturnType), arguments(aArguments) {
+        if (target == Target::AIR) {
+            std::vector<llvm::Type*> llvmArguments;
+            llvmArguments.reserve(arguments.size());
+            for (auto* arg : arguments)
+                llvmArguments.push_back(arg->getHandle());
+            handle = llvm::FunctionType::get(returnType->getHandle(), llvmArguments, false);
+        }
+    }
 
     ~FunctionType() = default;
 
@@ -880,7 +929,7 @@ public:
 
     //TODO: make this different in case of code backends
     std::string getNameBegin() const override {
-        return "ptr";
+        return "";
     }
 
     //TODO: implement this
@@ -925,6 +974,9 @@ public:
             error("vectors can only have component count of 2, 3 or 4", "VectorType::VectorType");
             return;
         }
+
+        if (target == Target::AIR)
+            handle = llvm::VectorType::get(componentType->getHandle(), componentCount, false);
     }
 
     ~VectorType() = default;
@@ -1008,15 +1060,13 @@ public:
             name += "vec" + std::to_string(componentCount);
 
             return name;
-        case Target::AIR:
-            return "<" + std::to_string(componentCount) + " x " + componentType->getName() + ">";
         default:
             return "unknown";
         }
     }
 
     std::string getDebugName() const override {
-        return componentType->getName() + std::to_string(componentCount);
+        return componentType->getDebugName() + std::to_string(componentCount);
     }
 
     //Getters
@@ -1036,6 +1086,9 @@ public:
             error("matrices can only have column count of 2, 3 or 4", "MatrixType::MatrixType");
             return;
         }
+
+        if (target == Target::AIR)
+            handle = llvm::ArrayType::get(componentType->getHandle(), columnCount);
     }
 
     ~MatrixType() = default;
@@ -1096,9 +1149,6 @@ public:
                 name += "x" + std::to_string(componentType->getComponentCount());
 
             return name;
-        case Target::AIR:
-            //TODO: check if matrices in LLVM are column-major
-            return "[" + std::to_string(columnCount) + " x " + componentType->getName() + "]";
         default:
             return "unknown";
         }
@@ -1127,6 +1177,9 @@ public:
     TextureType(Context& aContext, TextureViewType aViewType, Type* aType) : Type(aContext, TypeID::Texture), viewType(aViewType), type(aType) {
         if (target == Target::AIR)
             attributesStr = " nocapture readonly";
+        
+        if (target == Target::AIR)
+            handle = llvm::PointerType::get(*context.handle, 1u);
     }
 
     ~TextureType() = default;
@@ -1176,9 +1229,10 @@ public:
     }
 
     std::string getDebugName() const override {
-        GET_TEXTURE_NAME(viewType);
+        //TODO: don't hardcode this
+        std::string viewTypeStr = "texture2d";
 
-        return viewTypeStr + "<" + type->getName() + ">";
+        return viewTypeStr + "<" + type->getDebugName() + ">";
     }
 
     //Getters
@@ -1193,6 +1247,9 @@ public:
     SamplerType(Context& aContext) : Type(aContext, TypeID::Sampler) {
         if (target == Target::AIR)
             attributesStr = " nocapture readonly";
+        
+        if (target == Target::AIR)
+            handle = llvm::PointerType::get(*context.handle, 2u);
     }
 
     ~SamplerType() = default;
@@ -1225,9 +1282,7 @@ public:
 
     std::string getNameBegin() const override {
         //TODO: add template addguments
-        if (TARGET_IS_IR(target))
-            return "ptr addrspace(2)";//"%\"struct.metal::sampler\"";
-        else if (target == Target::HLSL)
+        if (target == Target::HLSL)
             return "SamplerState";
         else
             return "sampler";

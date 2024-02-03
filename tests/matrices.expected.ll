@@ -5,30 +5,31 @@ target triple = "air64-apple-macosx14.0.0"
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
 define %FragmentOut @testMatrices() local_unnamed_addr #0 {
+entry:
   ret %FragmentOut { <4 x float> <float 0.000000e+00, float 0.000000e+00, float 0.000000e+00, float 1.000000e+00> }
 }
 
 attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn }
 
-!llvm.module.flags = !{!0, !1, !2, !3, !4, !5, !6, !7, !8}
-!air.fragment = !{!9}
-!air.compile_options = !{!13, !14, !15}
-!air.version = !{!16}
+!llvm.module.flags = !{!288, !289, !290, !291, !292, !293, !294, !295, !296}
+!air.fragment = !{!297}
+!air.compile_options = !{!301, !302, !303}
+!air.version = !{!304}
 
-!0 = !{i32 2, !"SDK Version", [2 x i32] [i32 14, i32 0]}
-!1 = !{i32 1, !"wchar_size", i32 4}
-!2 = !{i32 7, !"frame-pointer", i32 2}
-!3 = !{i32 7, !"air.max_device_buffers", i32 31}
-!4 = !{i32 7, !"air.max_constant_buffers", i32 31}
-!5 = !{i32 7, !"air.max_threadgroup_buffers", i32 31}
-!6 = !{i32 7, !"air.max_textures", i32 128}
-!7 = !{i32 7, !"air.max_read_write_textures", i32 8}
-!8 = !{i32 7, !"air.max_samplers", i32 16}
-!9 = !{ptr @testMatrices, !10, !12}
-!10 = !{!11}
-!11 = !{!"air.render_target", i32 0, i32 0, !"air.arg_type_name", !"<4 x float>", !"air.arg_name", !"outColor"}
-!12 = !{}
-!13 = !{!"air.compile.denorms_disable"}
-!14 = !{!"air.compile.fast_math_disable"}
-!15 = !{!"air.compile.framebuffer_fetch_enable"}
-!16 = !{i32 2, i32 6, i32 0}
+!288 = !{i32 2, !"SDK Version", [2 x i32] [i32 14, i32 0]}
+!289 = !{i32 1, !"wchar_size", i32 4}
+!290 = !{i32 7, !"frame-pointer", i32 2}
+!291 = !{i32 7, !"air.max_device_buffers", i32 31}
+!292 = !{i32 7, !"air.max_constant_buffers", i32 31}
+!293 = !{i32 7, !"air.max_threadgroup_buffers", i32 31}
+!294 = !{i32 7, !"air.max_textures", i32 128}
+!295 = !{i32 7, !"air.max_read_write_textures", i32 8}
+!296 = !{i32 7, !"air.max_samplers", i32 16}
+!297 = !{ptr @testMatrices, !298, !299}
+!298 = !{!300}
+!299 = !{}
+!300 = !{!"air.render_target", i32 0, i32 0, !"air.arg_type_name", !"float4", !"air.arg_name", !"outColor"}
+!301 = !{!"air.compile.denorms_disable"}
+!302 = !{!"air.compile.fast_math_disable"}
+!303 = !{!"air.compile.framebuffer_fetch_enable"}
+!304 = !{i32 2, i32 6, i32 0}

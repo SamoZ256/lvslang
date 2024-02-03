@@ -4,40 +4,40 @@ target triple = "air64-apple-macosx14.0.0"
 %FragmentOut = type { <4 x float> }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
-define %FragmentOut @testControlFlow.psMyBuffer(ptr addrspace(2) nocapture noundef readonly "air-buffer-no-alias" %myBuffer) local_unnamed_addr #0 {
-end:
-  %_281 = load float, ptr addrspace(2) %myBuffer, align 4
-  %op3 = fcmp ogt float %_281, 0.000000e+00
-  %op4 = fcmp olt float %_281, 0.000000e+00
+define %FragmentOut @testControlFlow.psMyBuffer(ptr nocapture readonly %myBuffer) local_unnamed_addr #0 {
+entry:
+  %_291 = load float, ptr %myBuffer, align 4
+  %op3 = fcmp ogt float %_291, 0.000000e+00
+  %op4 = fcmp olt float %_291, 0.000000e+00
   %. = select i1 %op4, <4 x float> <float 0.000000e+00, float 1.000000e+00, float 0.000000e+00, float 1.000000e+00>, <4 x float> <float 0.000000e+00, float 0.000000e+00, float 1.000000e+00, float 1.000000e+00>
   %outColor.0 = select i1 %op3, <4 x float> <float 1.000000e+00, float 0.000000e+00, float 0.000000e+00, float 1.000000e+00>, <4 x float> %.
-  %_297.fca.0.insert = insertvalue %FragmentOut poison, <4 x float> %outColor.0, 0
-  ret %FragmentOut %_297.fca.0.insert
+  %_30219 = insertvalue %FragmentOut poison, <4 x float> %outColor.0, 0
+  ret %FragmentOut %_30219
 }
 
 attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn }
 
-!llvm.module.flags = !{!0, !1, !2, !3, !4, !5, !6, !7, !8}
-!air.fragment = !{!9}
-!air.compile_options = !{!15, !16, !17}
-!air.version = !{!18}
+!llvm.module.flags = !{!304, !305, !306, !307, !308, !309, !310, !311, !312}
+!air.fragment = !{!313}
+!air.compile_options = !{!319, !320, !321}
+!air.version = !{!322}
 
-!0 = !{i32 2, !"SDK Version", [2 x i32] [i32 14, i32 0]}
-!1 = !{i32 1, !"wchar_size", i32 4}
-!2 = !{i32 7, !"frame-pointer", i32 2}
-!3 = !{i32 7, !"air.max_device_buffers", i32 31}
-!4 = !{i32 7, !"air.max_constant_buffers", i32 31}
-!5 = !{i32 7, !"air.max_threadgroup_buffers", i32 31}
-!6 = !{i32 7, !"air.max_textures", i32 128}
-!7 = !{i32 7, !"air.max_read_write_textures", i32 8}
-!8 = !{i32 7, !"air.max_samplers", i32 16}
-!9 = !{ptr @testControlFlow.psMyBuffer, !10, !12}
-!10 = !{!11}
-!11 = !{!"air.render_target", i32 0, i32 0, !"air.arg_type_name", !"<4 x float>", !"air.arg_name", !"outColor"}
-!12 = !{!13}
-!13 = !{i32 0, !"air.buffer", !"air.location_index", i32 0, i32 1, !"air.read", !"air.address_space", i32 2, !"air.struct_type_info", !14, !"air.arg_type_size", i32 4, !"air.arg_type_align_size", i32 8, !"air.arg_type_name", !"ptr addrspace(2)", !"air.arg_name", !"myBuffer"}
-!14 = !{i32 0, i32 4, i32 0, !"float", !"a"}
-!15 = !{!"air.compile.denorms_disable"}
-!16 = !{!"air.compile.fast_math_disable"}
-!17 = !{!"air.compile.framebuffer_fetch_enable"}
-!18 = !{i32 2, i32 6, i32 0}
+!304 = !{i32 2, !"SDK Version", [2 x i32] [i32 14, i32 0]}
+!305 = !{i32 1, !"wchar_size", i32 4}
+!306 = !{i32 7, !"frame-pointer", i32 2}
+!307 = !{i32 7, !"air.max_device_buffers", i32 31}
+!308 = !{i32 7, !"air.max_constant_buffers", i32 31}
+!309 = !{i32 7, !"air.max_threadgroup_buffers", i32 31}
+!310 = !{i32 7, !"air.max_textures", i32 128}
+!311 = !{i32 7, !"air.max_read_write_textures", i32 8}
+!312 = !{i32 7, !"air.max_samplers", i32 16}
+!313 = !{ptr @testControlFlow.psMyBuffer, !314, !315}
+!314 = !{!316}
+!315 = !{!317}
+!316 = !{!"air.render_target", i32 0, i32 0, !"air.arg_type_name", !"float4", !"air.arg_name", !"outColor"}
+!317 = !{i32 0, !"air.buffer", !"air.location_index", i32 0, i32 1, !"air.read", !"air.address_space", i32 2, !"air.struct_type_info", !318, !"air.arg_type_size", i32 4, !"air.arg_type_align_size", i32 8, !"air.arg_type_name", !"struct MyBuffer*", !"air.arg_name", !"myBuffer"}
+!318 = !{i32 0, i32 4, i32 0, !"float", !"a"}
+!319 = !{!"air.compile.denorms_disable"}
+!320 = !{!"air.compile.fast_math_disable"}
+!321 = !{!"air.compile.framebuffer_fetch_enable"}
+!322 = !{i32 2, i32 6, i32 0}

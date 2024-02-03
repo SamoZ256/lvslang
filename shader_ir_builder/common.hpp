@@ -256,19 +256,6 @@ const std::string textureViewTypeLUT_SPIRV[] = {
     "Buffer"
 };
 
-/*
-const std::string textureViewTypeLUT_AIR[] = {
-    "1d",
-    "2d",
-    "3d",
-    "1d_array",
-    "2d_array",
-    "cube",
-    "cube_array",
-    "UNSUPPORTED"
-};
-*/
-
 #define GET_TEXTURE_NAME(viewType) \
 IRB_VALIDATE_ENUM_ARGUMENT(TextureViewType, viewType); \
 std::string viewType##Str; \
@@ -284,9 +271,6 @@ case Target::GLSL: \
     break; \
 case Target::SPIRV: \
     viewType##Str = textureViewTypeLUT_SPIRV[(int)viewType]; \
-    break; \
-case Target::AIR: \
-    viewType##Str = "ptr addrspace(1)";/*"%\"struct.metal::texture" + textureViewTypeLUT_AIR[(int)viewType] + "\"";*/ \
     break; \
 default: \
     break; \
@@ -337,59 +321,9 @@ const std::string operationLUT_SPIRV[] = {
     "LessThanEqual"
 };
 
-const std::string operationLUT_AIR[] = {
-    "add",
-    "sub",
-    "mul",
-    "div",
-    "mod",
-    "rem",
-    "BitwiseAnd???",
-    "BitwiseOr???",
-    "cmp",
-    "cmp",
-    "and",
-    "or",
-    "cmp",
-    "cmp",
-    "cmp",
-    "cmp"
-};
-
-const std::string operationKindLUT_AIR[] = {
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "eq",
-    "ne",
-    "",
-    "",
-    "gt",
-    "lt",
-    "ge",
-    "le"
-};
-
 #define GET_OPERATION_NAME(operation) \
 IRB_VALIDATE_ENUM_ARGUMENT(Operation, operation); \
-std::string operation##Str; \
-std::string operationKind##Str; \
-switch (target) { \
-case Target::SPIRV: \
-    operation##Str = operationLUT_SPIRV[(int)operation]; \
-    break; \
-case Target::AIR: \
-    operation##Str = operationLUT_AIR[(int)operation]; \
-    operationKind##Str = operationKindLUT_AIR[(int)operation]; \
-    break; \
-default: \
-    break; \
-}
+std::string operation##Str = operationLUT_SPIRV[(int)operation];
 
 //TODO: rename?
 enum class FunctionRole {
@@ -410,75 +344,7 @@ const std::string functionRoleLUT_SPIRV[] = {
 
 #define GET_FUNCTION_ROLE_NAME(functionRole) \
 IRB_VALIDATE_ENUM_ARGUMENT(FunctionRole, functionRole); \
-std::string functionRole##Str; \
-switch (target) { \
-case Target::SPIRV: \
-    functionRole##Str = functionRoleLUT_SPIRV[(int)functionRole]; \
-    break; \
-case Target::AIR: \
-    throw std::runtime_error("OOOPPPSSSS"); \
-    break; \
-default: \
-    break; \
-}
-
-//TODO: add AIR specific stuff
-struct StandardFunctionInfo {
-    struct {
-        std::string name;
-        bool requiresOpExtInst = true;
-        int32_t argumentIndexForSpecialization = -1;
-    } spirv;
-    struct {
-        std::string attributes = "nounwind willreturn memory(none)";
-    } air;
-};
-
-static std::map<std::string, StandardFunctionInfo> standardFunctionLUT = {
-    {"abs", {{"Abs", true, 0}}},
-    {"acos", {{"Acos"}}},
-    {"acosh", {{"Acosh"}}},
-    {"asin", {{"Asin"}}},
-    {"asinh", {{"Asinh"}}},
-    {"atan", {{"Atan"}}},
-    {"atanh", {{"Atanh"}}},
-    {"ceil", {{"Ceil"}}},
-    {"clamp", {{"Clamp", true, 0}}},
-    {"cos", {{"Cos"}}},
-    {"cosh", {{"Cosh"}}},
-    {"cross", {{"Cross"}}},
-    {"distance", {{"Distance"}}},
-    {"dot", {{"Dot", false}}},
-    {"exp", {{"Exp"}}},
-    {"exp2", {{"Exp2"}}},
-    {"floor", {{"Floor"}}},
-    {"fract", {{"Fract"}}},
-    //TODO: add image functions
-    //TODO: add transpose
-    {"isinf", {{"IsInf", false}}},
-    {"isnan", {{"IsNan", false}}},
-    {"length", {{"Length"}}},
-    {"log", {{"Log"}}},
-    {"log2", {{"Log2"}}},
-    {"max", {{"Max", true, 0}}},
-    {"min", {{"Min", true, 0}}},
-    {"mix", {{"Mix", true, 0}}},
-    {"normalize", {{"Normalize"}}},
-    {"pow", {{"Pow"}}},
-    {"reflect", {{"Reflect"}}},
-    {"refract", {{"Refract"}}},
-    {"round", {{"Round"}}},
-    {"sample", {{"ImageSampleExplicitLod", false}, {"convergent nounwind willreturn memory(argmem: read)"}}},
-    {"sign", {{"Sign", true, 0}}},
-    {"sin", {{"Sin"}}},
-    {"sinh", {{"Sinh"}}},
-    {"smoothstep", {{"SmoothStep"}}},
-    {"sqrt", {{"Sqrt"}}},
-    {"step", {{"Step"}}},
-    {"tan", {{"Tan"}}},
-    {"tanh", {{"Tanh"}}}
-    //TODO: add transpose function
-};
+std::string functionRole##Str = functionRoleLUT_SPIRV[(int)functionRole];
 
 //Utility functions
 union DoubleToUint64 {

@@ -1,6 +1,66 @@
 #include "ir.hpp"
 
+#include "llvm/IR/PassManager.h"
+#include "llvm/Passes/PassBuilder.h"
+#include "llvm/Passes/PassPlugin.h"
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/IRReader/IRReader.h"
+#include "llvm/Bitcode/BitcodeWriter.h"
+
 namespace irb {
+
+//TODO: uncomment
+/*
+struct StandardFunctionInfo {
+    std::vector<std::pair<llvm::Attribute::AttrKind, uint64_t> > attributes = {{llvm::Attribute::AttrKind::NoUnwind, 0}, {llvm::Attribute::AttrKind::WillReturn, 0}, {llvm::Attribute::AttrKind::Memory, 0}};
+};
+
+static std::map<std::string, StandardFunctionInfo> standardFunctionLUT = {
+    {"abs", {}},
+    {"acos", {}},
+    {"acosh", {}},
+    {"asin", {}},
+    {"asinh", {}},
+    {"atan", {}},
+    {"atanh", {}},
+    {"ceil", {}},
+    {"clamp", {}},
+    {"cos", {}},
+    {"cosh", {}},
+    {"cross", {}},
+    {"distance", {}},
+    {"dot", {}},
+    {"exp", {}},
+    {"exp2", {}},
+    {"floor", {}},
+    {"fract", {}},
+    //TODO: add image functions
+    //TODO: add transpose
+    {"isinf", {}},
+    {"isnan", {}},
+    {"length", {}},
+    {"log", {}},
+    {"log2", {}},
+    {"max", {}},
+    {"min", {}},
+    {"mix", {}},
+    {"normalize", {}},
+    {"pow", {}},
+    {"reflect", {}},
+    {"refract", {}},
+    {"round", {}},
+    {"sample", {{{llvm::Attribute::AttrKind::Convergent, 0}, {llvm::Attribute::AttrKind::NoUnwind, 0}, {llvm::Attribute::AttrKind::WillReturn, 0}, {llvm::Attribute::AttrKind::Memory, 1}}}},
+    {"sign", {}},
+    {"sin", {}},
+    {"sinh", {}},
+    {"smoothstep", {}},
+    {"sqrt", {}},
+    {"step", {}},
+    {"tan", {}},
+    {"tanh", {}}
+    //TODO: add transpose function
+};
+*/
 
 void AIRBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, const std::string& name, Type* returnType, const std::vector<Argument>& arguments) {
     entryPoints.push_back({entryPoint, functionRole, returnType, arguments});
@@ -13,31 +73,37 @@ Value* AIRBuilder::opConstant(ConstantValue* val) {
 }
 
 Value* AIRBuilder::opStructureDefinition(StructureType* structureType) {
-    Value* value = new Value(context, structureType, context.popRegisterName());
-    code += value->getName() + " = type { ";
-    const auto& members = structureType->getStructure()->members;
-    for (uint32_t i = 0; i < members.size(); i++) {
-        if (i != 0)
-            code += ", ";
-        code += members[i].type->getName();
+    return new Value(context, structureType, context.popRegisterName());
+}
+
+Value* AIRBuilder::opRegisterFunction(FunctionType* functionType) {
+    Value* value = new Value(context, functionType, context.popRegisterName() + functionType->getTemplateName(), "@", false);
+
+    llvm::Function* llvmFunction = llvm::Function::Create(static_cast<llvm::FunctionType*>(functionType->getHandle()), llvm::Function::ExternalLinkage, value->getRawName(), llvmModule.get());
+    for (uint32_t i = 0; i < functionType->getArguments().size(); i++) {
+        Type* argumentType = functionType->getArguments()[i];
+        llvm::Argument* llvmArgument = llvmFunction->getArg(i);
+        if (argumentType->isTexture() || argumentType->isSampler()) {
+            llvmArgument->addAttr(llvm::Attribute::get(*context.handle, llvm::Attribute::AttrKind::NoCapture));
+            llvmArgument->addAttr(llvm::Attribute::get(*context.handle, llvm::Attribute::AttrKind::ReadOnly));
+        }
     }
-    code += " }\n\n";
+    value->setHandle(llvmFunction);
 
     return value;
 }
 
-Value* AIRBuilder::opRegisterFunction(FunctionType* functionType) {
-    return new Value(context, functionType, context.popRegisterName() + functionType->getTemplateName(), "@", false);
-}
-
 //TODO: support fast math (in function names)
 Value* AIRBuilder::opStandardFunctionDeclaration(FunctionType* functionType, const std::string& name) {
+    //TODO: uncomment
+    /*
     if (!standardFunctionLUT.count(name)) {
         IRB_INVALID_ARGUMENT_WITH_REASON("name", "there is no such standard function");
         return nullptr;
     }
 
     const auto& standardFunctionInfo = standardFunctionLUT[name];
+    */
     
     //TODO: only add template name if there is at least one argument
     std::string fullName = "air." + name + "." + functionType->getArguments()[0]->getTemplateName();
@@ -45,10 +111,12 @@ Value* AIRBuilder::opStandardFunctionDeclaration(FunctionType* functionType, con
     if (name == "sample") {
         //TODO: do error checks
         functionType = new FunctionType(context, functionType->getReturnType(), {functionType->getArguments()[0], functionType->getArguments()[1], functionType->getArguments()[2], new ScalarType(context, TypeID::Bool, 8, false), new VectorType(context, new ScalarType(context, TypeID::Integer, 32, true), 2), new ScalarType(context, TypeID::Bool, 8, false), new ScalarType(context, TypeID::Float, 32, true), new ScalarType(context, TypeID::Float, 32, true), new ScalarType(context, TypeID::Integer, 32, true)});
-
-        return opFunctionDeclaration(functionType, "air.sample_texture_2d." + functionType->getReturnType()->getTemplateName(), standardFunctionInfo.air.attributes);
+        
+        //TODO: uncomment
+        return opFunctionDeclaration(functionType, "air.sample_texture_2d." + functionType->getReturnType()->getTemplateName(), /*standardFunctionInfo.attributes*/{{llvm::Attribute::AttrKind::Convergent, 0}, {llvm::Attribute::AttrKind::NoUnwind, 0}, {llvm::Attribute::AttrKind::WillReturn, 0}, {llvm::Attribute::AttrKind::Memory, 1}});
     } else {
-        return opFunctionDeclaration(functionType, fullName, standardFunctionInfo.air.attributes);
+        //TODO: uncomment
+        return opFunctionDeclaration(functionType, fullName, /*standardFunctionInfo.attributes*/{{llvm::Attribute::AttrKind::NoUnwind, 0}, {llvm::Attribute::AttrKind::WillReturn, 0}, {llvm::Attribute::AttrKind::Memory, 0}});
     }
 }
 
@@ -71,11 +139,10 @@ Value* AIRBuilder::opFunctionParameter(Type* type) {
 
 void AIRBuilder::opFunctionEnd() {
     function->end();
-    code += function->getCode() + "\n\n";
 }
 
 Block* AIRBuilder::opBlock() {
-    AIRBlock* block = new AIRBlock(context, context.popRegisterName());
+    AIRBlock* block = new AIRBlock(context, function, context.popRegisterName());
 
     return block;
 }
@@ -102,13 +169,107 @@ Value* AIRBuilder::opOperation(Value* l, Value* r, Type* type, Operation operati
 
     //TODO: do not use l for getting op prefix?
     std::string prefix = (needsPrefix ? l->getType()->getOpPrefix(signSensitive, false) : "");
-    std::string opKindName = "";
-    if (operationKindStr != "") {
-        opKindName = (prefix == "f" ? "o" : prefix) + operationKindStr + " "; //TODO: support unordered?
-        if (prefix != "f")
-            prefix = "i";
+
+    llvm::Value* llvmValue;
+    switch (operation) {
+        case Operation::Add:
+            if (prefix == "f")
+                llvmValue = handle->CreateFAdd(l->getHandle(), r->getHandle(), value->getRawName());
+            else
+                llvmValue = handle->CreateAdd(l->getHandle(), r->getHandle(), value->getRawName());
+            break;
+        case Operation::Subtract:
+            if (prefix == "f")
+                llvmValue = handle->CreateFSub(l->getHandle(), r->getHandle(), value->getRawName());
+            else
+                llvmValue = handle->CreateSub(l->getHandle(), r->getHandle(), value->getRawName());
+            break;
+        case Operation::Multiply:
+            if (prefix == "f")
+                llvmValue = handle->CreateFMul(l->getHandle(), r->getHandle(), value->getRawName());
+            else
+                llvmValue = handle->CreateMul(l->getHandle(), r->getHandle(), value->getRawName());
+            break;
+        case Operation::Divide:
+            if (prefix == "f")
+                llvmValue = handle->CreateFDiv(l->getHandle(), r->getHandle(), value->getRawName());
+            else if (prefix == "s")
+                llvmValue = handle->CreateSDiv(l->getHandle(), r->getHandle(), value->getRawName());
+            else
+                llvmValue = handle->CreateUDiv(l->getHandle(), r->getHandle(), value->getRawName());
+            break;
+        case Operation::Modulo:
+            IRB_ERROR("modulo is not supported in AIR");
+            break;
+        case Operation::Remainder:
+            if (prefix == "f")
+                llvmValue = handle->CreateFRem(l->getHandle(), r->getHandle(), value->getRawName());
+            else if (prefix == "s")
+                llvmValue = handle->CreateSRem(l->getHandle(), r->getHandle(), value->getRawName());
+            else
+                llvmValue = handle->CreateURem(l->getHandle(), r->getHandle(), value->getRawName());
+            break;
+        case Operation::And:
+            llvmValue = handle->CreateAnd(l->getHandle(), r->getHandle(), value->getRawName());
+            break;
+        case Operation::Or:
+            llvmValue = handle->CreateOr(l->getHandle(), r->getHandle(), value->getRawName());
+            break;
+        case Operation::Equal:
+            //TODO: support unordered
+            if (prefix == "f")
+                llvmValue = handle->CreateFCmpOEQ(l->getHandle(), r->getHandle(), value->getRawName());
+            else
+                llvmValue = handle->CreateICmpEQ(l->getHandle(), r->getHandle(), value->getRawName());
+            break;
+        case Operation::NotEqual:
+            //TODO: support unordered
+            if (prefix == "f")
+                llvmValue = handle->CreateFCmpONE(l->getHandle(), r->getHandle(), value->getRawName());
+            else
+                llvmValue = handle->CreateICmpNE(l->getHandle(), r->getHandle(), value->getRawName());
+            break;
+        case Operation::GreaterThan:
+            //TODO: support unordered
+            if (prefix == "f")
+                llvmValue = handle->CreateFCmpOGT(l->getHandle(), r->getHandle(), value->getRawName());
+            else if (prefix == "s")
+                llvmValue = handle->CreateICmpSGT(l->getHandle(), r->getHandle(), value->getRawName());
+            else
+                llvmValue = handle->CreateICmpUGT(l->getHandle(), r->getHandle(), value->getRawName());
+            break;
+        case Operation::GreaterThanEqual:
+            //TODO: support unordered
+            if (prefix == "f")
+                llvmValue = handle->CreateFCmpOGE(l->getHandle(), r->getHandle(), value->getRawName());
+            else if (prefix == "s")
+                llvmValue = handle->CreateICmpSGE(l->getHandle(), r->getHandle(), value->getRawName());
+            else
+                llvmValue = handle->CreateICmpUGE(l->getHandle(), r->getHandle(), value->getRawName());
+            break;
+        case Operation::LessThan:
+            //TODO: support unordered
+            if (prefix == "f")
+                llvmValue = handle->CreateFCmpOLT(l->getHandle(), r->getHandle(), value->getRawName());
+            else if (prefix == "s")
+                llvmValue = handle->CreateICmpSLT(l->getHandle(), r->getHandle(), value->getRawName());
+            else
+                llvmValue = handle->CreateICmpULT(l->getHandle(), r->getHandle(), value->getRawName());
+            break;
+        case Operation::LessThanEqual:
+            //TODO: support unordered
+            if (prefix == "f")
+                llvmValue = handle->CreateFCmpOLE(l->getHandle(), r->getHandle(), value->getRawName());
+            else if (prefix == "s")
+                llvmValue = handle->CreateICmpSLE(l->getHandle(), r->getHandle(), value->getRawName());
+            else
+                llvmValue = handle->CreateICmpULE(l->getHandle(), r->getHandle(), value->getRawName());
+            break;
+        default:
+            IRB_ERROR("unsupported operation");
+            return nullptr;
     }
-    getAIRInsertBlock()->addCode(prefix + operationStr + " " + opKindName + l->getNameWithType() + ", " + r->getName(), value);
+    value->setHandle(llvmValue);
 
     //"Unpack" the vector
     if (type->getTypeID() == TypeID::Bool && value->getType()->isVector()) {
@@ -133,15 +294,14 @@ Value* AIRBuilder::opLoad(Value* v) {
 
     Type* elementType = v->getType()->getElementType();
     Value* value = new Value(context, elementType, context.popRegisterName());
-    //TODO: use proper alignment
-    getAIRInsertBlock()->addCode("load " + elementType->getName() + ", " + v->getNameWithType() + ", align 4", value);
+
+    value->setHandle(handle->CreateLoad(elementType->getHandle(), v->getHandle(), value->getRawName()));
 
     return value;
 }
 
 void AIRBuilder::opStore(Value* ptr, Value* v) {
-    //TODO: use proper alignment
-    getAIRInsertBlock()->addCode("store " + v->getNameWithType() + ", " + ptr->getNameWithType() + ", align 4");
+    handle->CreateStore(v->getHandle(), ptr->getHandle());
 }
 
 void AIRBuilder::opReturn(Value* v) {
@@ -150,11 +310,11 @@ void AIRBuilder::opReturn(Value* v) {
         IRB_ERROR("cannot have more than 1 return instruction in a single block");
         return;
     }
-
+    
     if (v)
-        getAIRInsertBlock()->addCode("ret " + v->getNameWithType());
+        handle->CreateRet(v->getHandle());
     else
-        getAIRInsertBlock()->addCode("ret void");
+        handle->CreateRetVoid();
 
     getAIRInsertBlock()->setReturned();
 }
@@ -169,24 +329,22 @@ Value* AIRBuilder::opFunctionCall(Value* funcV, const std::vector<Value*>& argum
     }
 
     Value* value = new Value(context, type->getReturnType(), context.popRegisterName());
-    std::string code = "call " + type->getReturnType()->getName() + " " + funcV->getName() + "(";
-    for (uint32_t i = 0; i < arguments.size(); i++) {
-        if (i != 0)
-            code += ", ";
-        code += arguments[i]->getType()->getName() + type->getArguments()[i]->getAttributes() + " " + arguments[i]->getName();
-    }
-    code += ")";
-    getAIRInsertBlock()->addCode(code, (type->getReturnType()->getTypeID() == TypeID::Void ? nullptr : value));
+
+    std::vector<llvm::Value*> llvmArguments;
+    llvmArguments.reserve(arguments.size());
+    for (const auto& argument : arguments)
+        llvmArguments.push_back(argument->getHandle());
+    value->setHandle(handle->CreateCall(static_cast<llvm::FunctionType*>(type->getHandle()), funcV->getHandle(), llvmArguments, value->getRawName()));
 
     return value;
 }
 
 void AIRBuilder::opBranch(Block* block) {
-    getAIRInsertBlock()->addCode("br " + block->getNameWithType());
+    handle->CreateBr(static_cast<AIRBlock*>(block)->getHandle());
 }
 
 void AIRBuilder::opBranchCond(Value* cond, Block* blockTrue, Block* blockFalse) {
-    getAIRInsertBlock()->addCode("br " + cond->getNameWithType() + ", " + blockTrue->getNameWithType() + ", " + blockFalse->getNameWithType());
+    handle->CreateCondBr(cond->getHandle(), static_cast<AIRBlock*>(blockTrue)->getHandle(), static_cast<AIRBlock*>(blockFalse)->getHandle());
 }
 
 Value* AIRBuilder::opConstruct(Type* type, const std::vector<Value*>& components) {
@@ -199,16 +357,14 @@ Value* AIRBuilder::opConstruct(Type* type, const std::vector<Value*>& components
         }
     }
     if (allComponentsAreConstant) {
-        std::string code = (type->isVector() ? "<" : "[");
-        for (uint8_t i = 0; i < components.size(); i++) {
-            if (i != 0)
-                code += ", ";
-            code += components[i]->getNameWithType();
-        }
-        code += (type->isVector() ? ">" : "]");
-
-        Value* value = new Value(context, type, code, "", false);
+        Value* value = new Value(context, type);
         value->setIsConstant(true);
+
+        std::vector<llvm::Constant*> llvmComponents;
+        llvmComponents.reserve(components.size());
+        for (const auto& component : components)
+            llvmComponents.push_back(static_cast<llvm::Constant*>(component->getHandle()));
+        value->setHandle(llvm::ConstantVector::get(llvmComponents));
 
         return value;
     } else {
@@ -222,14 +378,16 @@ Value* AIRBuilder::opConstruct(Type* type, const std::vector<Value*>& components
 
 Value* AIRBuilder::opVectorExtract(Value* vec, ConstantInt* index) {
     Value* value = new Value(context, vec->getType()->getBaseType(), context.popRegisterName());
-    getAIRInsertBlock()->addCode("extractelement " + vec->getNameWithType() + ", " + index->getNameWithType(), value);
+
+    value->setHandle(handle->CreateExtractElement(vec->getHandle(), index->getHandle(), value->getRawName()));
 
     return value;
 }
 
 Value* AIRBuilder::opVectorInsert(Value* vec, Value* val, ConstantInt* index) {
     Value* value = new Value(context, vec->getType(), context.popRegisterName());
-    getAIRInsertBlock()->addCode("insertelement " + vec->getNameWithType() + ", " + val->getNameWithType() + ", " + index->getNameWithType(), value);
+
+    value->setHandle(handle->CreateInsertElement(vec->getHandle(), val->getHandle(), index->getHandle(), value->getRawName()));
 
     return value;
 }
@@ -242,17 +400,20 @@ Value* AIRBuilder::opGetElementPtr(PointerType* elementType, Value* ptr, const s
     //HACK: set the address space
     elementType->setAddressSpace(static_cast<PointerType*>(ptr->getType())->getAddressSpace());
     Value* value = new Value(context, elementType, context.popRegisterName());
-    //TODO: check if this is correct
-    std::string code = "getelementptr inbounds " + ptr->getType()->getElementType()->getName() + ", " + ptr->getNameWithType() + ", i32 0";
-    for (uint32_t i = 0; i < indexes.size(); i++)
-        code += ", " + indexes[i]->getNameWithType();
-    getAIRInsertBlock()->addCode(code, value);
+
+    std::vector<llvm::Value*> llvmIndexes;
+    llvmIndexes.reserve(indexes.size() + 1);
+    //Access the value at pointer first
+    llvmIndexes.push_back(handle->getInt32(0));
+    for (const auto& index : indexes)
+        llvmIndexes.push_back(index->getHandle());
+    value->setHandle(handle->CreateInBoundsGEP(ptr->getType()->getElementType()->getHandle(), ptr->getHandle(), llvmIndexes, value->getRawName()));
 
     return value;
 }
 
 void AIRBuilder::opUnreachable() {
-    getAIRInsertBlock()->addCode("unreachable");
+    handle->CreateUnreachable();
 }
 
 //TODO: support fast math
@@ -270,19 +431,17 @@ Value* AIRBuilder::opCast(Value* val, Type* type) {
         FunctionType* functionType = new FunctionType(context, type, {castFromType});
 
         if (type->getTypeID() == TypeID::Float && castFromType->getTypeID() == TypeID::Float) {
-            std::string instruction;
-            if (castFromType->getBitCount() > type->getBitCount()) 
-                instruction = "fptrunc";
-            else
-                instruction = "fpext";
             Value* value = new Value(context, type);
-            getAIRInsertBlock()->addCode(instruction + " " + val->getNameWithType() + " to " + type->getName(), value);
+            if (castFromType->getBitCount() > type->getBitCount())
+                value->setHandle(handle->CreateFPTrunc(val->getHandle(), type->getHandle(), value->getRawName()));
+            else
+                value->setHandle(handle->CreateFPExt(val->getHandle(), type->getHandle(), value->getRawName()));
 
             return value;
         }
         std::string functionName = "air.convert." + type->getOpPrefix(true, false) + "." + type->getTemplateName() + "." + castFromType->getOpPrefix(true, false) + "." + castFromType->getTemplateName();
 
-        Value* funcV = opFunctionDeclaration(functionType, functionName, "nounwind willreturn memory(none)");
+        Value* funcV = opFunctionDeclaration(functionType, functionName, {{llvm::Attribute::AttrKind::NoUnwind, 0}, {llvm::Attribute::AttrKind::WillReturn, 0}, {llvm::Attribute::AttrKind::Memory, 0}});
 
         return opFunctionCall(funcV, {val});
     } else if (val->getType()->isScalar() && type->isVector()) {
@@ -309,8 +468,9 @@ Value* AIRBuilder::opSample(Value* funcV, Value* texture, Value* sampler, Value*
 
 Value* AIRBuilder::opVariable(PointerType* type, Value* initializer) {
     Value* value = new Value(context, type, context.popRegisterName());
-    //TODO: use proper alignment
-    getAIRFunctionBlock()->addCode("alloca " + type->getElementType()->getName() + ", align 4", value);
+    
+    value->setHandle(handle->CreateAlloca(type->getElementType()->getHandle(), nullptr, value->getRawName()));
+
     if (initializer)
         opStore(value, initializer);
     
@@ -341,7 +501,7 @@ public:
 const std::string functionNames[3] = {"vertex", "fragment", "kernel"};
 
 //TODO: support other values whenever there is a 'TODO: here' comment
-void AIRBuilder::createMetadata(const std::string& languageName, uint32_t languageVersionMajor, uint32_t languageVersionMinor, uint32_t languageVersionPatch, const std::string& sourceFilenameStr) {
+std::string AIRBuilder::createMetadata(const std::string& languageName, uint32_t languageVersionMajor, uint32_t languageVersionMinor, uint32_t languageVersionPatch, const std::string& sourceFilenameStr) {
     MetadataBlock* block = new MetadataBlock(context);
 
     MetadataValue* sdkVersion = new MetadataValue(context);
@@ -380,7 +540,7 @@ void AIRBuilder::createMetadata(const std::string& languageName, uint32_t langua
             //TODO: support non-structure types as well
             if (!entryPoint.returnType->isStructure()) {
                 IRB_ERROR("Blah blah");
-                return;
+                return "";
             }
 
             Structure* structure = static_cast<StructureType*>(entryPoint.returnType)->getStructure();
@@ -396,7 +556,7 @@ void AIRBuilder::createMetadata(const std::string& languageName, uint32_t langua
                 } else if (entryPoint.functionRole == FunctionRole::Fragment) {
                     str += "!\"air.render_target\", i32 " + std::to_string(member.attributes.colorIndex) + ", i32 0"; //TODO: find out if the last argument should always be 0
                 }
-                str += ", !\"air.arg_type_name\", !\"" + member.type->getName() + "\", !\"air.arg_name\", !\"" + member.name + "\"}"; //TODO: don't use type name directly, use the name as if it was in Metal Shading Language
+                str += ", !\"air.arg_type_name\", !\"" + member.type->getDebugName() + "\", !\"air.arg_name\", !\"" + member.name + "\"}";
 
                 if (i != 0)
                     outputsStr += ", ";
@@ -411,7 +571,7 @@ void AIRBuilder::createMetadata(const std::string& languageName, uint32_t langua
                 //TODO: support non-structure types as well
                 if (!argument.type->isStructure()) {
                     IRB_ERROR("argument marked with 'buffer' attribute must have element type of structure");
-                    return;
+                    return "";
                 }
                 Structure* structure = static_cast<StructureType*>(argument.type)->getStructure();
                 for (uint32_t j = 0; j < structure->members.size(); j++) {
@@ -428,7 +588,7 @@ void AIRBuilder::createMetadata(const std::string& languageName, uint32_t langua
                             str += "!\"air.fragment_input\", !\"generated(randomstuff)\", !\"air.center\", !\"air.perspective\""; //TODO: here
                     }
 
-                    str += ", !\"air.arg_type_name\", !\"" + member.type->getName() + "\", !\"air.arg_name\", !\"" + member.name + "\"}"; //TODO: don't use type name directly, use the name as if it was in Metal Shading Language
+                    str += ", !\"air.arg_type_name\", !\"" + member.type->getDebugName() + "\", !\"air.arg_name\", !\"" + member.name + "\"}";
                     if (inputIndex != 0)
                         inputsStr += ", ";
                     inputsStr += crntInput->getName();
@@ -443,12 +603,12 @@ void AIRBuilder::createMetadata(const std::string& languageName, uint32_t langua
                 if (argument.attributes.isBuffer) {
                     if (!argument.type->isPointer()) {
                         IRB_ERROR("argument marked with 'buffer' attribute must have pointer type");
-                        return;
+                        return "";
                     }
                     //TODO: support non-structure types as well
                     if (!argument.type->getElementType()->isStructure()) {
                         IRB_ERROR("argument marked with 'buffer' attribute must have element type of structure");
-                        return;
+                        return "";
                     }
                     StructureType* structureType = static_cast<StructureType*>(argument.type->getElementType());
 
@@ -461,8 +621,7 @@ void AIRBuilder::createMetadata(const std::string& languageName, uint32_t langua
                         uint32_t size = member.type->getBitCount(true) / 8;
                         if (j != 0)
                             structureInfoStr += ", ";
-                        //TODO: don't use type name directly, use the name as if it was in Metal Shading Language
-                        structureInfoStr += "i32 " + std::to_string(offset) + ", i32 " + std::to_string(size) + ", i32 0, !\"" + member.type->getName() + "\", !\"" + member.name + "\""; //TODO: here
+                        structureInfoStr += "i32 " + std::to_string(offset) + ", i32 " + std::to_string(size) + ", i32 0, !\"" + member.type->getDebugName() + "\", !\"" + member.name + "\""; //TODO: here
                         offset += size;
                     }
                     structureInfoStr += "}";
@@ -476,9 +635,9 @@ void AIRBuilder::createMetadata(const std::string& languageName, uint32_t langua
                     str += "!\"air.sampler\", !\"air.location_index\", i32 " + std::to_string(argument.attributes.bindings.sampler) + ", i32 1";
                 } else {
                     IRB_ERROR("Every entry point input must be marked with exactly one of these attributes: 'input', 'buffer', 'texture' or 'sampler'");
-                    return;
+                    return "";
                 }
-                str += ", !\"air.arg_type_name\", !\"" + argument.type->getName() + "\", !\"air.arg_name\", !\"" + argument.name + "\"}"; //TODO: don't use type name directly, use the name as if it was in Metal Shading Language
+                str += ", !\"air.arg_type_name\", !\"" + argument.type->getDebugName() + "\", !\"air.arg_name\", !\"" + argument.name + "\"}";
                 if (inputIndex != 0)
                     inputsStr += ", ";
                 inputsStr += crntInput->getName();
@@ -489,7 +648,7 @@ void AIRBuilder::createMetadata(const std::string& languageName, uint32_t langua
             }
         }
 
-        block->addCode("!{" + entryPoint.value->getNameWithType() + ", " + entryPointOutputs->getName() + ", " + entryPointInputs->getName() + "}", entryPointInfo);
+        block->addCode("!{ptr @" + entryPoint.value->getRawName() + ", " + entryPointOutputs->getName() + ", " + entryPointInputs->getName() + "}", entryPointInfo);
         block->addCode("!{" + outputsStr + "}", entryPointOutputs); //TODO: here
         //TODO: add output information
         block->addCode("!{" + inputsStr + "}", entryPointInputs); //TODO: here
@@ -562,22 +721,99 @@ void AIRBuilder::createMetadata(const std::string& languageName, uint32_t langua
         block->addCodeToBeginning("!{" + sourceFilename->getName() + "}", airSourceFilename);
     }
 
-    code += block->getCode();
+    return block->getCode();
 }
 
-Value* AIRBuilder::opFunctionDeclaration(FunctionType* functionType, const std::string& name, const std::string& attributes) {
+std::string AIRBuilder::getCode(OptimizationLevel optimizationLevel, bool outputAssembly) {
+    //Uncomment if something goes wrong
+    /*
+    std::string tempCode;
+    llvm::raw_string_ostream tempStream(tempCode);
+    llvmModule->print(tempStream, nullptr);
+
+    std::unique_ptr<llvm::MemoryBuffer> buffer = llvm::MemoryBuffer::getMemBuffer(llvm::StringRef(tempCode));
+    llvm::SMDiagnostic error;
+    llvmModule = llvm::parseIR(buffer->getMemBufferRef(), error, context.handle);
+    if (!llvmModule) {
+        error.print("llvm-code", llvm::errs());
+        return "";
+    }
+    */
+
+    llvm::LoopAnalysisManager LAM;
+    llvm::FunctionAnalysisManager FAM;
+    llvm::CGSCCAnalysisManager CGAM;
+    llvm::ModuleAnalysisManager MAM;
+
+    llvm::PassBuilder PB;
+
+    //Register passes
+    PB.registerModuleAnalyses(MAM);
+    PB.registerCGSCCAnalyses(CGAM);
+    PB.registerFunctionAnalyses(FAM);
+    PB.registerLoopAnalyses(LAM);
+    PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+    //CreatePassManager
+    llvm::OptimizationLevel optLevel;
+    switch (optimizationLevel) {
+    case OptimizationLevel::O0:
+        optLevel = llvm::OptimizationLevel::O0;
+        break;
+    case OptimizationLevel::O1:
+        optLevel = llvm::OptimizationLevel::O1;
+        break;
+    case OptimizationLevel::O2:
+        optLevel = llvm::OptimizationLevel::O2;
+        break;
+    case OptimizationLevel::O3:
+        optLevel = llvm::OptimizationLevel::O3;
+        break;
+    case OptimizationLevel::Os:
+        optLevel = llvm::OptimizationLevel::Os;
+        break;
+    }
+    llvm::ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(optLevel);
+
+    //Run optimizations
+    MPM.run(*llvmModule, MAM);
+
+    //Remove the "memory" attribute, since xcrun metallib would throw "LLVM ERROR: Invalid bitcode file!"
+    for (auto &function : *llvmModule)
+        function.removeFnAttr(llvm::Attribute::AttrKind::Memory);
+
+    std::string outputCode;
+    llvm::raw_string_ostream stream(outputCode);
+    if (outputAssembly) {
+        stream << *llvmModule;
+        stream.flush();
+    } else {
+        llvm::WriteBitcodeToFile(*llvmModule, stream);
+    }
+
+    return outputCode;
+}
+
+Value* AIRBuilder::opFunctionDeclaration(FunctionType* functionType, const std::string& name, const std::vector<std::pair<llvm::Attribute::AttrKind, uint64_t> >& attributes) {
     if (auto* value = functionDeclarations[name])
         return value;
 
+    //TODO: use @ref opRegisterFunction?
     Value* value = new Value(context, functionType, name, "@", false);
 
-    code += "declare " + functionType->getReturnType()->getName() + " " + value->getName() + "(";
+    llvm::Function* llvmFunction = llvm::Function::Create(static_cast<llvm::FunctionType*>(functionType->getHandle()), llvm::Function::ExternalLinkage, name, llvmModule.get());
+    for (const auto& attribute : attributes)
+        llvmFunction->addFnAttr(llvm::Attribute::get(*context.handle, attribute.first, attribute.second));
     for (uint32_t i = 0; i < functionType->getArguments().size(); i++) {
-        if (i != 0)
-            code += ", ";
-        code += functionType->getArguments()[i]->getName() + functionType->getArguments()[i]->getAttributes();
+        Type* argumentType = functionType->getArguments()[i];
+        llvm::Argument* llvmArgument = llvmFunction->getArg(i);
+        if (argumentType->isTexture() || argumentType->isSampler()) {
+            llvmArgument->addAttr(llvm::Attribute::get(*context.handle, llvm::Attribute::AttrKind::NoCapture));
+            llvmArgument->addAttr(llvm::Attribute::get(*context.handle, llvm::Attribute::AttrKind::ReadOnly));
+        }
     }
-    code += ") " + attributes + "\n\n";
+    
+    value->setHandle(llvmFunction);
 
     functionDeclarations[name] = value;
 

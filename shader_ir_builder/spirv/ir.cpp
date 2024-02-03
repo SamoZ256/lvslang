@@ -2,6 +2,58 @@
 
 namespace irb {
 
+struct StandardFunctionInfo {
+    std::string name;
+    bool requiresOpExtInst = true;
+    int32_t argumentIndexForSpecialization = -1;
+};
+
+static std::map<std::string, StandardFunctionInfo> standardFunctionLUT = {
+    {"abs", {"Abs", true, 0}},
+    {"acos", {"Acos"}},
+    {"acosh", {"Acosh"}},
+    {"asin", {"Asin"}},
+    {"asinh", {"Asinh"}},
+    {"atan", {"Atan"}},
+    {"atanh", {"Atanh"}},
+    {"ceil", {"Ceil"}},
+    {"clamp", {"Clamp", true, 0}},
+    {"cos", {"Cos"}},
+    {"cosh", {"Cosh"}},
+    {"cross", {"Cross"}},
+    {"distance", {"Distance"}},
+    {"dot", {"Dot", false}},
+    {"exp", {"Exp"}},
+    {"exp2", {"Exp2"}},
+    {"floor", {"Floor"}},
+    {"fract", {"Fract"}},
+    //TODO: add image functions
+    //TODO: add transpose
+    {"isinf", {"IsInf", false}},
+    {"isnan", {"IsNan", false}},
+    {"length", {"Length"}},
+    {"log", {"Log"}},
+    {"log2", {"Log2"}},
+    {"max", {"Max", true, 0}},
+    {"min", {"Min", true, 0}},
+    {"mix", {"Mix", true, 0}},
+    {"normalize", {"Normalize"}},
+    {"pow", {"Pow"}},
+    {"reflect", {"Reflect"}},
+    {"refract", {"Refract"}},
+    {"round", {"Round"}},
+    {"sample", {"ImageSampleExplicitLod", false}},
+    {"sign", {"Sign", true, 0}},
+    {"sin", {"Sin"}},
+    {"sinh", {"Sinh"}},
+    {"smoothstep", {"SmoothStep"}},
+    {"sqrt", {"Sqrt"}},
+    {"step", {"Step"}},
+    {"tan", {"Tan"}},
+    {"tanh", {"Tanh"}}
+    //TODO: add transpose function
+};
+
 SPIRVBuilder::SPIRVBuilder(Context& aContext, const std::string& aCompilerName, bool aIncludeDebugInformation) : IRBuilder(aContext, aCompilerName, aIncludeDebugInformation) {
     blockHeader = new SPIRVBlock(context);
     blockDebug = new SPIRVBlock(context);
@@ -188,7 +240,7 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
     function = oldFunction;
 }
 
-void SPIRVBuilder::opName(Value* value, const std::string& name)  {
+void SPIRVBuilder::opName(Value* value, const std::string& name) {
     if (includeDebugInformation && !dynamic_cast<StandardFunctionValue*>(value))
         blockDebug->addCode("OpName " + value->getName() + " \"" + name + "\"");
 }
@@ -219,16 +271,16 @@ Value* SPIRVBuilder::opStandardFunctionDeclaration(FunctionType* functionType, c
     Value* returnV = functionType->getReturnType()->getValue(this);
 
     std::string fullName;
-    if (standardFunctionInfo.spirv.requiresOpExtInst)
+    if (standardFunctionInfo.requiresOpExtInst)
         fullName = "OpExtInst " + returnV->getName() + " " + importV->getName() + " ";
     else
         fullName = "Op";
 
     //TODO: only add template name if there is at least one argument
-    if (standardFunctionInfo.spirv.argumentIndexForSpecialization != -1)
-        fullName += functionType->getArguments()[standardFunctionInfo.spirv.argumentIndexForSpecialization]->getOpPrefix(true, false);
-    fullName += standardFunctionInfo.spirv.name;
-    if (!standardFunctionInfo.spirv.requiresOpExtInst)
+    if (standardFunctionInfo.argumentIndexForSpecialization != -1)
+        fullName += functionType->getArguments()[standardFunctionInfo.argumentIndexForSpecialization]->getOpPrefix(true, false);
+    fullName += standardFunctionInfo.name;
+    if (!standardFunctionInfo.requiresOpExtInst)
         fullName += " " + returnV->getName();
 
     Value* value = new StandardFunctionValue(context, functionType, fullName, "", false);

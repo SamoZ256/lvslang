@@ -83,7 +83,7 @@ public:
     void opMemberDecorate(Value* value, uint32_t memberIndex, Decoration decoration, const std::vector<std::string>& values = {});
 
     //Getters
-    std::string getCode() override {
+    std::string getCode(OptimizationLevel optimizationLevel, bool outputAssembly) override {
         return blockHeader->getCode() + blockDebug->getCode() + blockAnnotations->getCode() + blockTypesVariablesConstants->getCode() + blockMain->getCode();
     }
 

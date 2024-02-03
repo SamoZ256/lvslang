@@ -19,11 +19,12 @@ struct AIREntryPoint {
 };
 
 class AIRBuilder : public IRBuilder {
-private:
-    std::vector<AIREntryPoint> entryPoints;
-
 public:
-    AIRBuilder(Context& aContext, const std::string& aCompilerName, bool aIncludeDebugInformation = false) : IRBuilder(aContext, aCompilerName, aIncludeDebugInformation) {}
+    AIRBuilder(Context& aContext, const std::string& aCompilerName, bool aIncludeDebugInformation = false) : IRBuilder(aContext, aCompilerName, aIncludeDebugInformation) {
+        //TODO: set this to filename
+        llvmModule = std::make_unique<llvm::Module>(/*compilerName.c_str()*/"", *context.handle);
+        handle = new llvm::IRBuilder<>(*context.handle);
+    }
 
     void opExtension(const std::string& extensionName) override {}
 
@@ -87,19 +88,26 @@ public:
 
     Value* opVariable(PointerType* type, Value* initializer = nullptr) override;
 
-    void createMetadata(const std::string& languageName, uint32_t languageVersionMajor, uint32_t languageVersionMinor, uint32_t languageVersionPatch, const std::string& sourceFilenameStr);
+    std::string createMetadata(const std::string& languageName, uint32_t languageVersionMajor, uint32_t languageVersionMinor, uint32_t languageVersionPatch, const std::string& sourceFilenameStr);
 
     //Getters
-    std::string getCode() override {
-        return code;
+    std::string getCode(OptimizationLevel optimizationLevel, bool outputAssembly) override;
+
+    llvm::IRBuilder<>* getHandle() {
+        return handle;
     }
 
 private:
+    std::unique_ptr<llvm::Module> llvmModule;
+    //TODO: make this a unique_ptr
+    llvm::IRBuilder<>* handle;
+
     std::string code;
 
+    std::vector<AIREntryPoint> entryPoints;
     std::map<std::string, Value*> functionDeclarations;
 
-    Value* opFunctionDeclaration(FunctionType* functionType, const std::string& name, const std::string& attributes = "");
+    Value* opFunctionDeclaration(FunctionType* functionType, const std::string& name, const std::vector<std::pair<llvm::Attribute::AttrKind, uint64_t> >& attributes = {});
 
     inline AIRBlock* getAIRInsertBlock() {
         return static_cast<AIRBlock*>(getInsertBlock());

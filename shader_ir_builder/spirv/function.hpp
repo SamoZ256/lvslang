@@ -32,7 +32,7 @@ public:
     }
 
     //Getters
-    const std::string& getCode() override {
+    const std::string& getCode() {
         return code;
     }
 };

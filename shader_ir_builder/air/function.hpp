@@ -11,41 +11,24 @@ class AIRBuilder;
 
 class AIRFunction : public Function {
 public:
-    AIRFunction(Context& aContext, IRBuilder* builder, FunctionType* aFunctionType, Value* aValue) : Function(aContext, aFunctionType) {
-        value = aValue;
-        AIRBlock* block = new AIRBlock(context);
-        setInsertBlock(block);
+    AIRFunction(Context& aContext, IRBuilder* aBuilder, FunctionType* aFunctionType, Value* aValue);
 
-        //TODO: support attributes as well
-        code = "define " + functionType->getReturnType()->getName() + " " + value->getName() + "(";
-        //block->addCode("OpFunction " + returnV->getName() + " " + property + " " + functionV->getName(), value->getName(), name);
-    }
+    void end() override;
 
-    void end() override {
-        code += ") {";
-        for (uint32_t i = 0; i < blocks.size(); i++) {
-            if (i >= 2)
-                code += "\n" + blocks[i]->getRawName() + ":";
-            code += static_cast<AIRBlock*>(blocks[i])->getCode();
-        }
-        code += "}";
-    }
-
-    void addArgument(Value* argument) {
-        if (addedArgument)
-            code += ", ";
-        code += argument->getNameWithTypeAndAttributes();
-        addedArgument = true;
-    }
+    void addArgument(Value* argument);
 
     //Getters
-    const std::string& getCode() override {
-        return code;
+    llvm::Function* getHandle() {
+        return static_cast<llvm::Function*>(value->getHandle());
     }
 
+    //Setters
+    void setInsertBlock(Block* aInsertBlock) override;
+
 private:
-    std::string code;
-    bool addedArgument = false;
+    AIRBuilder* builder;
+
+    uint32_t argumentIndex = 0;
 };
 
 } //namespace irb

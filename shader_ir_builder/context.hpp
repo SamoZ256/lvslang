@@ -3,6 +3,18 @@
 
 #include "common.hpp"
 
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Verifier.h"
+
 namespace irb {
 
 //Forward declarations
@@ -59,12 +71,16 @@ struct StructureMember {
 };
 
 struct Structure {
+    llvm::StructType* handle = nullptr;
     std::vector<StructureMember> members;
     bool decorated = false; //For SPIRV backend
 };
 
 class Context {
 public:
+    //TODO: make this a void*?
+    std::unique_ptr<llvm::LLVMContext> handle;
+
     std::set<std::string> registerNames;
 
     std::string registerName = "";
@@ -78,6 +94,14 @@ public:
     uint32_t crntRegisterNumber = 2;
 
     Context() {}
+
+    void reset() {
+        handle = std::make_unique<llvm::LLVMContext>();
+        crntRegisterNumber = 0;
+        registerNames.clear();
+        structures.clear();
+        codeMain = "";
+    }
 
     void pushRegisterName(const std::string& name) {
         registerName = name;

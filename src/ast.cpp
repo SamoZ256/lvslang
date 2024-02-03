@@ -513,7 +513,7 @@ irb::Value* FunctionDefinitionAST::_codegen(irb::Type* requiredType) {
         }
     }
 
-    if (TARGET_IS_IR(irb::target)) {
+    if (irb::target == irb::Target::SPIRV) {
         irb::Block* block = builder->opBlock();
         builder->setInsertBlock(block);
     }

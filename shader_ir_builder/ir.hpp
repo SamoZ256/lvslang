@@ -5,6 +5,14 @@
 
 namespace irb {
 
+enum class OptimizationLevel {
+    O0,
+    O1,
+    O2,
+    O3,
+    Os
+};
+
 class IRBuilder {
 protected:
     Context& context;
@@ -131,7 +139,7 @@ public:
     virtual Value* opVariable(PointerType* type, Value* initializer = nullptr) = 0;
 
     //Getters
-    virtual std::string getCode() = 0;
+    virtual std::string getCode(OptimizationLevel optimizationLevel, bool outputAssembly) = 0;
 
     //Blocks
     Block* getInsertBlock() {

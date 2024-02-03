@@ -29,8 +29,6 @@ public:
         return functionType;
     }
 
-    virtual const std::string& getCode() = 0;
-
     //Blocks
     Block* getInsertBlock() {
         return insertBlock;
@@ -54,7 +52,7 @@ public:
         return blocks[1];
     }
 
-    void setInsertBlock(Block* aInsertBlock) {
+    virtual void setInsertBlock(Block* aInsertBlock) {
         insertBlock = aInsertBlock;
         if (!std::count(blocks.begin(), blocks.end(), insertBlock))
             blocks.push_back(insertBlock);

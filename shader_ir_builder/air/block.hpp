@@ -5,8 +5,13 @@
 
 namespace irb {
 
+class AIRBuilder;
+class Function;
+
 class AIRBlock : public Block {
 protected:
+    llvm::BasicBlock* handle;
+
     std::string codeBegin;
     std::string code;
 
@@ -26,6 +31,8 @@ protected:
 public:
     AIRBlock(Context& aContext, const std::string& aName = "") : Block(aContext, new BlockType(aContext), aName) {}
 
+    AIRBlock(Context& aContext, Function* function, const std::string& aName = "");
+
     void addCodeToBeginning(const std::string& instruction, Value* registerToAssign = nullptr, const std::string& comment = "") {
         codeBegin += _addCode(instruction, registerToAssign, comment);
     }
@@ -35,10 +42,15 @@ public:
     }
 
     //Getters
+    llvm::BasicBlock* getHandle() {
+        return handle;
+    }
+
     std::string getCode() {
         return codeBegin + (codeBegin.size() == 0 ? "" : "\n") + code + "\n";
     }
 
+    //Setters
     void setReturned() {
         returned = true;
     }
