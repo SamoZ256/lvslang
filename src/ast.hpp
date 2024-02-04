@@ -472,6 +472,10 @@ public:
         return functionType;
     }
 
+    inline bool getIsDefined() const {
+        return isDefined;
+    }
+
     inline bool getIsSTDFunction() const {
         return isSTDFunction;
     }

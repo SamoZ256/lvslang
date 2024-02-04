@@ -202,6 +202,29 @@ irb::Value* BinaryExpressionAST::_codegen(irb::Type* requiredType) {
 }
 
 irb::Value* FunctionPrototypeAST::_codegen(irb::Type* requiredType) {
+    //Check for redefinition
+    if (isDefined) {
+        if (functionDeclarations.count(_name)) {
+            const auto& declarations = functionDeclarations[_name];
+            for (const auto& declaration : declarations) {
+                if (identifier == declaration->getIdentifier()) {
+                    if (type->equals(declaration->getType())) {
+                        if (declaration->getIsDefined()) {
+                            logError("redefinition of function '" + _name + "'");
+                            return nullptr;
+                        } else {
+                            logError("forward declared functions are not supported yet");
+                            return nullptr;
+                        }
+                    } else {
+                        logError("cannot distinguish functions '" + _name + "' based on return type alone");
+                        return nullptr;
+                    }
+                }
+            }
+        }
+    }
+
     functionDeclarations[_name].push_back(this);
 
     if (TARGET_IS_CODE(irb::target)) {

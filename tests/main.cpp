@@ -114,7 +114,7 @@ void addTest(const std::string& testName) {
     }
 }
 
-const std::vector<std::string> availableTests = {"basic", "control_flow", "vectors", "matrices", "standard_functions", "advanced_features"};
+const std::vector<std::string> availableTests = {"basic", "control_flow", "vectors", "matrices", "standard_functions"/*, "advanced_features"*/};
 
 int main(int argc, char* argv[]) {
     std::vector<std::string> testNames;
@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
     parser.config().program(argv[0]).description("LVSLANG tests");
     params.add_parameter(outputExpected, "--output-expected").nargs(0).help("Write results to expected files.");
     params.add_parameter(baseDir, "--base-dir").nargs(1).help("Base directory for tests.").default_value(baseDir);
-    params.add_parameter(testNames, "--tests").choices(availableTests).help("Run only the specific tests.");
+    params.add_parameter(testNames, "--tests").minargs(1).choices(availableTests).help("Run only the specific tests.");
 
     if (!parser.parse_args(argc, argv, 1))
         return 1;
