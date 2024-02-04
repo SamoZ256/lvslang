@@ -4,9 +4,9 @@ target triple = "air64-apple-macosx14.0.0"
 %FragmentOut = type { <4 x float> }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
-define %FragmentOut @testControlFlow.psMyBuffer(ptr nocapture readonly %myBuffer) local_unnamed_addr #0 {
+define %FragmentOut @testControlFlow.psMyBuffer(ptr addrspace(2) nocapture noundef readonly "air-buffer-no-alias" %myBuffer) local_unnamed_addr #0 {
 entry:
-  %_291 = load float, ptr %myBuffer, align 4
+  %_291 = load float, ptr addrspace(2) %myBuffer, align 4
   %op3 = fcmp ogt float %_291, 0.000000e+00
   %op4 = fcmp olt float %_291, 0.000000e+00
   %. = select i1 %op4, <4 x float> <float 0.000000e+00, float 1.000000e+00, float 0.000000e+00, float 1.000000e+00>, <4 x float> <float 0.000000e+00, float 0.000000e+00, float 1.000000e+00, float 1.000000e+00>

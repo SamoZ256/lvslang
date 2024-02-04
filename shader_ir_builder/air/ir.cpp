@@ -64,6 +64,20 @@ static std::map<std::string, StandardFunctionInfo> standardFunctionLUT = {
 
 void AIRBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, const std::string& name, Type* returnType, const std::vector<Argument>& arguments) {
     entryPoints.push_back({entryPoint, functionRole, returnType, arguments});
+    if (FunctionType* functionType = dynamic_cast<FunctionType*>(entryPoint->getType())) {
+        llvm::Function* llvmFunction = static_cast<llvm::Function*>(entryPoint->getHandle());
+        for (uint32_t i = 0; i < functionType->getArguments().size(); i++) {
+            Type* argumentType = functionType->getArguments()[i];
+            llvm::Argument* llvmArgument = llvmFunction->getArg(i);
+            if (argumentType->isPointer() && !argumentType->isTexture() && !argumentType->isSampler()) {
+                llvmArgument->addAttr(llvm::Attribute::get(*context.handle, llvm::Attribute::AttrKind::NoUndef));
+                llvmArgument->addAttr(llvm::Attribute::get(*context.handle, "air-buffer-no-alias"));
+            }
+        }
+    } else {
+        IRB_INVALID_ARGUMENT_WITH_REASON("entryPoint", "entry point is not a function");
+        return;
+    }
 }
 
 Value* AIRBuilder::opConstant(ConstantValue* val) {
@@ -397,8 +411,7 @@ Value* AIRBuilder::opGetElementPtr(PointerType* elementType, Value* ptr, const s
         IRB_INVALID_ARGUMENT_WITH_REASON("ptr", "type of 'ptr' is not pointer type");
         return nullptr;
     }
-    //HACK: set the address space
-    elementType->setAddressSpace(static_cast<PointerType*>(ptr->getType())->getAddressSpace());
+    //elementType->setAddressSpace(static_cast<PointerType*>(ptr->getType())->getAddressSpace());
     Value* value = new Value(context, elementType, context.popRegisterName());
 
     std::vector<llvm::Value*> llvmIndexes;
@@ -627,7 +640,7 @@ std::string AIRBuilder::createMetadata(const std::string& languageName, uint32_t
                     structureInfoStr += "}";
 
                     uint32_t align = 8; //TODO: do not hardcode this
-                    str += "!\"air.buffer\", !\"air.location_index\", i32 " + std::to_string(argument.attributes.bindings.buffer) + ", i32 1, !\"air.read\", !\"air.address_space\", i32 " + std::to_string(static_cast<PointerType*>(argument.type)->getAddressSpace()) + ", !\"air.struct_type_info\", " + structureInfo->getName() + ", !\"air.arg_type_size\", i32 " + std::to_string(structureType->getBitCount(true) / 8) + ", !\"air.arg_type_align_size\", i32 " + std::to_string(align);
+                    str += "!\"air.buffer\", !\"air.location_index\", i32 " + std::to_string(argument.attributes.bindings.buffer) + ", i32 1, !\"air.read\", !\"air.address_space\", i32 " + std::to_string(argument.type->getHandle()->getPointerAddressSpace()) + ", !\"air.struct_type_info\", " + structureInfo->getName() + ", !\"air.arg_type_size\", i32 " + std::to_string(structureType->getBitCount(true) / 8) + ", !\"air.arg_type_align_size\", i32 " + std::to_string(align);
                 } else if (argument.attributes.isTexture) {
                     //TODO: do not hardcode template arguments
                     str += "!\"air.texture\", !\"air.location_index\", i32 " + std::to_string(argument.attributes.bindings.texture) + ", i32 1, !\"air.sample\"";

@@ -120,7 +120,7 @@ ExpressionAST* parseMain();
 ExpressionAST* parseExpression(int expressionPrecedence = 0);
 
 //Type
-irb::Type* _parseTypeExpression() {
+irb::Type* _parseTypeExpression(irb::Attributes* attributes = nullptr) {
     irb::Type* type;
     if (tokenIsType(crntToken)) {
         if (crntToken == TOKEN_TYPE_STRUCT) {
@@ -249,7 +249,7 @@ irb::Type* _parseTypeExpression() {
         type = new irb::ArrayType(context, type, arraySizes[i]->valueU());
     
     if (pointerCount)
-        type = new irb::PointerType(context, type, irb::StorageClass::Function);
+        type = new irb::PointerType(context, type, irb::StorageClass::Function, (attributes ? attributes->addressSpace : 0));
     
     return type;
 }
@@ -299,7 +299,21 @@ irb::Type* _parseTypeWithAttributesExpression(irb::Attributes* attributes = null
     }
     */
 
-    irb::Type* type = _parseTypeExpression();
+    if (attributes) {
+        for (const auto& attrib : attribs) {
+            switch (attrib.attrib) {
+            case irb::Attribute::Enum::AddressSpace:
+                attributes->addressSpace = attrib.values[0];
+                break;
+            default:
+                break;
+            }
+        }
+    }
+
+    attribs.clear();
+
+    irb::Type* type = _parseTypeExpression(attributes);
 
     while (crntToken == '[') {
         if (!attributes) {
@@ -350,9 +364,6 @@ irb::Type* _parseTypeWithAttributesExpression(irb::Attributes* attributes = null
     if (attributes) {
         for (const auto& attrib : attribs) {
             switch (attrib.attrib) {
-            case irb::Attribute::Enum::AddressSpace:
-                attributes->addressSpace = attrib.values[0];
-                break;
             case irb::Attribute::Enum::DescriptorSet:
                 attributes->bindings.set = attrib.values[0];
                 attributes->bindings.binding = attrib.values[1];

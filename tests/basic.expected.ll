@@ -10,13 +10,13 @@ target triple = "air64-apple-macosx14.0.0"
 declare <4 x float> @air.sample_texture_2d.v4f32(ptr addrspace(1) nocapture readonly, ptr addrspace(2) nocapture readonly, <2 x float>, i1, <2 x i32>, i1, float, float, i32) local_unnamed_addr #0
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
-define %VertexOut @vertexMain.sVertexIn.psModel(%VertexIn %vertexIn, ptr nocapture readonly %model) local_unnamed_addr #1 {
+define %VertexOut @vertexMain.sVertexIn.psModel(%VertexIn %vertexIn, ptr addrspace(2) nocapture noundef readonly "air-buffer-no-alias" %model) local_unnamed_addr #1 {
 entry:
   %vertexIn.fca.0.extract = extractvalue %VertexIn %vertexIn, 0
   %vertexIn.fca.1.extract = extractvalue %VertexIn %vertexIn, 1
-  %_282 = load <2 x float>, ptr %model, align 8
-  %_286 = getelementptr inbounds %Model, ptr %model, i64 0, i32 1
-  %_287 = load <2 x float>, ptr %_286, align 8
+  %_282 = load <2 x float>, ptr addrspace(2) %model, align 8
+  %_286 = getelementptr inbounds %Model, ptr addrspace(2) %model, i64 0, i32 1
+  %_287 = load <2 x float>, ptr addrspace(2) %_286, align 8
   %op = fmul <2 x float> %vertexIn.fca.0.extract, %_287
   %op0 = fadd <2 x float> %_282, %op
   %0 = shufflevector <2 x float> %op0, <2 x float> poison, <4 x i32> <i32 0, i32 1, i32 poison, i32 poison>

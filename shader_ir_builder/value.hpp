@@ -65,8 +65,6 @@ protected:
     Context& context;
     TypeID typeID;
 
-    std::string attributesStr;
-
 public:
     Type(Context& aContext, TypeID aTypeID = TypeID::None) : context(aContext), typeID(aTypeID) {}
 
@@ -107,16 +105,6 @@ public:
 
     virtual std::string getCastOpName(Type* castFrom) {
         return "";
-    }
-
-    inline std::string getAttributes() const {
-        return attributesStr;
-    }
-
-    inline void addAttribute(const std::string& attr) {
-        //TODO: make this actually do something
-        if (target == Target::AIR)
-            attributesStr += attr;
     }
 
     inline bool isScalar() const {
@@ -234,14 +222,6 @@ public:
 
     inline virtual std::string getName() {
         return prefix + name;
-    }
-
-    inline std::string getNameWithType() {
-        return type->getName() + " " + getName();
-    }
-
-    inline std::string getNameWithTypeAndAttributes() {
-        return type->getName() + type->getAttributes() + " " + getName();
     }
 
     inline bool isConstant() const {
@@ -654,13 +634,12 @@ class PointerType : public Type {
 private:
     Type* _baseType;
     StorageClass storageClass;
-    int addressSpace = -1;
 
 public:
-    PointerType(Context& aContext, Type* aBaseType, StorageClass aStorageClass) : Type(aContext, TypeID::Pointer), _baseType(aBaseType), storageClass(aStorageClass) {
+    PointerType(Context& aContext, Type* aBaseType, StorageClass aStorageClass, uint64_t addressSpace = 0) : Type(aContext, TypeID::Pointer), _baseType(aBaseType), storageClass(aStorageClass) {
         //TODO: set the adress space correctly
         if (target == Target::AIR)
-            handle = llvm::PointerType::get(*context.handle, 0u);
+            handle = llvm::PointerType::get(*context.handle, addressSpace);
     }
 
     ~PointerType() = default;
@@ -670,7 +649,7 @@ public:
     }
 
     bool equals(Type* other) override {
-        return (other->isPointer() && _baseType == other->getElementType());
+        return (other->isPointer() && _baseType->equals(other->getElementType()));
     }
 
     Value* getValue(IRBuilder* builder, bool decorate = false) override;
@@ -717,16 +696,6 @@ public:
     //Getters
     inline StorageClass getStorageClass() const {
         return storageClass;
-    }
-
-    inline int getAddressSpace() const {
-        return addressSpace;
-    }
-
-    //Setters
-    inline void setAddressSpace(int aAddressSpace) {
-        //TODO: set the address space
-        addressSpace = aAddressSpace;
     }
 };
 
@@ -1176,9 +1145,6 @@ private:
 public:
     TextureType(Context& aContext, TextureViewType aViewType, Type* aType) : Type(aContext, TypeID::Texture), viewType(aViewType), type(aType) {
         if (target == Target::AIR)
-            attributesStr = " nocapture readonly";
-        
-        if (target == Target::AIR)
             handle = llvm::PointerType::get(*context.handle, 1u);
     }
 
@@ -1245,9 +1211,6 @@ public:
 class SamplerType : public Type {
 public:
     SamplerType(Context& aContext) : Type(aContext, TypeID::Sampler) {
-        if (target == Target::AIR)
-            attributesStr = " nocapture readonly";
-        
         if (target == Target::AIR)
             handle = llvm::PointerType::get(*context.handle, 2u);
     }
