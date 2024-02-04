@@ -42,17 +42,15 @@ public:
 
     Value* opStructureDefinition(StructureType* structureType) override;
 
-    Value* opRegisterFunction(FunctionType* functionType) override;
+    Function* opStandardFunctionDeclaration(FunctionType* functionType, const std::string& name) override;
 
-    Value* opStandardFunctionDeclaration(FunctionType* functionType, const std::string& name) override;
+    Function* opFunction(FunctionType* functionType, const std::string& name) override;
 
-    Value* opFunction(FunctionType* functionType, Value* value = nullptr) override;
+    Value* opFunctionParameter(Function* function, Type* type) override;
 
-    Value* opFunctionParameter(Type* type) override;
+    void opFunctionEnd(Function* function) override;
 
-    void opFunctionEnd() override;
-
-    Block* opBlock() override;
+    Block* opBlock(Function* function) override;
 
     Value* opOperation(Value* l, Value* r, Type* type, Operation operation) override;
 
@@ -93,8 +91,18 @@ public:
     //Getters
     std::string getCode(OptimizationLevel optimizationLevel, bool outputAssembly) override;
 
+    std::unique_ptr<llvm::Module>& getLLVMModule() {
+        return llvmModule;
+    }
+
     llvm::IRBuilder<>* getHandle() {
         return handle;
+    }
+
+    //Setters
+    void setInsertBlock(Block* block) override {
+        insertBlock = block;
+        handle->SetInsertPoint(static_cast<AIRBlock*>(insertBlock)->getHandle());
     }
 
 private:
@@ -105,20 +113,12 @@ private:
     std::string code;
 
     std::vector<AIREntryPoint> entryPoints;
-    std::map<std::string, Value*> functionDeclarations;
+    std::map<std::string, Function*> functionDeclarations;
 
-    Value* opFunctionDeclaration(FunctionType* functionType, const std::string& name, const std::vector<std::pair<llvm::Attribute::AttrKind, uint64_t> >& attributes = {});
+    Function* opFunctionDeclaration(FunctionType* functionType, const std::string& name, const std::vector<std::pair<llvm::Attribute::AttrKind, uint64_t> >& attributes = {});
 
     inline AIRBlock* getAIRInsertBlock() {
         return static_cast<AIRBlock*>(getInsertBlock());
-    }
-
-    inline AIRBlock* getAIRFunctionBlock() {
-        return static_cast<AIRBlock*>(getFunctionBlock());
-    }
-
-    inline AIRBlock* getAIRFirstFunctionBlock() {
-        return static_cast<AIRBlock*>(getFirstFunctionBlock());
     }
 };
 

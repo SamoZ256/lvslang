@@ -5,35 +5,16 @@
 
 namespace irb {
 
-class Function {
+class Function : public Value {
 protected:
-    Context& context;
-
-    FunctionType* functionType;
-    Value* value;
-
     std::vector<Block*> blocks;
-    Block* insertBlock = nullptr;
 
 public:
-    Function(Context& aContext, FunctionType* aFunctionType) : context(aContext), functionType(aFunctionType) {}
+    Function(Context& aContext, FunctionType* type, const std::string& aName, const std::string& prefix = "%", bool checkIfNameIsAlreadyUsed = true) : Value(aContext, type, aName, prefix, checkIfNameIsAlreadyUsed) {}
 
-    virtual void end() = 0;
-
-    //Getters
-    Value* getValue() {
-        return value;
-    }
-
-    FunctionType* getType() {
-        return functionType;
-    }
+    virtual void end(IRBuilder* builder) = 0;
 
     //Blocks
-    Block* getInsertBlock() {
-        return insertBlock;
-    }
-
     Block* getFunctionBlock() {
         if (blocks.size() == 0) {
             IRB_ERROR("there is currently no active block");
@@ -46,24 +27,15 @@ public:
     Block* getFirstBlock() {
         if (blocks.size() <= 1) {
             IRB_ERROR("there is currently no active block");
+            std::cout << name << " : " << blocks.size() << std::endl;
             return nullptr;
         }
 
         return blocks[1];
     }
 
-    virtual void setInsertBlock(Block* aInsertBlock) {
-        insertBlock = aInsertBlock;
-        if (!std::count(blocks.begin(), blocks.end(), insertBlock))
-            blocks.push_back(insertBlock);
-    }
-
-    void popLastBlock() {
-        if (blocks.size() <= 1) {
-            IRB_ERROR("there is currently no active block");
-            return;
-        }
-        blocks.pop_back();
+    void _addBlock(Block* block) {
+        blocks.push_back(block);
     }
 };
 

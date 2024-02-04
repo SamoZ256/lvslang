@@ -481,12 +481,10 @@ irb::Value* FunctionPrototypeAST::_codegen(irb::Type* requiredType) {
             regName = "import " + regName;
             value = new irb::Value(context, nullptr, regName);
         } else {*/
-        if (isSTDFunction) {
+        if (isSTDFunction)
             value = builder->opStandardFunctionDeclaration(functionType, _name);
-        } else {
-            context.pushRegisterName(_name);
-            value = builder->opRegisterFunction(functionType);
-        }
+        else 
+            value = builder->opFunction(functionType, _name);
         builder->opName(value, _name + "(");
 
         return new irb::Value(context, functionType);
@@ -500,24 +498,13 @@ irb::Value* FunctionDefinitionAST::_codegen(irb::Type* requiredType) {
     if (!declV)
         return nullptr;
     
-    //TODO: check for this
-    if (false) {
-        logError("Redefinition of function '" + declaration->name() + "'");
-        return nullptr;
-    }
-    
     irb::Value* value = nullptr;
     if (TARGET_IS_IR(irb::target)) {
         irb::FunctionType* functionType = static_cast<irb::FunctionType*>(declV->getType());
-        value = builder->opFunction(functionType, declaration->getValue());
-        if (declaration->getFunctionRole() != irb::FunctionRole::Normal) {
+        value = declaration->getValue();
+        builder->setActiveFunction(declaration->getValue());
+        if (declaration->getFunctionRole() != irb::FunctionRole::Normal)
             builder->opEntryPoint(value, declaration->getFunctionRole(), declaration->name(), declaration->getType(), declaration->arguments());
-            if (irb::target == irb::Target::SPIRV && declaration->getType()->getTypeID() != irb::TypeID::Void) {
-                //builder->opAddInterfaceVariable(declaration->getReturnVariable()); //TODO: change this to static cast?
-                //if (declaration->getFunctionRole() == FunctionRole::Vertex)
-                //    builder->opAddInterfaceVariable(declaration->getPositionVariable());
-            }
-        }
     }
 
     for (uint32_t i = 0; i < declaration->arguments().size(); i++) {
@@ -530,14 +517,14 @@ irb::Value* FunctionDefinitionAST::_codegen(irb::Type* requiredType) {
                 auto& attr = declaration->getArgumentAttributes(i);
                 context.pushRegisterName(arg.name);
                 irb::Type* type = arg.type;
-                irb::Value* argValue = builder->opFunctionParameter(type);
+                irb::Value* argValue = builder->opFunctionParameter(declaration->getValue(), type);
                 variables[arg.name] = {argValue, false};
             }
         }
     }
 
     if (irb::target == irb::Target::SPIRV) {
-        irb::Block* block = builder->opBlock();
+        irb::Block* block = builder->opBlock(declaration->getValue());
         builder->setInsertBlock(block);
     }
     
@@ -558,7 +545,7 @@ irb::Value* FunctionDefinitionAST::_codegen(irb::Type* requiredType) {
             else
                 builder->opUnreachable();
         }
-        builder->opFunctionEnd();
+        builder->opFunctionEnd(declaration->getValue());
     }
 
     return value;
@@ -704,17 +691,17 @@ irb::Value* IfExpressionAST::_codegen(irb::Type* requiredType) {
         for (uint32_t i = 0; i < ifThenBlocks.size(); i++) {
             if (i != 0) {
                 context.pushRegisterName("cond");
-                elseBs[i - 1] = builder->opBlock();
+                elseBs[i - 1] = builder->opBlock(builder->getActiveFunction());
             }
             context.pushRegisterName("then");
-            thenBs[i] = builder->opBlock();
+            thenBs[i] = builder->opBlock(builder->getActiveFunction());
             context.pushRegisterName(i == 0 ? "end" : "merge");
-            mergeBs[i] = builder->opBlock();
+            mergeBs[i] = builder->opBlock(builder->getActiveFunction());
         }
         irb::Block* endB = mergeBs[0];
         if (elseBlock) {
             context.pushRegisterName("else");
-            elseBs[elseBs.size() - 1] = builder->opBlock();
+            elseBs[elseBs.size() - 1] = builder->opBlock(builder->getActiveFunction());
         } else {
             elseBs[elseBs.size() - 1] = endB;
         }
@@ -758,21 +745,21 @@ irb::Value* WhileExpressionAST::_codegen(irb::Type* requiredType) {
     if (TARGET_IS_IR(irb::target)) {
         if (irb::target == irb::Target::SPIRV) {
             context.pushRegisterName("loop_merge");
-            mergeB = builder->opBlock();
+            mergeB = builder->opBlock(builder->getActiveFunction());
         }
         context.pushRegisterName("loop_cond");
-        condB = builder->opBlock();
+        condB = builder->opBlock(builder->getActiveFunction());
         context.pushRegisterName("loop");
-        thenB = builder->opBlock();
+        thenB = builder->opBlock(builder->getActiveFunction());
         if (irb::target == irb::Target::SPIRV) {
             context.pushRegisterName("after_loop");
-            afterThenB = builder->opBlock();
+            afterThenB = builder->opBlock(builder->getActiveFunction());
         } else {
             mergeB = condB;
             afterThenB = condB;
         }
         context.pushRegisterName("end");
-        endB = builder->opBlock();
+        endB = builder->opBlock(builder->getActiveFunction());
 
         builder->opBranch(isDoWhile ? thenB : mergeB);
 

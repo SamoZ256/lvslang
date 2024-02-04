@@ -5,6 +5,7 @@
 
 namespace irb {
 
+class Function;
 class IRBuilder;
 
 class BlockType : public Type {
@@ -40,7 +41,7 @@ public:
 
 class Block : public Value {
 public:
-    using Value::Value;
+    Block(Context& aContext, Function* aFunction, std::string aName = "");
 
     //Getters
     bool hasReturned() {
@@ -48,6 +49,7 @@ public:
     }
 
 protected:
+    Function* function;
     bool returned = false;
 };
 

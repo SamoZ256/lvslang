@@ -11,23 +11,13 @@ class AIRBuilder;
 
 class AIRFunction : public Function {
 public:
-    AIRFunction(Context& aContext, IRBuilder* aBuilder, FunctionType* aFunctionType, Value* aValue);
+    AIRFunction(Context& aContext, IRBuilder* builder, FunctionType* type, const std::string& aName = "");
 
-    void end() override;
+    void end(IRBuilder* builder) override;
 
     void addArgument(Value* argument);
 
-    //Getters
-    llvm::Function* getHandle() {
-        return static_cast<llvm::Function*>(value->getHandle());
-    }
-
-    //Setters
-    void setInsertBlock(Block* aInsertBlock) override;
-
 private:
-    AIRBuilder* builder;
-
     uint32_t argumentIndex = 0;
 };
 

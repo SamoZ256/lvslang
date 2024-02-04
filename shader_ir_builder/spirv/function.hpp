@@ -14,21 +14,16 @@ private:
     std::string code;
 
 public:
-    SPIRVFunction(Context& aContext, IRBuilder* builder, FunctionType* aFunctionType, Block* blockTypesVariablesConstants, Value* aValue) : Function(aContext, aFunctionType) {
-        value = aValue;
-        Value* functionV = functionType->getValue(builder);
-        Value* returnV = functionType->getReturnV();
-        SPIRVBlock* block = new SPIRVBlock(context);
-        setInsertBlock(block);
-        block->addCode("OpFunction " + returnV->getName() + " " + property + " " + functionV->getName(), value, value->getName());
-    }
+    using Function::Function;
 
-    void end() override {
-        SPIRVBlock* endB = new SPIRVBlock(context);
+    void end(IRBuilder* builder) override {
+        Value* functionV = type->getValue(builder);
+        Value* returnV = static_cast<FunctionType*>(type)->getReturnV();
+        static_cast<SPIRVBlock*>(getFunctionBlock())->addCodeToBeginning("OpFunction " + returnV->getName() + " " + property + " " + functionV->getName(), this, getName());
+        SPIRVBlock* endB = new SPIRVBlock(context, this);
         endB->addCode("OpFunctionEnd");
         for (uint32_t i = 0; i < blocks.size(); i++)
             code += static_cast<SPIRVBlock*>(blocks[i])->getCode();
-        code += endB->getCode();
     }
 
     //Getters

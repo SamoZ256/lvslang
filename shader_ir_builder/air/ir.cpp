@@ -90,25 +90,8 @@ Value* AIRBuilder::opStructureDefinition(StructureType* structureType) {
     return new Value(context, structureType, context.popRegisterName());
 }
 
-Value* AIRBuilder::opRegisterFunction(FunctionType* functionType) {
-    Value* value = new Value(context, functionType, context.popRegisterName() + functionType->getTemplateName(), "@", false);
-
-    llvm::Function* llvmFunction = llvm::Function::Create(static_cast<llvm::FunctionType*>(functionType->getHandle()), llvm::Function::ExternalLinkage, value->getRawName(), llvmModule.get());
-    for (uint32_t i = 0; i < functionType->getArguments().size(); i++) {
-        Type* argumentType = functionType->getArguments()[i];
-        llvm::Argument* llvmArgument = llvmFunction->getArg(i);
-        if (argumentType->isTexture() || argumentType->isSampler()) {
-            llvmArgument->addAttr(llvm::Attribute::get(*context.handle, llvm::Attribute::AttrKind::NoCapture));
-            llvmArgument->addAttr(llvm::Attribute::get(*context.handle, llvm::Attribute::AttrKind::ReadOnly));
-        }
-    }
-    value->setHandle(llvmFunction);
-
-    return value;
-}
-
 //TODO: support fast math (in function names)
-Value* AIRBuilder::opStandardFunctionDeclaration(FunctionType* functionType, const std::string& name) {
+Function* AIRBuilder::opStandardFunctionDeclaration(FunctionType* functionType, const std::string& name) {
     //TODO: uncomment
     /*
     if (!standardFunctionLUT.count(name)) {
@@ -134,15 +117,14 @@ Value* AIRBuilder::opStandardFunctionDeclaration(FunctionType* functionType, con
     }
 }
 
-Value* AIRBuilder::opFunction(FunctionType* functionType, Value* value) {
-    if (!value)
-        value = opRegisterFunction(functionType);
-    function = new AIRFunction(context, this, functionType, value);
+Function* AIRBuilder::opFunction(FunctionType* functionType, const std::string& name) {
+    AIRFunction* function = new AIRFunction(context, this, functionType, name + functionType->getTemplateName());
+    setInsertBlock(new AIRBlock(context, function, "entry"));
 
-    return function->getValue();
+    return function;
 }
 
-Value* AIRBuilder::opFunctionParameter(Type* type) {
+Value* AIRBuilder::opFunctionParameter(Function* function, Type* type) {
     Value* argValue = new Value(context, type, context.popRegisterName());
     static_cast<AIRFunction*>(function)->addArgument(argValue);
     //This is required in order to maintain consistency with SPIRV
@@ -151,11 +133,11 @@ Value* AIRBuilder::opFunctionParameter(Type* type) {
     return value;
 }
 
-void AIRBuilder::opFunctionEnd() {
-    function->end();
+void AIRBuilder::opFunctionEnd(Function* function) {
+    function->end(this);
 }
 
-Block* AIRBuilder::opBlock() {
+Block* AIRBuilder::opBlock(Function* function) {
     AIRBlock* block = new AIRBlock(context, function, context.popRegisterName());
 
     return block;
@@ -490,14 +472,32 @@ Value* AIRBuilder::opVariable(PointerType* type, Value* initializer) {
     return value;
 }
 
+static uint32_t metadataCounter = 0;
+
 class MetadataValue : public Value {
 public:
-    MetadataValue(Context& aContext, const std::string& aName = "") : Value(aContext, new ScalarType(aContext, TypeID::Void, 0, true), aName, "!") {}
+    MetadataValue(Context& aContext, const std::string& aName = "") : Value(aContext, new ScalarType(aContext, TypeID::Void, 0, true), (aName == "" ? std::to_string(metadataCounter++) : aName), "!") {}
 };
 
-class MetadataBlock : public AIRBlock {
+class MetadataBlock {
+public:
+    void addCodeToBeginning(const std::string& instruction, Value* registerToAssign = nullptr, const std::string& comment = "") {
+        codeBegin += _addCode(instruction, registerToAssign, comment);
+    }
+
+    void addCode(const std::string& instruction, Value* registerToAssign = nullptr, const std::string& comment = "") {
+        code += _addCode(instruction, registerToAssign, comment);
+    }
+
+    std::string getCode() {
+        return codeBegin + (codeBegin.size() == 0 ? "" : "\n") + code + "\n";
+    }
+
 private:
-    std::string _addCode(const std::string& instruction, Value* registerToAssign, const std::string& comment) override {
+    std::string codeBegin;
+    std::string code;
+
+    std::string _addCode(const std::string& instruction, Value* registerToAssign, const std::string& comment) {
         std::string inst = "\n" + registerToAssign->getName() + " = " + instruction;
 
         if (comment.size() != 0)
@@ -505,9 +505,6 @@ private:
 
         return inst;
     }
-
-public:
-    using AIRBlock::AIRBlock;
 };
 
 //TODO: check if it really called "kernel"
@@ -515,7 +512,9 @@ const std::string functionNames[3] = {"vertex", "fragment", "kernel"};
 
 //TODO: support other values whenever there is a 'TODO: here' comment
 std::string AIRBuilder::createMetadata(const std::string& languageName, uint32_t languageVersionMajor, uint32_t languageVersionMinor, uint32_t languageVersionPatch, const std::string& sourceFilenameStr) {
-    MetadataBlock* block = new MetadataBlock(context);
+    metadataCounter = 0;
+
+    MetadataBlock* block = new MetadataBlock();
 
     MetadataValue* sdkVersion = new MetadataValue(context);
     MetadataValue* wcharSize = new MetadataValue(context);
@@ -746,7 +745,7 @@ std::string AIRBuilder::getCode(OptimizationLevel optimizationLevel, bool output
 
     std::unique_ptr<llvm::MemoryBuffer> buffer = llvm::MemoryBuffer::getMemBuffer(llvm::StringRef(tempCode));
     llvm::SMDiagnostic error;
-    llvmModule = llvm::parseIR(buffer->getMemBufferRef(), error, context.handle);
+    llvmModule = llvm::parseIR(buffer->getMemBufferRef(), error, *context.handle);
     if (!llvmModule) {
         error.print("llvm-code", llvm::errs());
         return "";
@@ -807,26 +806,13 @@ std::string AIRBuilder::getCode(OptimizationLevel optimizationLevel, bool output
     return outputCode;
 }
 
-Value* AIRBuilder::opFunctionDeclaration(FunctionType* functionType, const std::string& name, const std::vector<std::pair<llvm::Attribute::AttrKind, uint64_t> >& attributes) {
+Function* AIRBuilder::opFunctionDeclaration(FunctionType* functionType, const std::string& name, const std::vector<std::pair<llvm::Attribute::AttrKind, uint64_t> >& attributes) {
     if (auto* value = functionDeclarations[name])
         return value;
 
-    //TODO: use @ref opRegisterFunction?
-    Value* value = new Value(context, functionType, name, "@", false);
-
-    llvm::Function* llvmFunction = llvm::Function::Create(static_cast<llvm::FunctionType*>(functionType->getHandle()), llvm::Function::ExternalLinkage, name, llvmModule.get());
+    Function* value = new AIRFunction(context, this, functionType, name);
     for (const auto& attribute : attributes)
-        llvmFunction->addFnAttr(llvm::Attribute::get(*context.handle, attribute.first, attribute.second));
-    for (uint32_t i = 0; i < functionType->getArguments().size(); i++) {
-        Type* argumentType = functionType->getArguments()[i];
-        llvm::Argument* llvmArgument = llvmFunction->getArg(i);
-        if (argumentType->isTexture() || argumentType->isSampler()) {
-            llvmArgument->addAttr(llvm::Attribute::get(*context.handle, llvm::Attribute::AttrKind::NoCapture));
-            llvmArgument->addAttr(llvm::Attribute::get(*context.handle, llvm::Attribute::AttrKind::ReadOnly));
-        }
-    }
-    
-    value->setHandle(llvmFunction);
+        static_cast<llvm::Function*>(value->getHandle())->addFnAttr(llvm::Attribute::get(*context.handle, attribute.first, attribute.second));
 
     functionDeclarations[name] = value;
 

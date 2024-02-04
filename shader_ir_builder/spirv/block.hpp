@@ -35,7 +35,10 @@ private:
     }
 
 public:
-    SPIRVBlock(Context& aContext, const std::string& aName = "") : Block(aContext, new BlockType(aContext), aName) {}
+    using Block::Block;
+
+    //HACK: this is a temporary solution to avoid having to pass a function to the constructor
+    SPIRVBlock(Context& aContext) : Block(aContext, nullptr) {}
 
     void addCodeToBeginning(const std::string& instruction, Value* registerToAssign = nullptr, const std::string& comment = "") {
         codeBegin += _addCode(instruction, registerToAssign, comment);

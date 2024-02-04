@@ -7,11 +7,6 @@
 
 namespace irb {
 
-class StandardFunctionValue : public Value {
-public:
-    using Value::Value;
-};
-
 class SPIRVBuilder : public IRBuilder {
 public:
     SPIRVBuilder(Context& aContext, const std::string& aCompilerName, bool aIncludeDebugInformation = false);
@@ -30,17 +25,15 @@ public:
 
     Value* opStructureDefinition(StructureType* structureType) override;
 
-    Value* opRegisterFunction(FunctionType* functionType) override;
+    Function* opStandardFunctionDeclaration(FunctionType* functionType, const std::string& name) override;
 
-    Value* opStandardFunctionDeclaration(FunctionType* functionType, const std::string& name) override;
+    Function* opFunction(FunctionType* functionType, const std::string& name) override;
 
-    Value* opFunction(FunctionType* functionType, Value* value = nullptr) override;
+    Value* opFunctionParameter(Function* function, Type* type) override;
 
-    Value* opFunctionParameter(Type* type) override;
+    void opFunctionEnd(Function* function) override;
 
-    void opFunctionEnd() override;
-
-    Block* opBlock() override;
+    Block* opBlock(Function* function) override;
 
     Value* opOperation(Value* l, Value* r, Type* type, Operation operation) override;
 
@@ -101,10 +94,6 @@ private:
 
     inline SPIRVBlock* getSPIRVInsertBlock() {
         return static_cast<SPIRVBlock*>(getInsertBlock());
-    }
-
-    inline SPIRVBlock* getSPIRVFunctionBlock() {
-        return static_cast<SPIRVBlock*>(getFunctionBlock());
     }
 
     inline SPIRVBlock* getSPIRVFirstFunctionBlock() {

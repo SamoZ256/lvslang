@@ -14,14 +14,6 @@ enum class OptimizationLevel {
 };
 
 class IRBuilder {
-protected:
-    Context& context;
-    Function* function = nullptr;
-    Value* importV;
-
-    std::string compilerName;
-    bool includeDebugInformation;
-
 public:
     IRBuilder(Context& aContext, const std::string& aCompilerName, bool aIncludeDebugInformation) : context(aContext), compilerName(aCompilerName), includeDebugInformation(aIncludeDebugInformation) {}
 
@@ -51,7 +43,6 @@ public:
      */
     virtual void opMemoryModel() = 0;
 
-    //TODO: add the new parameters into the comment
     /**
      * Defines an entry point.
      * 
@@ -88,18 +79,16 @@ public:
     //TODO: create operation for structure declaration
 
     virtual Value* opStructureDefinition(StructureType* structureType) = 0;
-
-    virtual Value* opRegisterFunction(FunctionType* functionType) = 0;
     
-    virtual Value* opStandardFunctionDeclaration(FunctionType* functionType, const std::string& name) = 0;
+    virtual Function* opStandardFunctionDeclaration(FunctionType* functionType, const std::string& name) = 0;
 
-    virtual Value* opFunction(FunctionType* functionType, Value* value = nullptr) = 0;
+    virtual Function* opFunction(FunctionType* functionType, const std::string& name) = 0;
 
-    virtual Value* opFunctionParameter(Type* type) = 0;
+    virtual Value* opFunctionParameter(Function* function, Type* type) = 0;
 
-    virtual void opFunctionEnd() = 0;
+    virtual void opFunctionEnd(Function* function) = 0;
 
-    virtual Block* opBlock() = 0;
+    virtual Block* opBlock(Function* function) = 0;
 
     virtual Value* opOperation(Value* l, Value* r, Type* type, Operation operation) = 0;
 
@@ -142,53 +131,55 @@ public:
     virtual std::string getCode(OptimizationLevel optimizationLevel, bool outputAssembly) = 0;
 
     //Blocks
+    Function* getActiveFunction() {
+        return activeFunction;
+    }
+
     Block* getInsertBlock() {
-        if (!function) {
-            IRB_ERROR("there is currently no active function");
-            return nullptr;
-        }
-        Block* block = function->getInsertBlock();
-        if (!block) {
-            IRB_ERROR("there is currently no active block inside function");
+        if (!insertBlock) {
+            IRB_ERROR("there is currently no active block");
             return nullptr;
         }
 
-        return block;
+        return insertBlock;
     }
 
     Block* getFunctionBlock() {
-        if (!function) {
+        if (!activeFunction) {
             IRB_ERROR("there is currently no active function");
             return nullptr;
         }
 
-        return function->getFunctionBlock();
+        return activeFunction->getFunctionBlock();
     }
 
     Block* getFirstFunctionBlock() {
-        if (!function) {
+        if (!activeFunction) {
             IRB_ERROR("there is currently no active function");
             return nullptr;
         }
 
-        return function->getFirstBlock();
+        return activeFunction->getFirstBlock();
     }
 
-    void setInsertBlock(Block* block) {
-        if (!function) {
-            IRB_ERROR("there is currently no active function");
-            return;
-        }
-        function->setInsertBlock(block);
+    //Setters
+    void setActiveFunction(Function* function) {
+        activeFunction = function;
     }
 
-    void popLastBlock() {
-        if (!function) {
-            IRB_ERROR("there is currently no active function");
-            return;
-        }
-        function->popLastBlock();
+    virtual void setInsertBlock(Block* block) {
+        insertBlock = block;
     }
+
+protected:
+    Context& context;
+    Function* activeFunction = nullptr;
+    Value* importV;
+
+    std::string compilerName;
+    bool includeDebugInformation;
+
+    Block* insertBlock = nullptr;
 };
 
 } //namespace irb

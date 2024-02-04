@@ -20,17 +20,17 @@
       %float = OpTypeFloat 32
     %v4float = OpTypeVector %float 4
   %_struct_6 = OpTypeStruct %v4float
-       %void = OpTypeVoid
-         %37 = OpTypeFunction %void
 %_ptr_Output__struct_6 = OpTypePointer Output %_struct_6
           %5 = OpVariable %_ptr_Output__struct_6 Output
+       %void = OpTypeVoid
+         %40 = OpTypeFunction %void
     %float_0 = OpConstant %float 0
     %float_1 = OpConstant %float 1
         %306 = OpConstantComposite %v4float %float_0 %float_0 %float_0 %float_1
        %2225 = OpConstantComposite %_struct_6 %306
 
                ; Function 2
-          %2 = OpFunction %void None %37
+          %2 = OpFunction %void None %40
         %307 = OpLabel
                OpStore %5 %2225
                OpReturn

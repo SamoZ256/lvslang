@@ -389,7 +389,7 @@ private:
     bool isSTDFunction;
     irb::FunctionRole functionRole;
 
-    irb::Value* value;
+    irb::Function* value;
     irb::FunctionType* functionType;
 
     //For finding the correct overload
@@ -464,7 +464,7 @@ public:
         return functionRole;
     }
 
-    inline irb::Value* getValue() const {
+    inline irb::Function* getValue() const {
         return value;
     }
 

@@ -54,6 +54,11 @@ static std::map<std::string, StandardFunctionInfo> standardFunctionLUT = {
     //TODO: add transpose function
 };
 
+class StandardFunctionValue : public SPIRVFunction {
+public:
+    using SPIRVFunction::SPIRVFunction;
+};
+
 SPIRVBuilder::SPIRVBuilder(Context& aContext, const std::string& aCompilerName, bool aIncludeDebugInformation) : IRBuilder(aContext, aCompilerName, aIncludeDebugInformation) {
     blockHeader = new SPIRVBlock(context);
     blockDebug = new SPIRVBlock(context);
@@ -96,8 +101,11 @@ void SPIRVBuilder::opMemoryModel()  {
 }
 
 void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, const std::string& name, Type* returnType, const std::vector<Argument>& arguments)  {
-    Function* oldFunction = function;
-    Value* entryPointFunction = opFunction(new FunctionType(context, new ScalarType(context, TypeID::Void, 0, true), {}));
+    Function* oldFunction = activeFunction;
+    Block* oldInsertBlock = insertBlock;
+
+    Function* entryPointFunction = opFunction(new FunctionType(context, new ScalarType(context, TypeID::Void, 0, true), {}), name);
+    setActiveFunction(entryPointFunction);
 
     GET_FUNCTION_ROLE_NAME(functionRole);
     std::string code = "OpEntryPoint " + functionRoleStr + " " + entryPointFunction->getName() + " \"" + name + "\"";
@@ -109,7 +117,7 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
     //blockHeader->addCode("OpSourceExtension \"GL_GOOGLE_include_directive\"");
 
     //Body
-    Block* block = opBlock();
+    Block* block = opBlock(entryPointFunction);
     setInsertBlock(block);
 
     // -------- Input --------
@@ -232,12 +240,13 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
 
     opReturn();
 
-    opFunctionEnd();
+    opFunctionEnd(entryPointFunction);
 
     blockHeader->addCodeToBeginning(code);
 
     //Set the active function to be the old active funciton
-    function = oldFunction;
+    activeFunction = oldFunction;
+    insertBlock = oldInsertBlock;
 }
 
 void SPIRVBuilder::opName(Value* value, const std::string& name) {
@@ -257,15 +266,11 @@ Value* SPIRVBuilder::opConstant(ConstantValue* val)  {
     return _addCodeToTypesVariablesConstantsBlock(typeV->getType(), str, context.popRegisterName());
 }
 
-Value* SPIRVBuilder::opStructureDefinition(StructureType* structureType)  {
+Value* SPIRVBuilder::opStructureDefinition(StructureType* structureType) {
     return new Value(context, structureType, context.popRegisterName());
 }
 
-Value* SPIRVBuilder::opRegisterFunction(FunctionType* functionType)  {
-    return new Value(context, functionType, context.popRegisterName() + functionType->getTemplateName(), "%", false);
-}
-
-Value* SPIRVBuilder::opStandardFunctionDeclaration(FunctionType* functionType, const std::string& name)  {
+Function* SPIRVBuilder::opStandardFunctionDeclaration(FunctionType* functionType, const std::string& name) {
     const auto& standardFunctionInfo = standardFunctionLUT[name];
 
     Value* returnV = functionType->getReturnType()->getValue(this);
@@ -283,24 +288,17 @@ Value* SPIRVBuilder::opStandardFunctionDeclaration(FunctionType* functionType, c
     if (!standardFunctionInfo.requiresOpExtInst)
         fullName += " " + returnV->getName();
 
-    Value* value = new StandardFunctionValue(context, functionType, fullName, "", false);
-
-    return value;
+    return new StandardFunctionValue(context, functionType, fullName, "", false);
 }
 
-Value* SPIRVBuilder::opFunction(FunctionType* functionType, Value* value)  {
-    if (!value)
-        value = opRegisterFunction(functionType);
-    function = new SPIRVFunction(context, this, functionType, blockTypesVariablesConstants, value);
-    value = function->getValue();
-    //TODO: uncomment?
-    //if (includeDebugInformation && name.size() != 0)
-    //    opName(name, value);
+Function* SPIRVBuilder::opFunction(FunctionType* functionType, const std::string& name) {
+    SPIRVFunction* function = new SPIRVFunction(context, functionType, name);
+    setInsertBlock(new SPIRVBlock(context, function));
 
-    return value;
+    return function;
 }
 
-Value* SPIRVBuilder::opFunctionParameter(Type* type)  {
+Value* SPIRVBuilder::opFunctionParameter(Function* function, Type* type) {
     type = new PointerType(context, type, StorageClass::Function);
     Value* value = new Value(context, type, context.popRegisterName());
     getSPIRVInsertBlock()->addCode("OpFunctionParameter " + type->getValue(this)->getName(), value);
@@ -308,19 +306,19 @@ Value* SPIRVBuilder::opFunctionParameter(Type* type)  {
     return value;
 }
 
-void SPIRVBuilder::opFunctionEnd()  {
-    function->end();
+void SPIRVBuilder::opFunctionEnd(Function* function) {
+    function->end(this);
     blockMain->addCodeRaw(static_cast<SPIRVFunction*>(function)->getCode() + "\n");
 }
 
-Block* SPIRVBuilder::opBlock()  {
-    SPIRVBlock* block = new SPIRVBlock(context, context.popRegisterName());
+Block* SPIRVBuilder::opBlock(Function* function) {
+    SPIRVBlock* block = new SPIRVBlock(context, function, context.popRegisterName());
     block->addCodeToBeginning("OpLabel", block);
 
     return block;
 }
 
-Value* SPIRVBuilder::opOperation(Value* l, Value* r, Type* type, Operation operation)  {
+Value* SPIRVBuilder::opOperation(Value* l, Value* r, Type* type, Operation operation) {
     if (!type->isOperatorFriendly()) {
         IRB_INVALID_ARGUMENT_WITH_REASON("type", "type is not operator friendly (e.g. is not one of: scalar, pointer, vector)");
         return nullptr;

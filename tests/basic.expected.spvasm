@@ -40,40 +40,40 @@
       %float = OpTypeFloat 32
     %v2float = OpTypeVector %float 2
     %v4float = OpTypeVector %float 4
- %_struct_14 = OpTypeStruct %v4float %v2float
  %_struct_12 = OpTypeStruct %v2float %v2float
- %_struct_13 = OpTypeStruct %v2float %v2float
-       %void = OpTypeVoid
-         %44 = OpTypeFunction %void
 %_ptr_Input__struct_12 = OpTypePointer Input %_struct_12
           %3 = OpVariable %_ptr_Input__struct_12 Input
+ %_struct_13 = OpTypeStruct %v2float %v2float
 %_ptr_Uniform__struct_13 = OpTypePointer Uniform %_struct_13
           %4 = OpVariable %_ptr_Uniform__struct_13 Uniform
+ %_struct_14 = OpTypeStruct %v4float %v2float
 %_ptr_Output__struct_14 = OpTypePointer Output %_struct_14
           %5 = OpVariable %_ptr_Output__struct_14 Output
 %_ptr_Output_v4float = OpTypePointer Output %v4float
 %gl_Position = OpVariable %_ptr_Output_v4float Output
       %int_0 = OpConstant %int 0
+       %void = OpTypeVoid
+         %49 = OpTypeFunction %void
     %float_0 = OpConstant %float 0
     %float_1 = OpConstant %float 1
- %_struct_15 = OpTypeStruct %v4float
-         %56 = OpTypeImage %float 2D 0 0 0 1 Unknown
-         %58 = OpTypeSampler
 %_ptr_Input__struct_14 = OpTypePointer Input %_struct_14
           %8 = OpVariable %_ptr_Input__struct_14 Input
-%_ptr_UniformConstant_56 = OpTypePointer UniformConstant %56
-          %9 = OpVariable %_ptr_UniformConstant_56 UniformConstant
-%_ptr_UniformConstant_58 = OpTypePointer UniformConstant %58
-         %10 = OpVariable %_ptr_UniformConstant_58 UniformConstant
+         %57 = OpTypeImage %float 2D 0 0 0 1 Unknown
+%_ptr_UniformConstant_57 = OpTypePointer UniformConstant %57
+          %9 = OpVariable %_ptr_UniformConstant_57 UniformConstant
+         %60 = OpTypeSampler
+%_ptr_UniformConstant_60 = OpTypePointer UniformConstant %60
+         %10 = OpVariable %_ptr_UniformConstant_60 UniformConstant
+ %_struct_15 = OpTypeStruct %v4float
 %_ptr_Output__struct_15 = OpTypePointer Output %_struct_15
          %11 = OpVariable %_ptr_Output__struct_15 Output
-         %66 = OpTypeSampledImage %56
+         %66 = OpTypeSampledImage %57
 %_ptr_Input_v2float = OpTypePointer Input %v2float
        %uint = OpTypeInt 32 0
      %uint_1 = OpConstant %uint 1
 
                ; Function 2
-          %2 = OpFunction %void None %44
+          %2 = OpFunction %void None %49
          %67 = OpLabel
          %70 = OpLoad %_struct_12 %3
          %71 = OpLoad %_struct_13 %4
@@ -94,12 +94,12 @@
                OpFunctionEnd
 
                ; Function 7
-          %7 = OpFunction %void None %44
+          %7 = OpFunction %void None %49
          %96 = OpLabel
         %166 = OpAccessChain %_ptr_Input_v2float %8 %uint_1
         %167 = OpLoad %v2float %166
-        %101 = OpLoad %56 %9
-        %102 = OpLoad %58 %10
+        %101 = OpLoad %57 %9
+        %102 = OpLoad %60 %10
         %145 = OpSampledImage %66 %101 %102
         %146 = OpImageSampleExplicitLod %v4float %145 %167 Lod %float_0
         %162 = OpCompositeConstruct %_struct_15 %146

@@ -190,11 +190,9 @@ protected:
 public:
     Value(Context& aContext, Type* aType, std::string aName = "", const std::string aPrefix = "%", bool checkIfNameIsAlreadyUsed = true) : context(aContext), type(aType), prefix(aPrefix) {
         name = aName;
-        if (aName == "") {
+        if (name == "") {
             if (target == Target::SPIRV)
                 name = std::to_string(context.crntRegisterNumber++);
-            else if (target == Target::AIR)
-                name = (prefix == "%" ? "_" : "") + std::to_string(context.crntRegisterNumber++);
         } else {
             std::string baseName = name;
 
