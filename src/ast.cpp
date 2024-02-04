@@ -213,8 +213,7 @@ irb::Value* FunctionPrototypeAST::_codegen(irb::Type* requiredType) {
                             logError("redefinition of function '" + _name + "'");
                             return nullptr;
                         } else {
-                            logError("forward declared functions are not supported yet");
-                            return nullptr;
+                            value = declaration->getValue();
                         }
                     } else {
                         logError("cannot distinguish functions '" + _name + "' based on return type alone");
@@ -481,30 +480,38 @@ irb::Value* FunctionPrototypeAST::_codegen(irb::Type* requiredType) {
             regName = "import " + regName;
             value = new irb::Value(context, nullptr, regName);
         } else {*/
-        if (isSTDFunction)
-            value = builder->opStandardFunctionDeclaration(functionType, _name);
-        else 
-            value = builder->opFunction(functionType, _name);
-        builder->opName(value, _name + "(");
+        if (!value) {
+            if (isSTDFunction) {
+                value = builder->opStandardFunctionDeclaration(functionType, _name);
+            } else {
+                value = builder->opFunction(functionType, _name);
+                //TODO: name the function properly
+                builder->opName(value, _name + "(");
+            }
+        }
 
-        return new irb::Value(context, functionType);
+        return value;
     }
 }
 
 irb::Value* FunctionDefinitionAST::_codegen(irb::Type* requiredType) {
     crntFunction = declaration;
 
-    irb::Value* declV = declaration->codegen();
-    if (!declV)
+    irb::Value* value = declaration->codegen();
+    if (!value)
         return nullptr;
     
-    irb::Value* value = nullptr;
     if (TARGET_IS_IR(irb::target)) {
-        irb::FunctionType* functionType = static_cast<irb::FunctionType*>(declV->getType());
-        value = declaration->getValue();
+        irb::FunctionType* functionType = static_cast<irb::FunctionType*>(value->getType());
         builder->setActiveFunction(declaration->getValue());
         if (declaration->getFunctionRole() != irb::FunctionRole::Normal)
             builder->opEntryPoint(value, declaration->getFunctionRole(), declaration->name(), declaration->getType(), declaration->arguments());
+    }
+
+    if (TARGET_IS_IR(irb::target)) {
+        context.pushRegisterName("entry");
+        irb::Block* block = builder->opBlock(declaration->getValue());
+        builder->setInsertBlock(block);
     }
 
     for (uint32_t i = 0; i < declaration->arguments().size(); i++) {
@@ -522,11 +529,6 @@ irb::Value* FunctionDefinitionAST::_codegen(irb::Type* requiredType) {
             }
         }
     }
-
-    if (irb::target == irb::Target::SPIRV) {
-        irb::Block* block = builder->opBlock(declaration->getValue());
-        builder->setInsertBlock(block);
-    }
     
     irb::Value* bodyV = body->codegen();
     if (!bodyV)
@@ -534,8 +536,7 @@ irb::Value* FunctionDefinitionAST::_codegen(irb::Type* requiredType) {
     
     if (TARGET_IS_CODE(irb::target)) {
         std::string bodyStr = bodyV->getRawName();
-        //bodyStr = bodyStr.substr(0, 2) + functionHeader + bodyStr.substr(2);
-        std::string codeStr = declV->getRawName() + " " + bodyStr;
+        std::string codeStr = value->getRawName() + " " + bodyStr;
 
         value = new irb::Value(context, nullptr, codeStr);
     } else {

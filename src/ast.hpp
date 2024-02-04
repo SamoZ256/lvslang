@@ -389,7 +389,7 @@ private:
     bool isSTDFunction;
     irb::FunctionRole functionRole;
 
-    irb::Function* value;
+    irb::Function* value = nullptr;
     irb::FunctionType* functionType;
 
     //For finding the correct overload

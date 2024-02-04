@@ -102,7 +102,6 @@ void SPIRVBuilder::opMemoryModel()  {
 
 void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, const std::string& name, Type* returnType, const std::vector<Argument>& arguments)  {
     Function* oldFunction = activeFunction;
-    Block* oldInsertBlock = insertBlock;
 
     Function* entryPointFunction = opFunction(new FunctionType(context, new ScalarType(context, TypeID::Void, 0, true), {}), name);
     setActiveFunction(entryPointFunction);
@@ -246,11 +245,10 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
 
     //Set the active function to be the old active funciton
     activeFunction = oldFunction;
-    insertBlock = oldInsertBlock;
 }
 
 void SPIRVBuilder::opName(Value* value, const std::string& name) {
-    if (includeDebugInformation && !dynamic_cast<StandardFunctionValue*>(value))
+    if (includeDebugInformation)
         blockDebug->addCode("OpName " + value->getName() + " \"" + name + "\"");
 }
 
@@ -293,7 +291,7 @@ Function* SPIRVBuilder::opStandardFunctionDeclaration(FunctionType* functionType
 
 Function* SPIRVBuilder::opFunction(FunctionType* functionType, const std::string& name) {
     SPIRVFunction* function = new SPIRVFunction(context, functionType, name);
-    setInsertBlock(new SPIRVBlock(context, function));
+    new SPIRVBlock(context, function);
 
     return function;
 }
@@ -301,7 +299,7 @@ Function* SPIRVBuilder::opFunction(FunctionType* functionType, const std::string
 Value* SPIRVBuilder::opFunctionParameter(Function* function, Type* type) {
     type = new PointerType(context, type, StorageClass::Function);
     Value* value = new Value(context, type, context.popRegisterName());
-    getSPIRVInsertBlock()->addCode("OpFunctionParameter " + type->getValue(this)->getName(), value);
+    static_cast<SPIRVBlock*>(function->getFunctionBlock())->addCode("OpFunctionParameter " + type->getValue(this)->getName(), value);
 
     return value;
 }

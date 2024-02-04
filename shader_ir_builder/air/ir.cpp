@@ -118,10 +118,7 @@ Function* AIRBuilder::opStandardFunctionDeclaration(FunctionType* functionType, 
 }
 
 Function* AIRBuilder::opFunction(FunctionType* functionType, const std::string& name) {
-    AIRFunction* function = new AIRFunction(context, this, functionType, name + functionType->getTemplateName());
-    setInsertBlock(new AIRBlock(context, function, "entry"));
-
-    return function;
+    return new AIRFunction(context, this, functionType, name + functionType->getTemplateName());
 }
 
 Value* AIRBuilder::opFunctionParameter(Function* function, Type* type) {
@@ -742,6 +739,7 @@ std::string AIRBuilder::getCode(OptimizationLevel optimizationLevel, bool output
     std::string tempCode;
     llvm::raw_string_ostream tempStream(tempCode);
     llvmModule->print(tempStream, nullptr);
+    std::cout << tempCode << std::endl;
 
     std::unique_ptr<llvm::MemoryBuffer> buffer = llvm::MemoryBuffer::getMemBuffer(llvm::StringRef(tempCode));
     llvm::SMDiagnostic error;
