@@ -15,6 +15,41 @@ const std::string textureViewTypeLUT[] = {
     "Buffer"
 };
 
+std::string getNameForRegister(Type* type) {
+    if (type->getTypeID() == TypeID::Void) {
+        return "void";
+    } else if (type->getTypeID() == TypeID::Bool) {
+        return "bool";
+    } else if (type->getTypeID() == TypeID::Integer) {
+        return (type->getIsSigned() ? "int" : "uint") + std::to_string(type->getBitCount());
+    } else if (type->getTypeID() == TypeID::Float) {
+        return "float" + std::to_string(type->getBitCount());
+    } else if (type->getTypeID() == TypeID::Pointer) {
+        return "ptr_" + storageClassLUT[(int)static_cast<PointerType*>(type)->getStorageClass()] + "_" + getNameForRegister(type->getElementType());
+    } else if (type->getTypeID() == TypeID::Array) {
+        return "array_" + getNameForRegister(type->getBaseType()) + "_" + std::to_string(static_cast<ArrayType*>(type)->getSize());
+    } else if (type->getTypeID() == TypeID::Structure) {
+        return "struct_" + static_cast<StructureType*>(type)->getName();
+    } else if (type->getTypeID() == TypeID::Function) {
+        FunctionType* functionType = static_cast<FunctionType*>(type);
+        std::string registerName = "func_" + getNameForRegister(functionType->getReturnType());
+        for (auto* arg : functionType->getArguments())
+            registerName += "_" + getNameForRegister(arg);
+        
+        return registerName;
+    } else if (type->getTypeID() == TypeID::Vector) {
+        return "vec" + std::to_string(static_cast<VectorType*>(type)->getComponentCount()) + getNameForRegister(type->getBaseType());
+    } else if (type->getTypeID() == TypeID::Matrix) {
+        return "mat" + std::to_string(static_cast<MatrixType*>(type)->getColumnCount()) + getNameForRegister(type->getBaseType());
+    } else if (type->getTypeID() == TypeID::Texture) {
+        return "texture_" + textureViewTypeLUT[(int)static_cast<TextureType*>(type)->getViewType()] + "_" + getNameForRegister(type->getBaseType());
+    } else if (type->getTypeID() == TypeID::Sampler) {
+        return "sampler";
+    }
+
+    return "";
+}
+
 Value* getTypeValue(SPIRVBuilder* builder, Type* type, bool decorate) {
     std::string code;
     if (type->getTypeID() == TypeID::Void) {
@@ -44,7 +79,7 @@ Value* getTypeValue(SPIRVBuilder* builder, Type* type, bool decorate) {
         for (auto* memberValue : memberValues)
             code += " " + memberValue->getName();
 
-        Value* value = builder->_addCodeToTypesVariablesConstantsBlock(type, code, structureType->getNameForRegister(), structureType->getName());
+        Value* value = builder->_addCodeToTypesVariablesConstantsBlock(type, code, getNameForRegister(structureType), structureType->getName());
 
         if (decorate && !structure->decorated) {
             //We need to set @ref decorated to 'true' at the beginning, since @ref opMemberDecorate is going to call this function and we want to avoid endless loop
@@ -83,7 +118,7 @@ Value* getTypeValue(SPIRVBuilder* builder, Type* type, bool decorate) {
         code = "OpTypeSampler";
     }
 
-    return builder->_addCodeToTypesVariablesConstantsBlock(type, code, type->getNameForRegister());
+    return builder->_addCodeToTypesVariablesConstantsBlock(type, code, getNameForRegister(type));
 }
 
 } //namespace irb

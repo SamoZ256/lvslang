@@ -133,10 +133,6 @@ public:
         return (otherEnum->getEnum() == enumeration);
     }
 
-    std::string getNameForRegister() override {
-        return "enum_" + name;
-    }
-
     uint32_t getBitCount(bool align = false) override {
         return enumeration->type->getBitCount();
     }

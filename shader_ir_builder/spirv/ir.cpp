@@ -364,7 +364,6 @@ Value* SPIRVBuilder::opOperation(Value* l, Value* r, Type* type, Operation opera
 
 Value* SPIRVBuilder::opLoad(Value* v)  {
     if (!v->getType()->isPointer()) {
-        std::cout << v->getType()->getNameForRegister() << " : " << v->getName() << std::endl;
         IRB_INVALID_ARGUMENT_WITH_REASON("v", "type of 'v' is not a pointer");
         return nullptr;
     }

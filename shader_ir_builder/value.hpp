@@ -80,8 +80,6 @@ public:
         return false;
     }
 
-    virtual std::string getNameForRegister() = 0;
-
     virtual uint32_t getBitCount(bool align = false) {
         return 0;
     }
@@ -99,12 +97,15 @@ public:
         return this;
     }
 
+    //TODO: move this to spirv backend
     virtual std::string getOpPrefix(bool signSensitive, bool needsOrd) {
         return "";
     }
 
+    //TODO: move this to air backend
     virtual std::string getTemplateName() const = 0;
 
+    //TODO: move this to spirv backend
     virtual std::string getCastOpName(Type* castFrom) {
         return "";
     }
@@ -157,6 +158,7 @@ public:
         return handle;
     }
 
+    //TODO: remove this?
     virtual bool getIsSigned() {
         return false;
     }
@@ -282,21 +284,6 @@ public:
         ScalarType* otherScalar = static_cast<ScalarType*>(other);
 
         return (otherScalar->getBitCount() == bitCount && otherScalar->getIsSigned() == isSigned);
-    }
-
-    std::string getNameForRegister() override {
-        switch (typeID) {
-        case TypeID::Void:
-            return "void";
-        case TypeID::Bool:
-            return "bool";
-        case TypeID::Integer:
-            return (isSigned ? "int" : "uint") + std::to_string(bitCount);
-        case TypeID::Float:
-            return "float" + std::to_string(bitCount);
-        default:
-            return "unknown";
-        }
     }
 
     uint32_t getBitCount(bool align = false) override {
@@ -508,11 +495,11 @@ public:
 
 class PointerType : public Type {
 private:
-    Type* _baseType;
+    Type* elementType;
     StorageClass storageClass;
 
 public:
-    PointerType(Context& aContext, Type* aBaseType, StorageClass aStorageClass, uint64_t addressSpace = 0) : Type(aContext, TypeID::Pointer), _baseType(aBaseType), storageClass(aStorageClass) {
+    PointerType(Context& aContext, Type* aElementType, StorageClass aStorageClass, uint64_t addressSpace = 0) : Type(aContext, TypeID::Pointer), elementType(aElementType), storageClass(aStorageClass) {
         //TODO: set the adress space correctly
         if (target == Target::AIR)
             handle = llvm::PointerType::get(*context.handle, addressSpace);
@@ -525,11 +512,7 @@ public:
     }
 
     bool equals(Type* other) override {
-        return (other->isPointer() && _baseType->equals(other->getElementType()));
-    }
-
-    std::string getNameForRegister() override {
-        return "ptr_" + storageClassLUT[(int)storageClass] + "_" + _baseType->getNameForRegister();
+        return (other->isPointer() && elementType->equals(other->getElementType()));
     }
 
     uint32_t getBitCount(bool align = false) override {
@@ -543,11 +526,11 @@ public:
     //TODO: override @ref getOpPrefix
 
     std::string getTemplateName() const override {
-        return "p" + _baseType->getTemplateName();
+        return "p" + elementType->getTemplateName();
     }
 
     Type* getElementType() override {
-        return _baseType->copy();
+        return elementType;
     }
 
     bool isOperatorFriendly() override {
@@ -555,7 +538,7 @@ public:
     }
 
     std::string getDebugName() const override {
-        return _baseType->getDebugName() + "*";
+        return elementType->getDebugName() + "*";
     }
 
     //Getters
@@ -587,10 +570,6 @@ public:
         ArrayType* otherArray = static_cast<ArrayType*>(other);
 
         return (size == otherArray->getSize() && arrayType->equals(other->getElementType()));
-    }
-
-    std::string getNameForRegister() override {
-        return "array_" + arrayType->getNameForRegister() + "_" + std::to_string(size);
     }
 
     uint32_t getBitCount(bool align = false) override {
@@ -659,10 +638,6 @@ public:
         return (otherStruct->getStructure() == structure);
     }
 
-    std::string getNameForRegister() override {
-        return "struct_" + name;
-    }
-
     uint32_t getBitCount(bool align = false) override {
         uint32_t bitCount = 0;
         for (auto& member : structure->members)
@@ -727,14 +702,6 @@ public:
         return true;
     }
 
-    std::string getNameForRegister() override {
-        std::string registerName = "func_" + returnType->getNameForRegister();
-        for (auto* arg : arguments)
-            registerName += "_" + arg->getNameForRegister();
-        
-        return registerName;
-    }
-
     std::string getTemplateName() const override {
         std::string templateName;
         for (const auto* arg : arguments)
@@ -795,10 +762,6 @@ public:
         VectorType* otherVector = static_cast<VectorType*>(other);
 
         return (componentCount == otherVector->getComponentCount() && componentType->equals(otherVector->getBaseType()));
-    }
-
-    std::string getNameForRegister() override {
-        return "vec" + std::to_string(componentCount) + componentType->getNameForRegister();
     }
 
     uint32_t getBitCount(bool align = false) override {
@@ -879,10 +842,6 @@ public:
         return (columnCount == otherMatrix->getColumnCount() && componentType->equals(otherMatrix->getBaseType()));
     }
 
-    std::string getNameForRegister() override {
-        return "mat" + std::to_string(columnCount) + componentType->getNameForRegister();
-    }
-
     uint32_t getBitCount(bool align = false) override {
         return componentType->getBitCount(align) * columnCount;
     }
@@ -948,10 +907,6 @@ public:
         return (otherTexture->getViewType() == viewType && type->equals(otherTexture->getBaseType()));
     }
 
-    std::string getNameForRegister() override {
-        return "texture_" + std::to_string((int)viewType) + "_" + type->getNameForRegister(); //TODO: use view type name instead of plain enum
-    }
-
     uint32_t getBitCount(bool align = false) override {
         return 64; //TODO: check if this is correct
     }
@@ -998,10 +953,6 @@ public:
         SamplerType* otherSampler = static_cast<SamplerType*>(other);
 
         return true;
-    }
-
-    std::string getNameForRegister() override {
-        return "sampler";
     }
 
     uint32_t getBitCount(bool align = false) override {

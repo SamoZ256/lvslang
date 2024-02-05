@@ -22,10 +22,6 @@ public:
         return "";
     }
 
-    std::string getNameForRegister() override {
-        return "";
-    }
-
     std::string getDebugName() const override {
         return "block";
     }
