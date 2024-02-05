@@ -7,10 +7,6 @@
 
 namespace irb {
 
-struct AIRInterfaceVariable {
-
-};
-
 struct AIREntryPoint {
     Value* value;
     FunctionRole functionRole;

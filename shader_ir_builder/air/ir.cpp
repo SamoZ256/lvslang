@@ -9,6 +9,29 @@
 
 namespace irb {
 
+//TODO: support unordered?
+static std::string getTypeOpPrefix(Type* type, bool signSensitive, bool needsOrd) {
+    switch (type->getTypeID()) {
+    case TypeID::Bool:
+            case TypeID::Integer:
+                if (signSensitive)
+                    return (type->getIsSigned() ? "s" : "u");
+                else
+                    return "";
+            case TypeID::Float:
+                return "f";
+            case TypeID::Void:
+                return "";
+    case TypeID::Pointer:
+        return ""; //TODO: implement this
+    case TypeID::Vector:
+    case TypeID::Matrix:
+        return getTypeOpPrefix(type->getBaseType(), signSensitive, needsOrd);
+    default:
+        return "";
+    }
+}
+
 //TODO: uncomment
 /*
 struct StandardFunctionInfo {
@@ -161,7 +184,7 @@ Value* AIRBuilder::opOperation(Value* l, Value* r, Type* type, Operation operati
     GET_OPERATION_NAME(operation);
 
     //TODO: do not use l for getting op prefix?
-    std::string prefix = (needsPrefix ? l->getType()->getOpPrefix(signSensitive, false) : "");
+    std::string prefix = (needsPrefix ? getTypeOpPrefix(l->getType(), signSensitive, false) : "");
 
     llvm::Value* llvmValue;
     switch (operation) {
@@ -431,7 +454,7 @@ Value* AIRBuilder::opCast(Value* val, Type* type) {
 
             return value;
         }
-        std::string functionName = "air.convert." + type->getOpPrefix(true, false) + "." + type->getTemplateName() + "." + castFromType->getOpPrefix(true, false) + "." + castFromType->getTemplateName();
+        std::string functionName = "air.convert." + getTypeOpPrefix(type, true, false) + "." + type->getTemplateName() + "." + getTypeOpPrefix(castFromType, true, false) + "." + castFromType->getTemplateName();
 
         Value* funcV = opFunctionDeclaration(functionType, functionName, {{llvm::Attribute::AttrKind::NoUnwind, 0}, {llvm::Attribute::AttrKind::WillReturn, 0}, {llvm::Attribute::AttrKind::Memory, 0}});
 

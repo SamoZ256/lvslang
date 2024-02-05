@@ -4,6 +4,97 @@
 
 namespace irb {
 
+//TODO: support unordered?
+static std::string getTypeOpPrefix(Type* type, bool signSensitive, bool needsOrd) {
+    switch (type->getTypeID()) {
+    case TypeID::Void:
+        return "";
+    case TypeID::Bool:
+        return "Logical";
+    case TypeID::Integer:
+        if (signSensitive)
+            return (type->getIsSigned() ? "S" : "U");
+        else
+            return "I";
+    case TypeID::Float:
+        if (needsOrd)
+            return "FOrd";
+        else
+            return "F";
+    case TypeID::Pointer:
+        return ""; //TODO: implement this
+    case TypeID::Vector:
+    case TypeID::Matrix:
+        return getTypeOpPrefix(type->getBaseType(), signSensitive, needsOrd);
+    default:
+        return "";
+    }
+}
+
+//TODO: support matrices?
+static std::string getTypeCastOpName(Type* castFrom, Type* castTo) {
+    if (castTo->isScalar()) {
+        if (castFrom->isVector())
+            return "NP"; //Not possible
+        switch (castFrom->getTypeID()) {
+        case TypeID::Bool:
+        case TypeID::Integer:
+            if (castFrom->getIsSigned()) {
+                switch (castTo->getTypeID()) {
+                case TypeID::Bool:
+                case TypeID::Integer:
+                    if (castTo->getIsSigned())
+                        return "SConvert";
+                    else
+                        return "NR"; //SatConvertSToU
+                case TypeID::Float:
+                    return "ConvertSToF";
+                default:
+                    break;
+                }
+            } else {
+                switch (castTo->getTypeID()) {
+                case TypeID::Bool:
+                case TypeID::Integer:
+                    if (castTo->getIsSigned())
+                        return "NR"; //SatConvertUToS
+                    else
+                        return "UConvert";
+                case TypeID::Float:
+                    return "ConvertUToF";
+                default:
+                    break;
+                }
+            }
+            break;
+        case TypeID::Float:
+            switch (castTo->getTypeID()) {
+            case TypeID::Bool:
+            case TypeID::Integer:
+                if (castTo->getIsSigned())
+                    return "ConvertFToS";
+                else
+                    return "ConvertFToU";
+            case TypeID::Float:
+                return "FConvert";
+            default:
+                break;
+            }
+            break;
+        default:
+            break;
+        }
+    } else if (castTo->isVector()) {
+        if (castFrom->isScalar()) {
+            if (castFrom->equals(castTo->getBaseType()))
+                return "VCS";
+            //TODO: cast twice in other cases
+        }
+    }
+
+    return "Unknown";
+}
+
 struct StandardFunctionInfo {
     std::string name;
     bool requiresOpExtInst = true;
@@ -281,9 +372,8 @@ Function* SPIRVBuilder::opStandardFunctionDeclaration(FunctionType* functionType
     else
         fullName = "Op";
 
-    //TODO: only add template name if there is at least one argument
     if (standardFunctionInfo.argumentIndexForSpecialization != -1)
-        fullName += functionType->getArguments()[standardFunctionInfo.argumentIndexForSpecialization]->getOpPrefix(true, false);
+        fullName += getTypeOpPrefix(functionType->getArguments()[standardFunctionInfo.argumentIndexForSpecialization], true, false);
     fullName += standardFunctionInfo.name;
     if (!standardFunctionInfo.requiresOpExtInst)
         fullName += " " + returnV->getName();
@@ -345,7 +435,7 @@ Value* SPIRVBuilder::opOperation(Value* l, Value* r, Type* type, Operation opera
     GET_OPERATION_NAME(operation);
 
     //TODO: do not use l for getting op prefix?
-    getSPIRVInsertBlock()->addCode("Op" + (needsPrefix ? l->getType()->getOpPrefix(signSensitive, needsOrd) : "") + operationStr + " " + typeV->getName() + " " + l->getName() + " " + r->getName(), value);
+    getSPIRVInsertBlock()->addCode("Op" + (needsPrefix ? getTypeOpPrefix(l->getType(), signSensitive, needsOrd) : "") + operationStr + " " + typeV->getName() + " " + l->getName() + " " + r->getName(), value);
 
     //"Unpack" the vector
     if (type->getTypeID() == TypeID::Bool && value->getType()->isVector()) {
@@ -516,24 +606,12 @@ Value* SPIRVBuilder::opCast(Value* val, Type* type)  {
     if (val->getType()->equals(type))
         return val;
 
-    std::string opName = type->getCastOpName(val->getType());
+    std::string opName = getTypeCastOpName(val->getType(), type);
     if (opName == "NP") { //Not possible
         //TODO: warn?
         return val;
-    } if (opName == "NR") { //Not required
+    } else if (opName == "NR") { //Not required
         return val;
-    } else if (opName == "VC") { //Vector construct //TODO: I am actually not sure if I want this
-        VectorType* srcVec = static_cast<VectorType*>(val->getType());
-        VectorType* dstVec = static_cast<VectorType*>(type);
-        if (srcVec->getComponentCount() < dstVec->getComponentCount()) {
-            error("cannot cast from a vector with component count of " + std::to_string(srcVec->getComponentCount()) + " to a vector with component count of " + std::to_string(dstVec->getComponentCount()), "SPIRVBuilder::opCast");
-            return nullptr;
-        }
-        std::vector<Value*> components(dstVec->getComponentCount());
-        for (uint8_t i = 0; i < components.size(); i++)
-            components[i] = opVectorExtract(val, new ConstantInt(context, i, 32, false));
-        
-        return opConstruct(dstVec, components);
     } else if (opName == "VCS") { //Vector construct from scalar
         VectorType* dstVec = static_cast<VectorType*>(type);
 

@@ -97,18 +97,7 @@ public:
         return this;
     }
 
-    //TODO: move this to spirv backend
-    virtual std::string getOpPrefix(bool signSensitive, bool needsOrd) {
-        return "";
-    }
-
-    //TODO: move this to air backend
     virtual std::string getTemplateName() const = 0;
-
-    //TODO: move this to spirv backend
-    virtual std::string getCastOpName(Type* castFrom) {
-        return "";
-    }
 
     inline bool isScalar() const {
         return typeID & TypeID::Scalar;
@@ -290,48 +279,6 @@ public:
         return bitCount;
     }
 
-    //TODO: support unordered?
-    std::string getOpPrefix(bool signSensitive, bool needsOrd) override {
-        switch (target) {
-        case Target::SPIRV:
-            switch (typeID) {
-            case TypeID::Bool:
-                return "Logical";
-            case TypeID::Integer:
-                if (signSensitive)
-                    return (isSigned ? "S" : "U");
-                else
-                    return "I";
-            case TypeID::Float:
-                if (needsOrd)
-                    return "FOrd";
-                else
-                    return "F";
-            case TypeID::Void:
-                return "";
-            default:
-                return "Unknown";
-            }
-        case Target::AIR:
-            switch (typeID) {
-            case TypeID::Bool:
-            case TypeID::Integer:
-                if (signSensitive)
-                    return (isSigned ? "s" : "u");
-                else
-                    return "";
-            case TypeID::Float:
-                return "f";
-            case TypeID::Void:
-                return "";
-            default:
-                return "Unknown";
-            }
-        default:
-            return "Unknown";
-        }
-    }
-
     std::string getTemplateName() const override {
         switch (typeID) {
         case TypeID::Bool:
@@ -342,61 +289,6 @@ public:
         default:
             return "none_scalar.none_scalar";
         }
-    }
-
-    std::string getCastOpName(Type* castFrom) override {
-        if (castFrom->isVector())
-            return "NP"; //Not possible
-        switch (castFrom->getTypeID()) {
-        case TypeID::Bool:
-        case TypeID::Integer:
-            if (castFrom->getIsSigned()) {
-                switch (typeID) {
-                case TypeID::Bool:
-                case TypeID::Integer:
-                    if (isSigned)
-                        return "SConvert";
-                    else
-                        return "NR"; //SatConvertSToU
-                case TypeID::Float:
-                    return "ConvertSToF";
-                default:
-                    break;
-                }
-            } else {
-                switch (typeID) {
-                case TypeID::Bool:
-                case TypeID::Integer:
-                    if (isSigned)
-                        return "NR"; //SatConvertUToS
-                    else
-                        return "UConvert";
-                case TypeID::Float:
-                    return "ConvertUToF";
-                default:
-                    break;
-                }
-            }
-            break;
-        case TypeID::Float:
-            switch (typeID) {
-            case TypeID::Bool:
-            case TypeID::Integer:
-                if (isSigned)
-                    return "ConvertFToS";
-                else
-                    return "ConvertFToU";
-            case TypeID::Float:
-                return "FConvert";
-            default:
-                break;
-            }
-            break;
-        default:
-            break;
-        }
-
-        return "Unknown";
     }
 
     bool isOperatorFriendly() override {
@@ -522,8 +414,6 @@ public:
     uint16_t pointerCount() override {
         return 1;
     }
-
-    //TODO: override @ref getOpPrefix
 
     std::string getTemplateName() const override {
         return "p" + elementType->getTemplateName();
@@ -771,27 +661,8 @@ public:
         return componentType->getBitCount() * alignComponentCount;
     }
 
-    std::string getOpPrefix(bool signSensitive, bool needsOrd) override {
-        return componentType->getOpPrefix(signSensitive, needsOrd);
-    }
-
     std::string getTemplateName() const override {
         return "v" + std::to_string(componentCount) + componentType->getTemplateName();
-    }
-
-    std::string getCastOpName(Type* castFrom) override {
-        if (castFrom->isVector()) {
-            if (componentType->equals(castFrom->getBaseType()))
-                return "VC";
-            //TODO: cast twice in other cases
-        }
-        if (castFrom->isScalar()) {
-            if (castFrom->getTypeID() == componentType->getTypeID())
-                return "VCS";
-            //TODO: cast twice in other cases
-        }
-
-        return "Unknown";
     }
 
     Type* getBaseType() override {
@@ -846,18 +717,9 @@ public:
         return componentType->getBitCount(align) * columnCount;
     }
 
-    std::string getOpPrefix(bool signSensitive, bool needsOrd) override {
-        return componentType->getOpPrefix(signSensitive, needsOrd);
-    }
-
     //TODO: check if this is correct
     std::string getTemplateName() const override {
         return "m" + std::to_string(columnCount) + componentType->getTemplateName();
-    }
-    
-    //TODO: implement this
-    std::string getCastOpName(Type* castFrom) override {
-        return "Unknown";
     }
 
     Type* getBaseType() override {

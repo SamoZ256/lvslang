@@ -103,6 +103,6 @@ private:
     }
 };
 
-} //namespace irn
+} //namespace irb
 
 #endif
