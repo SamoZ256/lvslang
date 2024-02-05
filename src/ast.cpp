@@ -1080,7 +1080,7 @@ irb::Value* EnumDefinitionAST::_codegen(irb::Type* requiredType) {
     Enumeration* enumeration = new Enumeration(values);
     enumerations[name] = enumeration;
 
-    return new irb::Value(context, new EnumType(context, name), codeStr);
+    return new irb::Value(context, enumeration->type, codeStr);
 }
 
 irb::Value* EnumValueExpressionAST::_codegen(irb::Type* requiredType) {

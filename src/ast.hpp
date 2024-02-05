@@ -102,59 +102,6 @@ extern std::map<std::string, Variable> variables;
 extern std::map<std::string, std::vector<FunctionPrototypeAST*> > functionDeclarations;
 extern std::map<std::string, Enumeration*> enumerations;
 
-class EnumType : public irb::Type {
-private:
-    Enumeration* enumeration;
-
-    std::string name;
-
-public:
-    EnumType(irb::Context& aContext, const std::string& aName) : Type(aContext), name(aName) {
-        enumeration = enumerations[name];
-        typeID = enumeration->type->getTypeID(); //HACK: set the typeID later
-
-        if (!enumeration) {
-            logError("use of undeclared enum '" + name + "'");
-            return;
-        }
-    }
-
-    ~EnumType() = default;
-
-    irb::Type* copy() override {
-        return new EnumType(*this);
-    }
-
-    bool equals(Type* other) override {
-        EnumType* otherEnum = dynamic_cast<EnumType*>(other);
-        if (!otherEnum)
-            return false;
-
-        return (otherEnum->getEnum() == enumeration);
-    }
-
-    uint32_t getBitCount(bool align = false) override {
-        return enumeration->type->getBitCount();
-    }
-
-    irb::Type* getBaseType() override {
-        return enumeration->type;
-    }
-
-    std::string getTemplateName() const override {
-        return "e" + name;
-    }
-
-    std::string getDebugName() const override {
-        return "enum " + name;
-    }
-
-    //Getters
-    inline Enumeration* getEnum() {
-        return enumeration;
-    }
-};
-
 inline std::string getGLSLVersionString() {
     LVSLANG_CHECK_ARGUMENT(GLSLVersion, glslVersion);
     std::string versionStr = glslVersionMap.at(glslVersion);

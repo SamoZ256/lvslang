@@ -128,7 +128,13 @@ irb::Type* _parseTypeExpression(irb::Attributes* attributes = nullptr) {
             type = new irb::StructureType(context, identifierStr);
         } else if (crntToken == TOKEN_TYPE_ENUM) {
             getNextToken(); // 'enum'
-            type = new EnumType(context, identifierStr);
+            Enumeration* enumeration = enumerations[identifierStr];
+            if (!enumeration) {
+                logError("use of undeclared enum '" + identifierStr + "'");
+                return nullptr;
+            }
+
+            type = enumeration->type;
         } else if (tokenIsTextureType(crntToken)) {
             irb::TextureViewType viewType;
             switch (crntToken) {
