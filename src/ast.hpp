@@ -3,7 +3,7 @@
 
 #include <limits>
 
-#include "common.hpp"
+#include "type_name.hpp"
 
 #include "../shader_ir_builder/spirv/ir.hpp"
 #include "../shader_ir_builder/air/ir.hpp"
@@ -112,8 +112,6 @@ public:
     EnumType(irb::Context& aContext, const std::string& aName) : Type(aContext), name(aName) {
         enumeration = enumerations[name];
         typeID = enumeration->type->getTypeID(); //HACK: set the typeID later
-        //if (target != Target::GLSL)
-        //    nameBegin = "struct ";
 
         if (!enumeration) {
             logError("use of undeclared enum '" + name + "'");
@@ -153,17 +151,6 @@ public:
 
     std::string getTemplateName() const override {
         return "e" + name;
-    }
-
-    std::string getNameBegin() const override {
-        if (irb::target == irb::Target::Metal || irb::target == irb::Target::HLSL)
-            return name;
-        else if (irb::target == irb::Target::GLSL)
-            return enumeration->type->getNameBegin();
-        else if (irb::target == irb::Target::AIR)
-            return enumeration->type->getName();
-        else
-            return "unknown";
     }
 
     std::string getDebugName() const override {
@@ -255,7 +242,7 @@ public:
             if (TARGET_IS_IR(irb::target))
                 return builder->opCast(value, requiredType);
             else if (!value->getType()->equals(requiredType))
-                return new irb::Value(context, requiredType, requiredType->getName() + "(" + value->getRawName() + ")");
+                return new irb::Value(context, requiredType, getTypeName(requiredType) + "(" + value->getRawName() + ")");
         }
         
         return value;

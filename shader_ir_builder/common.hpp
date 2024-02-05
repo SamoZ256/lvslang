@@ -211,40 +211,6 @@ enum class TextureViewType {
     MaxEnum
 };
 
-//TODO: support texture buffer?
-const std::string textureViewTypeLUT_Metal[] = {
-    "1d",
-    "2d",
-    "3d",
-    "1d_array",
-    "2d_array",
-    "cube",
-    "cube_array",
-    "UNSUPPORTED"
-};
-
-const std::string textureViewTypeLUT_HLSL[] = {
-    "1D",
-    "2D",
-    "3D",
-    "1DArray",
-    "2DArray",
-    "Cube",
-    "CubeArray",
-    "Buffer"
-};
-
-const std::string textureViewTypeLUT_GLSL[] = {
-    "1D",
-    "2D",
-    "3D",
-    "1DArray",
-    "2DArray",
-    "Cube",
-    "CubeArray",
-    "Buffer"
-};
-
 const std::string textureViewTypeLUT_SPIRV[] = {
     "1D",
     "2D",
@@ -258,23 +224,7 @@ const std::string textureViewTypeLUT_SPIRV[] = {
 
 #define GET_TEXTURE_NAME(viewType) \
 IRB_VALIDATE_ENUM_ARGUMENT(TextureViewType, viewType); \
-std::string viewType##Str; \
-switch (target) { \
-case Target::Metal: \
-    viewType##Str = "texture" + textureViewTypeLUT_Metal[(int)viewType]; \
-    break; \
-case Target::HLSL: \
-    viewType##Str = "Texture" + textureViewTypeLUT_HLSL[(int)viewType]; \
-    break; \
-case Target::GLSL: \
-    viewType##Str = "texture" + textureViewTypeLUT_GLSL[(int)viewType]; \
-    break; \
-case Target::SPIRV: \
-    viewType##Str = textureViewTypeLUT_SPIRV[(int)viewType]; \
-    break; \
-default: \
-    break; \
-}
+std::string viewType##Str = textureViewTypeLUT_SPIRV[(int)viewType];
 
 enum class Operation {
     //Binary

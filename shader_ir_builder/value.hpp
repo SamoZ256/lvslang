@@ -163,16 +163,6 @@ public:
         return typeID;
     }
 
-    std::string getName() const {
-        return getNameBegin() + getNameEnd();
-    }
-
-    virtual std::string getNameBegin() const = 0;
-
-    virtual std::string getNameEnd() const {
-        return "";
-    }
-
     virtual std::string getDebugName() const = 0;
 };
 
@@ -430,118 +420,6 @@ public:
         return isSigned;
     }
 
-    //TODO: add "noundef" attribute by default?
-    std::string getNameBegin() const override {
-        std::string strTmp;
-        switch (target) {
-        case Target::Metal:
-            switch (typeID) {
-            case TypeID::Void:
-                return "void";
-            case TypeID::Bool:
-                return "bool";
-            case TypeID::Integer:
-                switch (bitCount) {
-                case 8:
-                    strTmp = "char";
-                    break;
-                case 16:
-                    strTmp = "short";
-                    break;
-                case 32:
-                    strTmp = "int";
-                    break;
-                default:
-                    IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of integer can only be 8, 16 or 32");
-                    return nullptr;
-                }
-                if (!isSigned)
-                    strTmp = "u" + strTmp;
-                
-                return strTmp;
-            case TypeID::Float:
-                switch (bitCount) {
-                case 16:
-                    return "half";
-                case 32:
-                    return "float";
-                default:
-                    IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of float can only be 16 or 32");
-                    return nullptr;
-                }
-            default:
-                break;
-            }
-            return "";
-        case Target::HLSL:
-            switch (typeID) {
-            case TypeID::Void:
-                return "void";
-            case TypeID::Bool:
-                return "bool";
-            case TypeID::Integer:
-                switch (bitCount) {
-                case 8:
-                case 16:
-                    strTmp = "int16_t";
-                    break;
-                case 32:
-                    strTmp = "int";
-                    break;
-                default:
-                    IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of integer can only be 8, 16 or 32");
-                    return nullptr;
-                }
-                if (!isSigned)
-                    strTmp = "u" + strTmp;
-                
-                return strTmp;
-            case TypeID::Float:
-                switch (bitCount) {
-                case 16:
-                    return "min16float";
-                case 32:
-                    return "float";
-                default:
-                    IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of float can only be 16 or 32");
-                    return nullptr;
-                }
-            default:
-                break;
-            }
-            return "";
-        case Target::GLSL:
-            switch (typeID) {
-            case TypeID::Void:
-                return "void";
-            case TypeID::Bool:
-                return "bool";
-            case TypeID::Integer:
-                //TODO: uncomment
-                strTmp = "int"/* + std::to_string(bitCount)*/;
-                if (!isSigned)
-                    strTmp = "u" + strTmp;
-                
-                return strTmp;
-            case TypeID::Float:
-                switch (bitCount) {
-                case 16:
-                    return "float16_t";
-                case 32:
-                    return "float";
-                default:
-                    IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of float can only be 16 or 32");
-                    return nullptr;
-                }
-            default:
-                break;
-            }
-            return "";
-        default:
-            return "";
-        }
-    }
-
     std::string getDebugName() const override {
         std::string strTmp;
         switch (typeID) {
@@ -679,14 +557,6 @@ public:
         return true;
     }
 
-    std::string getNameBegin() const override {
-        if (TARGET_IS_CODE(target)) {
-            return _baseType->getName() + "*";
-        } else {
-            return "unknown";
-        }
-    }
-
     std::string getDebugName() const override {
         return _baseType->getDebugName() + "*";
     }
@@ -744,19 +614,8 @@ public:
         return "a" + std::to_string(size) + arrayType->getTemplateName();
     }
 
-    std::string getNameBegin() const override {
-        return arrayType->getNameBegin();
-    }
-
-    std::string getNameEnd() const override {
-        if (TARGET_IS_CODE(target))
-            return "[" + std::to_string(size) + "]" + arrayType->getNameEnd();
-        
-        return "unknown";
-    }
-
     std::string getDebugName() const override {
-        return arrayType->getNameBegin() + "[" + std::to_string(size) + "]";
+        return arrayType->getDebugName() + "[" + std::to_string(size) + "]";
     }
     
     //Getters
@@ -823,16 +682,16 @@ public:
         return "s" + name;
     }
 
-    std::string getNameBegin() const override {
-        return name;
-    }
-
     std::string getDebugName() const override {
         return "struct " + name;
     }
 
     inline Structure* getStructure() {
         return structure;
+    }
+
+    const std::string& getName() const {
+        return name;
     }
 };
 
@@ -892,11 +751,6 @@ public:
             templateName += (target == Target::AIR ? "." : "_") + arg->getTemplateName();
         
         return templateName;
-    }
-
-    //TODO: make this different in case of code backends
-    std::string getNameBegin() const override {
-        return "";
     }
 
     //TODO: implement this
@@ -997,39 +851,11 @@ public:
     }
 
     Type* getBaseType() override {
-        return componentType->copy();
+        return componentType;
     }
 
     bool isOperatorFriendly() override {
         return true;
-    }
-
-    std::string getNameBegin() const override {
-        std::string name;
-        switch (target) {
-        case Target::Metal:
-        case Target::HLSL:
-            return componentType->getName() + std::to_string(componentCount);
-        case Target::GLSL:
-            switch (componentType->getTypeID()) {
-            case TypeID::Integer:
-                name = (componentType->getIsSigned() ? "i" : "u");
-                if (componentType->getBitCount() != 32)
-                    name += std::to_string(componentType->getBitCount());
-                break;
-            case TypeID::Float:
-                if (componentType->getBitCount() != 32)
-                    name = "f" + std::to_string(componentType->getBitCount());
-                break;
-            default:
-                break;
-            }
-            name += "vec" + std::to_string(componentCount);
-
-            return name;
-        default:
-            return "unknown";
-        }
     }
 
     std::string getDebugName() const override {
@@ -1097,32 +923,15 @@ public:
     }
 
     Type* getBaseType() override {
-        return componentType->copy();
+        return componentType;
     }
 
     bool isOperatorFriendly() override {
         return true;
     }
 
-    std::string getNameBegin() const override {
-        std::string name;
-        switch (target) {
-        case Target::Metal:
-        case Target::HLSL:
-            return componentType->getBaseType()->getName() + std::to_string(columnCount) + "x" + std::to_string(componentType->getComponentCount());
-        case Target::GLSL:
-            name += "mat" + std::to_string(columnCount);
-            if (columnCount != componentType->getComponentCount())
-                name += "x" + std::to_string(componentType->getComponentCount());
-
-            return name;
-        default:
-            return "unknown";
-        }
-    }
-
     std::string getDebugName() const override {
-        return componentType->getBaseType()->getName() + std::to_string(columnCount) + "x" + std::to_string(componentType->getComponentCount());
+        return componentType->getBaseType()->getDebugName() + std::to_string(columnCount) + "x" + std::to_string(componentType->getComponentCount());
     }
 
     //Getters
@@ -1179,19 +988,6 @@ public:
         return "t" + std::to_string((int)viewType) + type->getTemplateName();
     }
 
-    std::string getNameBegin() const override {
-        GET_TEXTURE_NAME(viewType);
-        std::string name = viewTypeStr;
-        if (target == Target::Metal) {
-            name += "<" + type->getName() + ">";
-        } else if (target == Target::HLSL) {
-            if (type->getTypeID() != TypeID::Float || type->getBitCount() != 32)
-                name += "<" + type->getName() + ">"; //TODO: check if this is correct
-        }
-
-        return name;
-    }
-
     std::string getDebugName() const override {
         //TODO: don't hardcode this
         std::string viewTypeStr = "texture2d";
@@ -1239,14 +1035,6 @@ public:
 
     std::string getTemplateName() const override {
         return "sm";
-    }
-
-    std::string getNameBegin() const override {
-        //TODO: add template addguments
-        if (target == Target::HLSL)
-            return "SamplerState";
-        else
-            return "sampler";
     }
 
     std::string getDebugName() const override {

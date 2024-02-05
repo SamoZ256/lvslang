@@ -30,10 +30,6 @@ public:
         return "";
     }
 
-    std::string getNameBegin() const override {
-        return "label";
-    }
-
     std::string getDebugName() const override {
         return "block";
     }

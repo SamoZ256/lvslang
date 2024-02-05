@@ -38,6 +38,7 @@ add_library(lvslang_lib SHARED
     shader_ir_builder/spirv/value.cpp
     shader_ir_builder/spirv/ir.cpp
     src/common.cpp
+    src/type_name.cpp
     src/ast.cpp
     src/lvslang.cpp
     src/frontends/lvsl/lexer.cpp
