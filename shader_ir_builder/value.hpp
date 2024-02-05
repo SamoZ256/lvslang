@@ -71,12 +71,14 @@ public:
     virtual ~Type() {}
 
     virtual Type* copy() = 0;
+    
+    Context& getContext() const {
+        return context;
+    }
 
     virtual bool equals(Type* other) {
         return false;
     }
-
-    virtual Value* getValue(IRBuilder* builder, bool decorate = false) = 0;
 
     virtual std::string getNameForRegister() = 0;
 
@@ -281,8 +283,6 @@ public:
 
         return (otherScalar->getBitCount() == bitCount && otherScalar->getIsSigned() == isSigned);
     }
-
-    Value* getValue(IRBuilder* builder, bool decorate = false) override;
 
     std::string getNameForRegister() override {
         switch (typeID) {
@@ -528,11 +528,8 @@ public:
         return (other->isPointer() && _baseType->equals(other->getElementType()));
     }
 
-    Value* getValue(IRBuilder* builder, bool decorate = false) override;
-
     std::string getNameForRegister() override {
-        GET_STORAGE_CLASS_NAME(storageClass);
-        return "ptr_" + storageClassStr + "_" + _baseType->getNameForRegister();
+        return "ptr_" + storageClassLUT[(int)storageClass] + "_" + _baseType->getNameForRegister();
     }
 
     uint32_t getBitCount(bool align = false) override {
@@ -591,8 +588,6 @@ public:
 
         return (size == otherArray->getSize() && arrayType->equals(other->getElementType()));
     }
-
-    Value* getValue(IRBuilder* builder, bool decorate = false) override;
 
     std::string getNameForRegister() override {
         return "array_" + arrayType->getNameForRegister() + "_" + std::to_string(size);
@@ -664,8 +659,6 @@ public:
         return (otherStruct->getStructure() == structure);
     }
 
-    Value* getValue(IRBuilder* builder, bool decorate = false) override;
-
     std::string getNameForRegister() override {
         return "struct_" + name;
     }
@@ -699,7 +692,6 @@ class FunctionType : public Type {
 private:
     Type* returnType;
     std::vector<Type*> arguments;
-    Value* returnV = nullptr;
 
 public:
     FunctionType(Context& aContext, Type* aReturnType, const std::vector<Type*>& aArguments) : Type(aContext, TypeID::Function), returnType(aReturnType), arguments(aArguments) {
@@ -735,8 +727,6 @@ public:
         return true;
     }
 
-    Value* getValue(IRBuilder* builder, bool decorate = false) override;
-
     std::string getNameForRegister() override {
         std::string registerName = "func_" + returnType->getNameForRegister();
         for (auto* arg : arguments)
@@ -761,13 +751,6 @@ public:
     //Getters
     inline Type* getReturnType() const {
         return returnType;
-    }
-
-    inline Value* getReturnV() const {
-        if (!returnV)
-            IRB_ERROR("return value is null");
-        
-        return returnV;
     }
 
     inline const std::vector<Type*>& getArguments() const {
@@ -813,8 +796,6 @@ public:
 
         return (componentCount == otherVector->getComponentCount() && componentType->equals(otherVector->getBaseType()));
     }
-
-    Value* getValue(IRBuilder* builder, bool decorate = false) override;
 
     std::string getNameForRegister() override {
         return "vec" + std::to_string(componentCount) + componentType->getNameForRegister();
@@ -898,8 +879,6 @@ public:
         return (columnCount == otherMatrix->getColumnCount() && componentType->equals(otherMatrix->getBaseType()));
     }
 
-    Value* getValue(IRBuilder* builder, bool decorate = false) override;
-
     std::string getNameForRegister() override {
         return "mat" + std::to_string(columnCount) + componentType->getNameForRegister();
     }
@@ -969,8 +948,6 @@ public:
         return (otherTexture->getViewType() == viewType && type->equals(otherTexture->getBaseType()));
     }
 
-    Value* getValue(IRBuilder* builder, bool decorate = false) override;
-
     std::string getNameForRegister() override {
         return "texture_" + std::to_string((int)viewType) + "_" + type->getNameForRegister(); //TODO: use view type name instead of plain enum
     }
@@ -1022,8 +999,6 @@ public:
 
         return true;
     }
-
-    Value* getValue(IRBuilder* builder, bool decorate = false) override;
 
     std::string getNameForRegister() override {
         return "sampler";

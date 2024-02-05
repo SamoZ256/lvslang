@@ -31,16 +31,16 @@
 %_ptr_Output__struct_6 = OpTypePointer Output %_struct_6
           %4 = OpVariable %_ptr_Output__struct_6 Output
        %void = OpTypeVoid
-         %36 = OpTypeFunction %void
+         %35 = OpTypeFunction %void
     %float_0 = OpConstant %float 0
     %float_1 = OpConstant %float 1
-         %48 = OpConstantComposite %v4float %float_1 %float_0 %float_0 %float_1
-         %49 = OpConstantComposite %v4float %float_0 %float_1 %float_0 %float_1
-         %50 = OpConstantComposite %v4float %float_0 %float_0 %float_1 %float_1
+         %47 = OpConstantComposite %v4float %float_1 %float_0 %float_0 %float_1
+         %48 = OpConstantComposite %v4float %float_0 %float_1 %float_0 %float_1
+         %49 = OpConstantComposite %v4float %float_0 %float_0 %float_1 %float_1
      %v4bool = OpTypeVector %bool 4
 
                ; Function 2
-          %2 = OpFunction %void None %36
+          %2 = OpFunction %void None %35
          %52 = OpLabel
          %54 = OpLoad %_struct_5 %3
         %134 = OpCompositeExtract %float %54 0
@@ -50,13 +50,13 @@
         %136 = OpLabel
                OpBranch %137
         %137 = OpLabel
-        %163 = OpPhi %v4float %48 %136 %173 %138
+        %163 = OpPhi %v4float %47 %136 %173 %138
         %170 = OpCompositeConstruct %_struct_6 %163
                OpStore %4 %170
                OpReturn
         %138 = OpLabel
         %141 = OpFOrdLessThan %bool %134 %float_0
         %172 = OpCompositeConstruct %v4bool %141 %141 %141 %141
-        %173 = OpSelect %v4float %172 %49 %50
+        %173 = OpSelect %v4float %172 %48 %49
                OpBranch %137
                OpFunctionEnd

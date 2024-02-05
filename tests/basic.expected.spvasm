@@ -53,7 +53,7 @@
 %gl_Position = OpVariable %_ptr_Output_v4float Output
       %int_0 = OpConstant %int 0
        %void = OpTypeVoid
-         %49 = OpTypeFunction %void
+         %48 = OpTypeFunction %void
     %float_0 = OpConstant %float 0
     %float_1 = OpConstant %float 1
 %_ptr_Input__struct_14 = OpTypePointer Input %_struct_14
@@ -67,13 +67,13 @@
  %_struct_15 = OpTypeStruct %v4float
 %_ptr_Output__struct_15 = OpTypePointer Output %_struct_15
          %11 = OpVariable %_ptr_Output__struct_15 Output
-         %66 = OpTypeSampledImage %57
+         %65 = OpTypeSampledImage %57
 %_ptr_Input_v2float = OpTypePointer Input %v2float
        %uint = OpTypeInt 32 0
      %uint_1 = OpConstant %uint 1
 
                ; Function 2
-          %2 = OpFunction %void None %49
+          %2 = OpFunction %void None %48
          %67 = OpLabel
          %70 = OpLoad %_struct_12 %3
          %71 = OpLoad %_struct_13 %4
@@ -94,13 +94,13 @@
                OpFunctionEnd
 
                ; Function 7
-          %7 = OpFunction %void None %49
+          %7 = OpFunction %void None %48
          %96 = OpLabel
         %166 = OpAccessChain %_ptr_Input_v2float %8 %uint_1
         %167 = OpLoad %v2float %166
         %101 = OpLoad %57 %9
         %102 = OpLoad %60 %10
-        %145 = OpSampledImage %66 %101 %102
+        %145 = OpSampledImage %65 %101 %102
         %146 = OpImageSampleExplicitLod %v4float %145 %167 Lod %float_0
         %162 = OpCompositeConstruct %_struct_15 %146
                OpStore %11 %162

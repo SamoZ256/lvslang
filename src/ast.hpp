@@ -133,10 +133,6 @@ public:
         return (otherEnum->getEnum() == enumeration);
     }
 
-    irb::Value* getValue(irb::IRBuilder* builder, bool decorate = false) override {
-        return enumeration->type->getValue(builder);
-    }
-
     std::string getNameForRegister() override {
         return "enum_" + name;
     }

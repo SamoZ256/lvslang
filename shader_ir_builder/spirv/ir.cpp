@@ -1,5 +1,7 @@
 #include "ir.hpp"
 
+#include "type_value.hpp"
+
 namespace irb {
 
 struct StandardFunctionInfo {
@@ -159,7 +161,7 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
                 }
                 structure = static_cast<StructureType*>(type)->getStructure();
                 for (uint32_t i = 0; i < structure->members.size(); i++)
-                    opMemberDecorate(type->getValue(this), i, Decoration::Location, {std::to_string(structure->members[i].attributes.locationIndex)});
+                    opMemberDecorate(getTypeValue(this, type), i, Decoration::Location, {std::to_string(structure->members[i].attributes.locationIndex)});
                 break;
             case FunctionRole::Fragment:
                 opDecorate(argValue, Decoration::Location, {"0"});
@@ -172,7 +174,7 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
             break;
         }
         if (attr.isBuffer || (functionRole == FunctionRole::Vertex && attr.isInput))
-            opDecorate(type->getValue(this, true), Decoration::Block);
+            opDecorate(getTypeValue(this, type, true), Decoration::Block);
         
         //Add to interface
         if (spirvVersionIsGreaterThanOrEqual(SPIRVVersion::_1_4) || (storageClass == StorageClass::Input || storageClass == StorageClass::Output))
@@ -188,7 +190,7 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
     Value* returnValue = opFunctionCall(entryPoint, argValues);
 
     // -------- Output --------
-    opDecorate(returnType->getValue(this), Decoration::Block);
+    opDecorate(getTypeValue(this, returnType), Decoration::Block);
     context.pushRegisterName(name + "_output");
     Value* returnVariable = opVariable(new PointerType(context, returnType, StorageClass::Output));
     opStore(returnVariable, returnValue);
@@ -229,7 +231,7 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
         //TODO: do this decoration somewhere else
         irb::Structure* structure = static_cast<StructureType*>(returnType)->getStructure();
         for (uint32_t i = 0; i < structure->members.size(); i++)
-            opMemberDecorate(returnType->getValue(this), i, Decoration::Location, {std::to_string(structure->members[i].attributes.colorIndex)});
+            opMemberDecorate(getTypeValue(this, returnType), i, Decoration::Location, {std::to_string(structure->members[i].attributes.colorIndex)});
     }
 
     //Add to interface
@@ -253,7 +255,7 @@ void SPIRVBuilder::opName(Value* value, const std::string& name) {
 }
 
 Value* SPIRVBuilder::opConstant(ConstantValue* val)  {
-    Value* typeV = val->getType()->getValue(this);
+    Value* typeV = getTypeValue(this, val->getType());
 
     std::string str;
     if (val->getType()->getTypeID() == TypeID::Bool)
@@ -271,7 +273,7 @@ Value* SPIRVBuilder::opStructureDefinition(StructureType* structureType) {
 Function* SPIRVBuilder::opStandardFunctionDeclaration(FunctionType* functionType, const std::string& name) {
     const auto& standardFunctionInfo = standardFunctionLUT[name];
 
-    Value* returnV = functionType->getReturnType()->getValue(this);
+    Value* returnV = getTypeValue(this, functionType->getReturnType());
 
     std::string fullName;
     if (standardFunctionInfo.requiresOpExtInst)
@@ -299,7 +301,7 @@ Function* SPIRVBuilder::opFunction(FunctionType* functionType, const std::string
 Value* SPIRVBuilder::opFunctionParameter(Function* function, Type* type) {
     type = new PointerType(context, type, StorageClass::Function);
     Value* value = new Value(context, type, context.popRegisterName());
-    static_cast<SPIRVBlock*>(function->getFunctionBlock())->addCode("OpFunctionParameter " + type->getValue(this)->getName(), value);
+    static_cast<SPIRVBlock*>(function->getFunctionBlock())->addCode("OpFunctionParameter " + getTypeValue(this, type)->getName(), value);
 
     return value;
 }
@@ -325,7 +327,7 @@ Value* SPIRVBuilder::opOperation(Value* l, Value* r, Type* type, Operation opera
     if (r->getType()->isVector() && l->getType()->isScalar())
         std::swap(l, r);
     Value* value = new Value(context, (type->getTypeID() == TypeID::Bool && l->getType()->isVector() ? new VectorType(context, type, static_cast<VectorType*>(l->getType())->getComponentCount()) : type), context.popRegisterName());
-    Value* typeV = value->getType()->getValue(this);
+    Value* typeV = getTypeValue(this, value->getType());
     if (l->getType()->isVector() && r->getType()->isScalar()) {
         if (operation == Operation::Multiply && type->getBaseType()->getTypeID() == TypeID::Float) {
             getSPIRVInsertBlock()->addCode("OpVectorTimesScalar " + typeV->getName() + " " + l->getName() + " " + r->getName(), value);
@@ -368,7 +370,7 @@ Value* SPIRVBuilder::opLoad(Value* v)  {
     }
 
     Type* elementType = v->getType()->getElementType();
-    Value* elementTypeV = elementType->getValue(this);
+    Value* elementTypeV = getTypeValue(this, elementType);
     Value* value = new Value(context, elementType, context.popRegisterName());
     getSPIRVInsertBlock()->addCode("OpLoad " + elementTypeV->getName() + " " + v->getName(), value);
 
@@ -401,9 +403,7 @@ Value* SPIRVBuilder::opFunctionCall(Value* funcV, const std::vector<Value*>& arg
         IRB_INVALID_ARGUMENT_WITH_REASON("funcV", "type of 'funcV' is not a function");
         return nullptr;
     }
-    //TODO: check if this is necessary
-    type->getValue(this); //HACK: the standard library functions still don't have their returnV initialized at this point
-    Value* returnV = type->getReturnV();
+    Value* returnV = getTypeValue(this, type->getReturnType());
     Value* value = new Value(context, returnV->getType(), context.popRegisterName());
     std::string code;
     if (dynamic_cast<StandardFunctionValue*>(funcV))
@@ -448,7 +448,7 @@ Value* SPIRVBuilder::opConstruct(Type* type, const std::vector<Value*>& componen
             return nullptr;
         }
     }
-    Value* typeV = type->getValue(this);
+    Value* typeV = getTypeValue(this, type);
     Value* value = new Value(context, type, context.popRegisterName());
     bool isAllConstants = true;
     for (auto* component : components) {
@@ -482,14 +482,14 @@ Value* SPIRVBuilder::opVectorExtract(Value* vec, ConstantInt* index)  {
     Type* type = vec->getType()->getBaseType();
 
     Value* value = new Value(context, type, context.popRegisterName());
-    getSPIRVInsertBlock()->addCode("OpCompositeExtract " + type->getValue(this)->getName() + " " + vec->getName() + " " + index->getName(), value);
+    getSPIRVInsertBlock()->addCode("OpCompositeExtract " + getTypeValue(this, type)->getName() + " " + vec->getName() + " " + index->getName(), value);
 
     return value;
 }
 
 Value* SPIRVBuilder::opVectorInsert(Value* vec, Value* val, ConstantInt* index)  {
     Value* value = new Value(context, vec->getType(), context.popRegisterName());
-    getSPIRVInsertBlock()->addCode("OpCompositeInsert " + vec->getType()->getValue(this)->getName() + " " + val->getName() + " " + vec->getName() + " " + index->getName(), value);
+    getSPIRVInsertBlock()->addCode("OpCompositeInsert " + getTypeValue(this, vec->getType())->getName() + " " + val->getName() + " " + vec->getName() + " " + index->getName(), value);
 
     return value;
 }
@@ -499,7 +499,7 @@ Value* SPIRVBuilder::opGetElementPtr(PointerType* elementType, Value* ptr, const
         IRB_INVALID_ARGUMENT_WITH_REASON("ptr", "type of 'ptr' is not pointer type");
         return nullptr;
     }
-    Value* elementTypeV = elementType->getValue(this);
+    Value* elementTypeV = getTypeValue(this, elementType);
     Value* value = new Value(context, elementType, context.popRegisterName());
     std::string code = "OpAccessChain " + elementTypeV->getName() + " " + ptr->getName();
     for (auto* index : indexes)
@@ -541,7 +541,7 @@ Value* SPIRVBuilder::opCast(Value* val, Type* type)  {
         return opConstruct(dstVec, std::vector<Value*>(dstVec->getComponentCount(), val));
     }
 
-    Value* typeV = type->getValue(this);
+    Value* typeV = getTypeValue(this, type);
     Value* value = new Value(context, type, context.popRegisterName());
     getSPIRVInsertBlock()->addCode("Op" + opName + " " + typeV->getName() + " " + val->getName(), value);
 
@@ -550,7 +550,7 @@ Value* SPIRVBuilder::opCast(Value* val, Type* type)  {
 
 Value* SPIRVBuilder::opSample(Value* funcV, Value* texture, Value* sampler, Value* coords, Value* lod)  {
     Value* sampledImageTypeV = new Value(context, nullptr, "sampledImageType");
-    blockTypesVariablesConstants->addCode("OpTypeSampledImage " + texture->getType()->getValue(this)->getName(), sampledImageTypeV);
+    blockTypesVariablesConstants->addCode("OpTypeSampledImage " + getTypeValue(this, texture->getType())->getName(), sampledImageTypeV);
 
     Value* sampledImage = new Value(context, nullptr, "samplerTexTmp");
     getSPIRVInsertBlock()->addCode("OpSampledImage " + sampledImageTypeV->getName() + " " + texture->getName() + " " + sampler->getName(), sampledImage);
@@ -558,24 +558,22 @@ Value* SPIRVBuilder::opSample(Value* funcV, Value* texture, Value* sampler, Valu
     if (!lod)
         lod = opConstant(new ConstantFloat(context, 0.0f, 32));
     Value* value = new Value(context, new VectorType(context, texture->getType()->getBaseType(), 4), context.popRegisterName());
-    getSPIRVInsertBlock()->addCode("OpImageSampleExplicitLod " + value->getType()->getValue(this)->getName() + " " + sampledImage->getName() + " " + coords->getName() + " Lod " + lod->getName(), value);
+    getSPIRVInsertBlock()->addCode("OpImageSampleExplicitLod " + getTypeValue(this, value->getType())->getName() + " " + sampledImage->getName() + " " + coords->getName() + " Lod " + lod->getName(), value);
 
     return value;
 }
 
 Value* SPIRVBuilder::opVariable(PointerType* type, Value* initializer)  {
-    Value* typeV = type->getValue(this);
+    Value* typeV = getTypeValue(this, type);
     Value* value = new Value(context, type, context.popRegisterName());
-    StorageClass storageClass = type->getStorageClass();
-    GET_STORAGE_CLASS_NAME(storageClass);
-    std::string code = "OpVariable " + typeV->getName() + " " + storageClassStr;
+    std::string code = "OpVariable " + typeV->getName() + " " + storageClassLUT[(int) type->getStorageClass()];
     if (initializer) {
         if (initializer->isConstant())
             code += " " + initializer->getName();
         else
             opStore(value, initializer);
     }
-    if (storageClass == StorageClass::Function)
+    if (type->getStorageClass() == StorageClass::Function)
         getSPIRVFirstFunctionBlock()->addCodeToBeginning(code, value);
     else
         blockTypesVariablesConstants->addCode(code, value);
@@ -583,13 +581,13 @@ Value* SPIRVBuilder::opVariable(PointerType* type, Value* initializer)  {
     return value;
 }
 
-Value* SPIRVBuilder::_addCodeToTypesVariablesConstantsBlock(Type* type, const std::string& code, const std::string& registerName, const std::string& comment, const std::string& userDefinedName) {
+Value* SPIRVBuilder::_addCodeToTypesVariablesConstantsBlock(Type* type, const std::string& code, const std::string& registerName, const std::string& userDefinedName) {
     //HACK: use @ref userDefinedName to prevent structures with same members to end up as the same value
     auto& mappedValue = typesVariablesConstantsDefinitions[code + userDefinedName];
     if (!mappedValue) {
         mappedValue = new Value(context, type, registerName);
         mappedValue->setIsConstant(true);
-        blockTypesVariablesConstants->addCode(code, mappedValue, comment);
+        blockTypesVariablesConstants->addCode(code, mappedValue);
     }
 
     return mappedValue;

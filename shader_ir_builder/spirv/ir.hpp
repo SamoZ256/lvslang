@@ -5,6 +5,8 @@
 
 #include "function.hpp"
 
+#include "type_value.hpp"
+
 namespace irb {
 
 class SPIRVBuilder : public IRBuilder {
@@ -69,7 +71,7 @@ public:
 
     Value* opVariable(PointerType* type, Value* initializer = nullptr) override;
 
-    Value* _addCodeToTypesVariablesConstantsBlock(Type* type, const std::string& code, const std::string& registerName, const std::string& comment = "", const std::string& userDefinedName = "");
+    Value* _addCodeToTypesVariablesConstantsBlock(Type* type, const std::string& code, const std::string& registerName, const std::string& userDefinedName = "");
 
     void opDecorate(Value* value, Decoration decoration, const std::vector<std::string>& values = {});
 

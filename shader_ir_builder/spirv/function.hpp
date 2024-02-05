@@ -16,15 +16,7 @@ private:
 public:
     using Function::Function;
 
-    void end(IRBuilder* builder) override {
-        Value* functionV = type->getValue(builder);
-        Value* returnV = static_cast<FunctionType*>(type)->getReturnV();
-        static_cast<SPIRVBlock*>(getFunctionBlock())->addCodeToBeginning("OpFunction " + returnV->getName() + " " + property + " " + functionV->getName(), this, getName());
-        SPIRVBlock* endB = new SPIRVBlock(context, this);
-        endB->addCode("OpFunctionEnd");
-        for (uint32_t i = 0; i < blocks.size(); i++)
-            code += static_cast<SPIRVBlock*>(blocks[i])->getCode();
-    }
+    void end(IRBuilder* builder) override;
 
     //Getters
     const std::string& getCode() {

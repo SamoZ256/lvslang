@@ -23,10 +23,10 @@
 %_ptr_Output__struct_4 = OpTypePointer Output %_struct_4
           %3 = OpVariable %_ptr_Output__struct_4 Output
        %void = OpTypeVoid
-         %32 = OpTypeFunction %void
+         %31 = OpTypeFunction %void
 
                ; Function 2
-          %2 = OpFunction %void None %32
+          %2 = OpFunction %void None %31
          %42 = OpLabel
                OpReturn
                OpFunctionEnd

@@ -138,10 +138,6 @@ const std::string storageClassLUT[] = {
     "StorageBuffer"
 };
 
-#define GET_STORAGE_CLASS_NAME(storageClass) \
-IRB_VALIDATE_ENUM_ARGUMENT(StorageClass, storageClass); \
-const std::string& storageClass##Str = storageClassLUT[(int)storageClass];
-
 enum class Decoration {
     Block,
     ArrayStride,
@@ -210,21 +206,6 @@ enum class TextureViewType {
 
     MaxEnum
 };
-
-const std::string textureViewTypeLUT_SPIRV[] = {
-    "1D",
-    "2D",
-    "3D",
-    "1DArray",
-    "2DArray",
-    "Cube",
-    "CubeArray",
-    "Buffer"
-};
-
-#define GET_TEXTURE_NAME(viewType) \
-IRB_VALIDATE_ENUM_ARGUMENT(TextureViewType, viewType); \
-std::string viewType##Str = textureViewTypeLUT_SPIRV[(int)viewType];
 
 enum class Operation {
     //Binary

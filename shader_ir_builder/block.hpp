@@ -18,10 +18,6 @@ public:
         return new BlockType(*this);
     }
 
-    Value* getValue(IRBuilder* builder, bool decorate = false) override {
-        return nullptr;
-    }
-
     std::string getTemplateName() const override {
         return "";
     }
