@@ -294,12 +294,12 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
         opDecorate(positionVariable, Decoration::Position);
     }
     
+    //TODO: don't throw this error
+    if (!returnType->isStructure()) {
+        IRB_ERROR(("Entry point argument declared with the 'output' attribute must have a structure type, found '" + returnType->getDebugName() + "' instead").c_str());
+        return;
+    }
     if (functionRole == FunctionRole::Vertex) {
-        //TODO: don't throw this error
-        if (!returnType->isStructure()) {
-            IRB_ERROR("Entry point argument declared with the 'output' attribute must have a structure type");
-            return;
-        }
         Structure* structure = static_cast<StructureType*>(returnType)->getStructure();
         Value* positionV = nullptr;
         for (uint32_t i = 0; i < structure->members.size(); i++) {
@@ -314,11 +314,6 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
         if (positionV)
             opStore(positionVariable, positionV);
     } else if (functionRole == FunctionRole::Fragment) {
-        //TODO: do this error check for every backend?
-        if (!returnType->isStructure()) {
-            IRB_ERROR("Entry point argument declared with the 'output' attribute must have a structure type");
-            return;
-        }
         //TODO: do this decoration somewhere else
         irb::Structure* structure = static_cast<StructureType*>(returnType)->getStructure();
         for (uint32_t i = 0; i < structure->members.size(); i++)

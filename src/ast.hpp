@@ -94,6 +94,7 @@ public:
 };
 
 struct Variable {
+    irb::Type* type;
     irb::Value* value;
     bool shouldBeLoaded;
 };
@@ -155,14 +156,6 @@ inline irb::Type* getPromotedType(irb::Type* a, irb::Type* b) {
 
 //Base class
 class ExpressionAST {
-protected:
-    uint32_t debugLine;
-    uint32_t debugChar;
-
-    bool loadOnCodegen = true;
-
-    virtual irb::Value* _codegen(irb::Type* requiredType = nullptr) = 0;
-
 public:
     ExpressionAST() {
         debugLine = source.crntLine;
@@ -171,16 +164,36 @@ public:
 
     virtual ~ExpressionAST() = default;
 
-    irb::Value* codegen(irb::Type* requiredType = nullptr) {
+    irb::Type* initialize(irb::Type* aRequiredType = nullptr) {
+        uint32_t oldDebugLine = source.crntDebugLine;
+        uint32_t oldDebugChar = source.crntDebugChar;
         setDebugInfo();
 
-        irb::Value* value = _codegen(requiredType);
+        requiredType = aRequiredType;
+        type = _initialize();
+        
+        source.crntDebugLine = oldDebugLine;
+        source.crntDebugChar = oldDebugChar;
+
+        return (requiredType ? requiredType : type);
+    }
+
+    irb::Value* codegen() {
+        uint32_t oldDebugLine = source.crntDebugLine;
+        uint32_t oldDebugChar = source.crntDebugChar;
+        setDebugInfo();
+
+        irb::Value* value = _codegen();
         if (!value)
             return nullptr;
+        
+        source.crntDebugLine = oldDebugLine;
+        source.crntDebugChar = oldDebugChar;
+        
         if (requiredType) {
             if (TARGET_IS_IR(irb::target))
                 return builder->opCast(value, requiredType);
-            else if (!value->getType()->equals(requiredType))
+            else if (!value->getType()->equals(requiredType) && !type->equals(requiredType))
                 return new irb::Value(context, requiredType, getTypeName(requiredType) + "(" + value->getRawName() + ")");
         }
         
@@ -199,26 +212,54 @@ public:
         loadOnCodegen = aLoadOnCodegen;
     }
 
+    //Getters
+    inline irb::Type* getType() const {
+        if (!type)
+            logError("expression does not have type");
+
+        return type;
+    }
+
     //Debugging
     inline void setDebugInfo() {
         source.crntDebugLine = debugLine;
         source.crntDebugChar = debugChar;
     }
+
+protected:
+    uint32_t debugLine;
+    uint32_t debugChar;
+
+    irb::Type* requiredType = nullptr;
+
+    bool loadOnCodegen = true;
+
+    virtual irb::Type* _initialize() = 0;
+
+    virtual irb::Value* _codegen() = 0;
+
+private:
+    irb::Type* type = nullptr;
 };
+
+/*
+class TopLevelAST : public ExpressionAST {
+public:
+    TopLevelAST(const std::vector<ExpressionAST*>& aExpressions) : expressions(aExpressions) {}
+
+private:
+    std::vector<ExpressionAST*> expressions;
+    
+    irb::Type* _initialize() override;
+
+    irb::Value* _codegen() override;
+};
+*/
 
 //Number
 class NumberExpressionAST : public ExpressionAST {
-private:
-    double _valueD;
-    long _valueL;
-    unsigned long _valueU;
-
-    irb::Type* type;
-
 public:
-    NumberExpressionAST(double aValueD, long aValueL, unsigned long aValueU, irb::ScalarType* aType) : _valueD(aValueD), _valueL(aValueL), _valueU(aValueU), type(aType) {}
-
-    irb::Value* _codegen(irb::Type* requiredType = nullptr) override;
+    NumberExpressionAST(double aValueD, long aValueL, unsigned long aValueU, irb::ScalarType* aScalarType) : _valueD(aValueD), _valueL(aValueL), _valueU(aValueU), scalarType(aScalarType) {}
 
     bool isConstant() override {
         return true;
@@ -236,138 +277,75 @@ public:
     unsigned long valueU() {
         return _valueU;
     }
+
+private:
+    double _valueD;
+    long _valueL;
+    unsigned long _valueU;
+
+    irb::Type* scalarType;
+
+    irb::Type* _initialize() override;
+
+    irb::Value* _codegen() override;
 };
 
 //Variable
 class VariableExpressionAST : public ExpressionAST {
-private:
-    std::string _name;
-    irb::Type* type;
-
 public:
     VariableExpressionAST(const std::string& aName) : _name(aName) {}
-
-    irb::Value* _codegen(irb::Type* requiredType = nullptr) override;
 
     bool isVariable() override {
         return true;
     }
 
     std::string& name() { return _name; }
+
+private:
+    std::string _name;
+
+    Variable* variable;
+
+    irb::Type* _initialize() override;
+
+    irb::Value* _codegen() override;
 };
 
 //TODO: rename to OperationAST?
 //Operation
 class BinaryExpressionAST : public ExpressionAST {
+public:
+    BinaryExpressionAST(const std::string& aOperator, ExpressionAST* aLHS, ExpressionAST* aRHS) : op(aOperator), lhs(aLHS), rhs(aRHS) {}
+
 private:
     std::string op;
     ExpressionAST* lhs;
     ExpressionAST* rhs;
 
-public:
-    BinaryExpressionAST(const std::string& aOperator, ExpressionAST* aLHS, ExpressionAST* aRHS) : op(aOperator), lhs(aLHS), rhs(aRHS) {}
+    irb::Operation operation;
 
-    irb::Value* _codegen(irb::Type* requiredType = nullptr) override;
+    irb::Type* _initialize() override;
+
+    irb::Value* _codegen() override;
 };
 
 //Block
 class BlockExpressionAST : public ExpressionAST {
-private:
-    std::vector<ExpressionAST*> expressions;
-
 public:
     BlockExpressionAST(std::vector<ExpressionAST*> aExpressions) : expressions(aExpressions) {}
 
-    irb::Value* _codegen(irb::Type* requiredType = nullptr) override {
-        std::string codeStr = "{\n";
+private:
+    std::vector<ExpressionAST*> expressions;
 
-        currentIndentation += 1;
+    irb::Type* _initialize() override;
 
-        for (auto expr : expressions) {
-            irb::Value* value = expr->codegen();
-            if (!value)
-                return nullptr;
-            if (TARGET_IS_CODE(irb::target)) {
-                for (uint16_t i = 0; i < currentIndentation; i++)
-                    codeStr += "\t";
-                codeStr += value->getRawName() + ";\n";
-            }
-        }
-
-        currentIndentation -= 1;
-
-        for (uint16_t i = 0; i < currentIndentation; i++)
-            codeStr += "\t";
-        codeStr += "}";
-        
-        return new irb::Value(context, nullptr, codeStr);
-    }
+    irb::Value* _codegen() override;
 };
 
 //Function declaration
 class FunctionPrototypeAST : public ExpressionAST {
-private:
-    std::string _name;
-    irb::Type* type;
-    std::vector<irb::Argument> _arguments;
-    //std::vector<int> attributes;
-    bool isDefined;
-    bool isSTDFunction;
-    irb::FunctionRole functionRole;
-
-    irb::Function* value = nullptr;
-    irb::FunctionType* functionType;
-
-    //For finding the correct overload
-    std::string identifier;
-
 public:
-    FunctionPrototypeAST(const std::string& aName, irb::Type* aType, std::vector<irb::Argument> aArguments/*, const std::vector<int>& aAttributes*/, bool aIsDefined, bool aIsSTDFunction, irb::FunctionRole aFunctionRole) : _name(aName), type(aType), _arguments(aArguments)/*, attributes(aAttributes)*/, isDefined(aIsDefined), isSTDFunction(aIsSTDFunction), functionRole(aFunctionRole) {
-        uint32_t bufferBinding = 0, textureBinding = 0, samplerBinding = 0;
-        for (uint32_t i = 0; i < _arguments.size(); i++) {
-            irb::Argument& arg = _arguments[i];
-            auto& attr = arg.attributes;
-            if (attr.addressSpace != 0) {
-                irb::PointerType* pointerType = dynamic_cast<irb::PointerType*>(arg.type);
-                if (!pointerType) {
-                    logError("only pointers can be used with an address space");
-                    return;
-                }
-                //pointerType->setAddressSpace(attr.addressSpace);
-            }
-            if (functionRole != irb::FunctionRole::Normal) {
-                //TDOO: save the bindings for reflection
-                if (arg.type->isTexture()) {
-                    attr.isTexture = true;
-                    attr.bindings.texture = textureBinding++;
-                } else if (arg.type->isSampler()) {
-                    attr.isSampler = true;
-                    attr.bindings.sampler = samplerBinding++;
-                } else if (!attr.isInput) {
-                    irb::PointerType* pointerType = dynamic_cast<irb::PointerType*>(arg.type);
-                    if (!pointerType) {
-                        logError("only pointers can be used as buffers");
-                        return;
-                    }
-                    attr.isBuffer = true;
-                    attr.bindings.buffer = bufferBinding++;
-                    if ((irb::target == irb::Target::SPIRV || irb::target == irb::Target::GLSL || irb::target == irb::Target::HLSL) && functionRole != irb::FunctionRole::Normal)
-                        arg.type = arg.type->getElementType();
-                    //pointerType->addAttribute(" noundef \"air-buffer-no-alias\"");
-                }
-            }
-        }
-
-        std::vector<irb::Type*> argumentTypes;
-        argumentTypes.resize((_arguments.size()));
-        for (uint32_t i = 0; i < argumentTypes.size(); i++)
-            argumentTypes[i] = _arguments[i].type;
-        functionType = new irb::FunctionType(context, type, argumentTypes);
-
-        identifier = functionType->getTemplateName();
-    }
-
-    irb::Value* _codegen(irb::Type* requiredType = nullptr) override;
+    FunctionPrototypeAST(const std::string& aName, irb::Type* aReturnType, std::vector<irb::Argument> aArguments/*, const std::vector<int>& aAttributes*/, bool aIsDefined, bool aIsSTDFunction, irb::FunctionRole aFunctionRole) : _name(aName), returnType(aReturnType), _arguments(aArguments)/*, attributes(aAttributes)*/, isDefined(aIsDefined), isSTDFunction(aIsSTDFunction), functionRole(aFunctionRole) {}
 
     //Getters
     inline const std::string& name() const {
@@ -382,8 +360,8 @@ public:
         return _arguments[index].attributes;
     }
 
-    inline irb::Type* getType() const {
-        return type;
+    inline irb::Type* getReturnType() const {
+        return returnType;
     }
 
     inline irb::FunctionRole getFunctionRole() const {
@@ -392,10 +370,6 @@ public:
 
     inline irb::Function* getValue() const {
         return value;
-    }
-
-    inline irb::FunctionType* getFunctionType() const {
-        return functionType;
     }
 
     inline bool getIsDefined() const {
@@ -414,6 +388,24 @@ public:
     inline void setIsDefined(bool aIsDefined) {
         isDefined = aIsDefined;
     }
+
+private:
+    std::string _name;
+    irb::Type* returnType;
+    std::vector<irb::Argument> _arguments;
+    //std::vector<int> attributes;
+    bool isDefined;
+    bool isSTDFunction;
+    irb::FunctionRole functionRole;
+
+    irb::Function* value = nullptr;
+
+    //For finding the correct overload
+    std::string identifier;
+
+    irb::Type* _initialize() override;
+
+    irb::Value* _codegen() override;
 };
 
 //Function definition
@@ -425,30 +417,38 @@ private:
 public:
     FunctionDefinitionAST(FunctionPrototypeAST* aDeclaration, BlockExpressionAST* aBody) : declaration(aDeclaration), body(aBody) {}
 
-    irb::Value* _codegen(irb::Type* requiredType = nullptr) override;
+    irb::Type* _initialize() override;
+
+    irb::Value* _codegen() override;
 };
 
 //Function call
 class CallExpressionAST : public ExpressionAST {
+public:
+    CallExpressionAST(const std::string& aCallee, std::vector<ExpressionAST*> aArguments) : callee(aCallee), arguments(aArguments) {}
+
 private:
     std::string callee;
     std::vector<ExpressionAST*> arguments;
 
-public:
-    CallExpressionAST(const std::string& aCallee, std::vector<ExpressionAST*> aArguments) : callee(aCallee), arguments(aArguments) {}
+    FunctionPrototypeAST* declaration = nullptr;
 
-    irb::Value* _codegen(irb::Type* requiredType = nullptr) override;
+    irb::Type* _initialize() override;
+
+    irb::Value* _codegen() override;
 };
 
 //Return
 class ReturnExpressionAST : public ExpressionAST {
-private:
-    ExpressionAST* expression;
-
 public:
     ReturnExpressionAST(ExpressionAST* aExpression) : expression(aExpression) {}
 
-    irb::Value* _codegen(irb::Type* requiredType = nullptr) override;
+private:
+    ExpressionAST* expression;
+
+    irb::Type* _initialize() override;
+
+    irb::Value* _codegen() override;
 };
 
 //If
@@ -459,28 +459,35 @@ struct IfThenBlock {
 
 //TODO: rename?
 class IfExpressionAST : public ExpressionAST {
+public:
+    IfExpressionAST(const std::vector<IfThenBlock*>& aIfThenBlocks, ExpressionAST* aElseBlock) : ifThenBlocks(aIfThenBlocks), elseBlock(aElseBlock) {}
+
 private:
     std::vector<IfThenBlock*> ifThenBlocks;
     ExpressionAST* elseBlock;
 
-public:
-    IfExpressionAST(const std::vector<IfThenBlock*>& aIfThenBlocks, ExpressionAST* aElseBlock) : ifThenBlocks(aIfThenBlocks), elseBlock(aElseBlock) {}
+    irb::Type* _initialize() override;
 
-    irb::Value* _codegen(irb::Type* requiredType = nullptr) override;
+    irb::Value* _codegen() override;
 };
 
 //Inline if else
 class InlineIfElseExpressionAST : public ExpressionAST {
+public:
+    InlineIfElseExpressionAST(ExpressionAST* aCondition, BlockExpressionAST* aThenBlock, BlockExpressionAST* aElseBlock) : condition(aCondition), thenBlock(aThenBlock), elseBlock(aElseBlock) {}
+
 private:
     ExpressionAST* condition;
     BlockExpressionAST* thenBlock;
     BlockExpressionAST* elseBlock;
 
-public:
-    InlineIfElseExpressionAST(ExpressionAST* aCondition, BlockExpressionAST* aThenBlock, BlockExpressionAST* aElseBlock) : condition(aCondition), thenBlock(aThenBlock), elseBlock(aElseBlock) {}
+    //TODO: implement this
+    irb::Type* _initialize() override {
+        return nullptr;
+    }
 
     //TODO: implement this
-    irb::Value* _codegen(irb::Type* requiredType = nullptr) override {
+    irb::Value* _codegen() override {
         return nullptr;
     }
 };
@@ -488,16 +495,18 @@ public:
 //TODO: rename to WhileLoopAST?
 //While
 class WhileExpressionAST : public ExpressionAST {
+public:
+    WhileExpressionAST(ExpressionAST* aCondition, ExpressionAST* aBlock, bool aIsDoWhile) : condition(aCondition), block(aBlock), isDoWhile(aIsDoWhile) {}
+
 private:
     ExpressionAST* condition;
     ExpressionAST* block;
 
     bool isDoWhile;
 
-public:
-    WhileExpressionAST(ExpressionAST* aCondition, ExpressionAST* aBlock, bool aIsDoWhile) : condition(aCondition), block(aBlock), isDoWhile(aIsDoWhile) {}
+    irb::Type* _initialize() override;
 
-    irb::Value* _codegen(irb::Type* requiredType = nullptr) override;
+    irb::Value* _codegen() override;
 };
 
 //Variable declaration
@@ -509,45 +518,49 @@ struct VariableDeclaration {
 
 //TODO: rename to VariableDeclarationAST?
 class VariableDeclarationExpressionAST : public ExpressionAST {
+public:
+    VariableDeclarationExpressionAST(const std::vector<VariableDeclaration>& aVariableNames, bool aIsGlobal, bool aIsConstant) : variableNames(aVariableNames), isGlobal(aIsGlobal), isConstant(aIsConstant) {}
+
 private:
     std::vector<VariableDeclaration> variableNames;
     bool isGlobal;
     bool isConstant;
 
-public:
-    VariableDeclarationExpressionAST(const std::vector<VariableDeclaration>& aVariableNames, bool aIsGlobal, bool aIsConstant) : variableNames(aVariableNames), isGlobal(aIsGlobal), isConstant(aIsConstant) {}
+    irb::Type* _initialize() override;
 
-    irb::Value* _codegen(irb::Type* requiredType = nullptr) override;
+    irb::Value* _codegen() override;
 };
 
 //Subscript
 class SubscriptExpressionAST : public ExpressionAST {
+public:
+    SubscriptExpressionAST(ExpressionAST* aPtr, ExpressionAST* aIndex) : ptr(aPtr), index(aIndex) {}
+
 private:
     ExpressionAST* ptr;
     ExpressionAST* index;
 
-    irb::PointerType* type;
+    irb::Type* _initialize() override;
 
-public:
-    SubscriptExpressionAST(ExpressionAST* aPtr, ExpressionAST* aIndex) : ptr(aPtr), index(aIndex) {}
-
-    irb::Value* _codegen(irb::Type* requiredType = nullptr) override;
+    irb::Value* _codegen() override;
 };
 
 //TODO: rename to MemberAccessAST?
 //Member access
 class MemberAccessExpressionAST : public ExpressionAST {
+public:
+    MemberAccessExpressionAST(ExpressionAST* aExpression, const std::string& aMemberName, bool aExprShouldBeLoadedBeforeAccessingMember) : expression(aExpression), memberName(aMemberName), exprShouldBeLoadedBeforeAccessingMember(aExprShouldBeLoadedBeforeAccessingMember) {}
+
 private:
     ExpressionAST* expression;
     std::string memberName;
     bool exprShouldBeLoadedBeforeAccessingMember;
 
-    irb::PointerType* type = nullptr;
+    uint32_t memberIndex = 0;
 
-public:
-    MemberAccessExpressionAST(ExpressionAST* aExpression, const std::string& aMemberName, bool aExprShouldBeLoadedBeforeAccessingMember) : expression(aExpression), memberName(aMemberName), exprShouldBeLoadedBeforeAccessingMember(aExprShouldBeLoadedBeforeAccessingMember) {}
+    irb::Type* _initialize() override;
 
-    irb::Value* _codegen(irb::Type* requiredType = nullptr) override;
+    irb::Value* _codegen() override;
 };
 
 //Structure definition
@@ -559,32 +572,38 @@ private:
 public:
     StructureDefinitionAST(const std::string& aName, const std::vector<irb::StructureMember>& aMembers) : name(aName), members(aMembers) {}
 
-    irb::Value* _codegen(irb::Type* requiredType = nullptr) override;
+    irb::Type* _initialize() override;
+
+    irb::Value* _codegen() override;
 };
 
 //Enumeration definition
 class EnumDefinitionAST : public ExpressionAST {
+public:
+    EnumDefinitionAST(const std::string& aName, const std::vector<EnumValue>& aValues) : name(aName), values(aValues) {}
+
 private:
     std::string name;
     std::vector<EnumValue> values;
 
-public:
-    EnumDefinitionAST(const std::string& aName, const std::vector<EnumValue>& aValues) : name(aName), values(aValues) {}
+    irb::Type* _initialize() override;
 
-    irb::Value* _codegen(irb::Type* requiredType = nullptr) override;
+    irb::Value* _codegen() override;
 };
 
 //TODO: rename?
 //Enumeration value
 class EnumValueExpressionAST : public ExpressionAST {
+public:
+    EnumValueExpressionAST(Enumeration* aEnumeration, EnumValue& aValue) : enumeration(aEnumeration), value(aValue) {}
+
 private:
     Enumeration* enumeration;
     EnumValue& value;
 
-public:
-    EnumValueExpressionAST(Enumeration* aEnumeration, EnumValue& aValue) : enumeration(aEnumeration), value(aValue) {}
+    irb::Type* _initialize() override;
 
-    irb::Value* _codegen(irb::Type* requiredType = nullptr) override;
+    irb::Value* _codegen() override;
 };
 
 //TODO: support other initializer lists as well (for instance sampler)
@@ -592,14 +611,8 @@ public:
 //TODO: rename to InitializerListAST?
 //Initializer list
 class InitializerListExpressionAST : public ExpressionAST {
-private:
-    irb::Type* type;
-    std::vector<ExpressionAST*> expressions;
-
 public:
-    InitializerListExpressionAST(irb::Type* aType, std::vector<ExpressionAST*> aExpressions) : type(aType), expressions(aExpressions) {}
-
-    irb::Value* _codegen(irb::Type* requiredType = nullptr) override;
+    InitializerListExpressionAST(irb::Type* aListType, std::vector<ExpressionAST*> aExpressions) : listType(aListType), expressions(aExpressions) {}
 
     bool isConstant() override {
         for (auto* expression : expressions) {
@@ -609,6 +622,14 @@ public:
 
         return true;
     }
+
+private:
+    irb::Type* listType;
+    std::vector<ExpressionAST*> expressions;
+
+    irb::Type* _initialize() override;
+
+    irb::Value* _codegen() override;
 };
 
 } //namespace lvslang

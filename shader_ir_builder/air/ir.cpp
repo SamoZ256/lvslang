@@ -585,7 +585,7 @@ std::string AIRBuilder::createMetadata(const std::string& languageName, uint32_t
         if (entryPoint.returnType->getTypeID() != TypeID::Void) {
             //TODO: support non-structure types as well
             if (!entryPoint.returnType->isStructure()) {
-                IRB_ERROR("Blah blah");
+                IRB_ERROR(("Entry point argument declared with the 'output' attribute must have a structure type, found '" + entryPoint.returnType->getDebugName() + "' instead").c_str());
                 return "";
             }
 

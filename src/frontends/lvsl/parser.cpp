@@ -922,7 +922,6 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, bool isSTDF
     return new FunctionPrototypeAST(functionName, functionType, arguments/*, attributes*/, isDefined, isSTDFunction, functionRole);
 }
 
-//TODO: support forward declarations
 //Function definition
 ExpressionAST* parseFunctionDefinition(bool isSTDFunction = false, irb::FunctionRole functionRole = irb::FunctionRole::Normal) {
     getNextToken(); // 'func', 'vertex', 'fragment' or 'kernel'
@@ -1136,7 +1135,9 @@ bool mainLoop() {
         }
 
         if (expression) {
-            if (auto* value = expression->codegen()) {
+            auto* type = expression->initialize();
+            auto* value = expression->codegen();
+            if (type && value) {
                 std::string code = value->getRawName();
                 //HACK: check if it contains something
                 if (code.size() > 0)
