@@ -278,6 +278,7 @@ IRB_VALIDATE_ENUM_ARGUMENT(FunctionRole, functionRole); \
 std::string functionRole##Str = functionRoleLUT_SPIRV[(int)functionRole];
 
 //Utility functions
+/*
 union DoubleToUint64 {
     double d;
     uint64_t u;
@@ -292,6 +293,7 @@ inline std::string doubleToHEX(float d) {
     
     return "0x" + stream.str();
 }
+*/
 
 } //namespace irb
 

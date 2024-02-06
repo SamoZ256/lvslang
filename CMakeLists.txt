@@ -32,6 +32,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/argumentum)
 add_library(lvslang_lib SHARED
     shader_ir_builder/common.cpp
     shader_ir_builder/block.cpp
+    shader_ir_builder/air/type_handle.cpp
     shader_ir_builder/air/block.cpp
     shader_ir_builder/air/function.cpp
     shader_ir_builder/air/ir.cpp

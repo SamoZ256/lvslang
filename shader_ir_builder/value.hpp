@@ -60,8 +60,6 @@ inline TypeID operator|(TypeID l, TypeID r) {
 
 class Type {
 protected:
-    llvm::Type* handle = nullptr;
-
     Context& context;
     TypeID typeID;
 
@@ -140,13 +138,6 @@ public:
     }
 
     //Getters
-    llvm::Type* getHandle() {
-        if (!handle)
-            IRB_ERROR("handle is null");
-        
-        return handle;
-    }
-
     //TODO: remove this?
     virtual bool getIsSigned() {
         return false;
@@ -161,7 +152,7 @@ public:
 
 class Value {
 protected:
-    llvm::Value* handle = nullptr;
+    void* handle = nullptr;
 
     Context& context;
 
@@ -190,9 +181,13 @@ public:
     }
 
     //Getters
-    inline llvm::Value* getHandle() {
+    inline Context& getContext() const {
+        return context;
+    }
+
+    inline void* getHandle() {
         if (!handle)
-            IRB_ERROR("handle is null");
+            IRB_ERROR(("handle is null (type: " + type->getDebugName() + ")").c_str());
         
         return handle;
     }
@@ -215,7 +210,7 @@ public:
     }
 
     //Setters
-    void setHandle(llvm::Value* aHandle) {
+    void setHandle(void* aHandle) {
         handle = aHandle;
     }
 
@@ -226,10 +221,7 @@ public:
 
 class UndefinedValue : public Value {
 public:
-    UndefinedValue(Context& aContext, Type* aType) : Value(aContext, aType, "undef", "", false) {
-        if (target == Target::AIR)
-            handle = llvm::UndefValue::get(aType->getHandle());
-    }
+    UndefinedValue(Context& aContext, Type* aType) : Value(aContext, aType, "undef", "", false) {}
 };
 
 class ScalarType : public Type {
@@ -238,28 +230,7 @@ private:
     bool isSigned;
 
 public:
-    ScalarType(Context& aContext, TypeID aTypeID, uint32_t aBitCount, bool aIsSigned = true) : Type(aContext, aTypeID), bitCount(aBitCount), isSigned(aIsSigned) {
-        if (target == Target::AIR) {
-            switch (typeID) {
-            case TypeID::Bool:
-                handle = llvm::Type::getInt1Ty(*context.handle);
-                break;
-            case TypeID::Integer:
-                handle = llvm::Type::getIntNTy(*context.handle, bitCount);
-                break;
-            case TypeID::Float:
-                if (bitCount == 32)
-                    handle = llvm::Type::getFloatTy(*context.handle);
-                else if (bitCount == 16)
-                    handle = llvm::Type::getHalfTy(*context.handle);
-                else
-                    IRB_INVALID_ARGUMENT_WITH_REASON("bitCount", "bit count of float can only be 16 or 32");
-                break;
-            default:
-                break;
-            }
-        }
-    }
+    ScalarType(Context& aContext, TypeID aTypeID, uint32_t aBitCount, bool aIsSigned = true) : Type(aContext, aTypeID), bitCount(aBitCount), isSigned(aIsSigned) {}
 
     ~ScalarType() = default;
 
@@ -362,26 +333,41 @@ public:
 };
 
 class ConstantBool : public ConstantValue {
+private:
+    bool value;
+
 public:
-    ConstantBool(Context& aContext, bool value) : ConstantValue(aContext, new ScalarType(aContext, TypeID::Bool, 8, false), TARGET_IS_IR(target) ? std::to_string(value) : (value ? "true" : "false")) {
-        if (target == Target::AIR)
-            handle = llvm::ConstantInt::get(*context.handle, llvm::APInt(1, value, false));
+    ConstantBool(Context& aContext, bool aValue) : ConstantValue(aContext, new ScalarType(aContext, TypeID::Bool, 8, false), TARGET_IS_IR(target) ? std::to_string(aValue) : (aValue ? "true" : "false")), value(aValue) {}
+
+    //Getters
+    inline bool getValue() const {
+        return value;
     }
 };
 
 class ConstantInt : public ConstantValue {
+private:
+    long value;
+
 public:
-    ConstantInt(Context& aContext, long value, uint8_t bitCount, bool isSigned) : ConstantValue(aContext, new ScalarType(aContext, TypeID::Integer, bitCount, isSigned), std::to_string(value)) {
-        if (target == Target::AIR)
-            handle = llvm::ConstantInt::get(*context.handle, llvm::APInt(bitCount, value, isSigned));
+    ConstantInt(Context& aContext, long aValue, uint8_t bitCount, bool isSigned) : ConstantValue(aContext, new ScalarType(aContext, TypeID::Integer, bitCount, isSigned), std::to_string(aValue)), value(aValue) {}
+
+    //Getters
+    inline long getValue() const {
+        return value;
     }
 };
 
 class ConstantFloat : public ConstantValue {
+private:
+    float value;
+
 public:
-    ConstantFloat(Context& aContext, float value, uint8_t bitCount) : ConstantValue(aContext, new ScalarType(aContext, TypeID::Float, bitCount, true), target == Target::AIR ? doubleToHEX(value) : std::to_string(value)) {
-        if (target == Target::AIR)
-            handle = llvm::ConstantFP::get(*context.handle, llvm::APFloat(value));
+    ConstantFloat(Context& aContext, float aValue, uint8_t bitCount) : ConstantValue(aContext, new ScalarType(aContext, TypeID::Float, bitCount, true), std::to_string(aValue)), value(aValue) {}
+
+    //Getters
+    inline float getValue() const {
+        return value;
     }
 };
 
@@ -389,13 +375,11 @@ class PointerType : public Type {
 private:
     Type* elementType;
     StorageClass storageClass;
+    //TODO: remove this?
+    uint64_t addressSpace;
 
 public:
-    PointerType(Context& aContext, Type* aElementType, StorageClass aStorageClass, uint64_t addressSpace = 0) : Type(aContext, TypeID::Pointer), elementType(aElementType), storageClass(aStorageClass) {
-        //TODO: set the adress space correctly
-        if (target == Target::AIR)
-            handle = llvm::PointerType::get(*context.handle, addressSpace);
-    }
+    PointerType(Context& aContext, Type* aElementType, StorageClass aStorageClass, uint64_t aAddressSpace = 0) : Type(aContext, TypeID::Pointer), elementType(aElementType), storageClass(aStorageClass), addressSpace(aAddressSpace) {}
 
     ~PointerType() = default;
 
@@ -435,6 +419,10 @@ public:
     inline StorageClass getStorageClass() const {
         return storageClass;
     }
+
+    inline uint64_t getAddressSpace() const {
+        return addressSpace;
+    }
 };
 
 class ArrayType : public Type {
@@ -443,10 +431,7 @@ private:
     uint32_t size;
 
 public:
-    ArrayType(Context& aContext, Type* aArrayType, uint32_t aSize) : Type(aContext, TypeID::Array), arrayType(aArrayType), size(aSize) {
-        if (target == Target::AIR)
-            handle = llvm::ArrayType::get(arrayType->getHandle(), size);
-    }
+    ArrayType(Context& aContext, Type* aArrayType, uint32_t aSize) : Type(aContext, TypeID::Array), arrayType(aArrayType), size(aSize) {}
 
     ~ArrayType() = default;
 
@@ -497,21 +482,8 @@ private:
 public:
     StructureType(Context& aContext, const std::string& aName) : Type(aContext, TypeID::Structure), name(aName) {
         structure = context.structures[name];
-        //if (target != Target::GLSL)
-        //    nameBegin = "struct ";
         if (!structure)
             error("use of undeclared structure '" + name + "'", "StructureType::StructureType");
-        
-        if (target == Target::AIR) {
-            if (!structure->handle) {
-                std::vector<llvm::Type*> members;
-                members.reserve(structure->members.size());
-                for (auto& member : structure->members)
-                    members.push_back(member.type->getHandle());
-                structure->handle = llvm::StructType::create(members, name);
-            }
-            handle = structure->handle;
-        }
     }
 
     ~StructureType() = default;
@@ -559,15 +531,7 @@ private:
     std::vector<Type*> arguments;
 
 public:
-    FunctionType(Context& aContext, Type* aReturnType, const std::vector<Type*>& aArguments) : Type(aContext, TypeID::Function), returnType(aReturnType), arguments(aArguments) {
-        if (target == Target::AIR) {
-            std::vector<llvm::Type*> llvmArguments;
-            llvmArguments.reserve(arguments.size());
-            for (auto* arg : arguments)
-                llvmArguments.push_back(arg->getHandle());
-            handle = llvm::FunctionType::get(returnType->getHandle(), llvmArguments, false);
-        }
-    }
+    FunctionType(Context& aContext, Type* aReturnType, const std::vector<Type*>& aArguments) : Type(aContext, TypeID::Function), returnType(aReturnType), arguments(aArguments) {}
 
     ~FunctionType() = default;
 
@@ -635,9 +599,6 @@ public:
             error("vectors can only have component count of 2, 3 or 4", "VectorType::VectorType");
             return;
         }
-
-        if (target == Target::AIR)
-            handle = llvm::VectorType::get(componentType->getHandle(), componentCount, false);
     }
 
     ~VectorType() = default;
@@ -694,9 +655,6 @@ public:
             error("matrices can only have column count of 2, 3 or 4", "MatrixType::MatrixType");
             return;
         }
-
-        if (target == Target::AIR)
-            handle = llvm::ArrayType::get(componentType->getHandle(), columnCount);
     }
 
     ~MatrixType() = default;
@@ -750,10 +708,7 @@ private:
     Type* type;
 
 public:
-    TextureType(Context& aContext, TextureViewType aViewType, Type* aType) : Type(aContext, TypeID::Texture), viewType(aViewType), type(aType) {
-        if (target == Target::AIR)
-            handle = llvm::PointerType::get(*context.handle, 1u);
-    }
+    TextureType(Context& aContext, TextureViewType aViewType, Type* aType) : Type(aContext, TypeID::Texture), viewType(aViewType), type(aType) {}
 
     ~TextureType() = default;
 
@@ -798,10 +753,7 @@ public:
 //TODO: support some template arguments
 class SamplerType : public Type {
 public:
-    SamplerType(Context& aContext) : Type(aContext, TypeID::Sampler) {
-        if (target == Target::AIR)
-            handle = llvm::PointerType::get(*context.handle, 2u);
-    }
+    SamplerType(Context& aContext) : Type(aContext, TypeID::Sampler) {}
 
     ~SamplerType() = default;
 

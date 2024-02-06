@@ -26,7 +26,7 @@ irb::Value* NumberExpressionAST::_codegen(irb::Type* requiredType) {
         }
     }
 
-    irb::Value* value;
+    irb::ConstantValue* value;
     switch (type->getTypeID()) {
     case irb::TypeID::Bool:
         value = new irb::ConstantBool(context, _valueU);
@@ -49,7 +49,7 @@ irb::Value* NumberExpressionAST::_codegen(irb::Type* requiredType) {
         //TODO: find out why I do this
         if (!context.pushedRegisterName())
             context.pushRegisterName("const");
-        value = builder->opConstant(static_cast<irb::ConstantValue*>(value));
+        return builder->opConstant(value);
     }
 
     return value;

@@ -98,7 +98,7 @@ public:
     //Setters
     void setInsertBlock(Block* block) override {
         insertBlock = block;
-        handle->SetInsertPoint(static_cast<AIRBlock*>(insertBlock)->getHandle());
+        handle->SetInsertPoint(static_cast<llvm::BasicBlock*>(insertBlock->getHandle()));
     }
 
 private:

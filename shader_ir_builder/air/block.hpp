@@ -21,10 +21,6 @@ public:
     }
 
     //Getters
-    llvm::BasicBlock* getHandle() {
-        return handle;
-    }
-
     std::string getCode() {
         return codeBegin + (codeBegin.size() == 0 ? "" : "\n") + code + "\n";
     }
@@ -35,8 +31,6 @@ public:
     }
 
 protected:
-    llvm::BasicBlock* handle;
-
     std::string codeBegin;
     std::string code;
 

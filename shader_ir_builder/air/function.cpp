@@ -2,10 +2,12 @@
 
 #include "ir.hpp"
 
+#include "type_handle.hpp"
+
 namespace irb {
 
 AIRFunction::AIRFunction(Context& aContext, IRBuilder* builder, FunctionType* type, const std::string& aName) : Function(aContext, type, aName) {
-    llvm::Function* llvmFunction = llvm::Function::Create(static_cast<llvm::FunctionType*>(type->getHandle()), llvm::Function::ExternalLinkage, name, static_cast<AIRBuilder*>(builder)->getLLVMModule().get());
+    llvm::Function* llvmFunction = llvm::Function::Create(static_cast<llvm::FunctionType*>(getTypeLLVMHandle(type)), llvm::Function::ExternalLinkage, name, static_cast<AIRBuilder*>(builder)->getLLVMModule().get());
     for (uint32_t i = 0; i < type->getArguments().size(); i++) {
         Type* argumentType = type->getArguments()[i];
         llvm::Argument* llvmArgument = llvmFunction->getArg(i);
