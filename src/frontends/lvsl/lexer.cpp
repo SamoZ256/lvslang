@@ -332,10 +332,10 @@ void resetLastChar() {
 
 int _getNextToken() {
     //Whitespace
-    while (isspace(lastChar))
+    while (isspace(lastChar) && lastChar != '\n')
         lastChar = getNextChar();
         
-    if (lastChar == ';') {
+    if (lastChar == ';' || lastChar == '\n') {
         lastChar = getNextChar();
         
         return TOKEN_SKIP;

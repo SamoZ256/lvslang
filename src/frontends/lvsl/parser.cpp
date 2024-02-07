@@ -119,6 +119,12 @@ inline int getTokenPrecedence() {
 ExpressionAST* parseMain();
 ExpressionAST* parseExpression(int expressionPrecedence = 0);
 
+//Skip
+void _consumeSkips() {
+    while (crntToken == TOKEN_SKIP)
+        getNextToken(); //Skip
+}
+
 //Type
 irb::Type* _parseTypeExpression(irb::Attributes* attributes = nullptr) {
     irb::Type* type;
@@ -438,10 +444,7 @@ BlockExpressionAST* parseBracesExpression() {
         if (!expr)
             return nullptr;
 
-        //Get rid of semicolons
-        while (crntToken == TOKEN_SKIP) {
-            getNextToken();
-        }
+        _consumeSkips();
         
         expressions.push_back(expr);
     }
@@ -461,7 +464,6 @@ ExpressionAST* parseSquareBracketsExpression() {
 
     if (crntToken != ':') {
         logError("Expected ':' in a subscript expression");
-
         return nullptr;
     }
     getNextToken(); // ':'
@@ -472,7 +474,6 @@ ExpressionAST* parseSquareBracketsExpression() {
     
     if (crntToken != ']') {
         logError("Expected ']' to match the '['");
-
         return nullptr;
     }
     getNextToken(); // ']'
@@ -552,9 +553,13 @@ IfThenBlock* _parseIfThenBlock() {
     if (!ifThenBlock->condition)
         return nullptr;
     
+    _consumeSkips();
+    
     ifThenBlock->block = parseExpression();
     if (!ifThenBlock->block)
         return nullptr;
+    
+    _consumeSkips();
 
     return ifThenBlock;
 }
@@ -873,8 +878,10 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, bool isSTDF
 
     std::vector<irb::Argument> arguments;
     do {
+        getNextToken(); // '(' or ','
+        _consumeSkips();
         std::string name;
-        if (getNextToken() == TOKEN_IDENTIFIER) {
+        if (crntToken == TOKEN_IDENTIFIER) {
             name = identifierStr;
             if (getNextToken() == ':') {
                 getNextToken(); // ':'
@@ -965,6 +972,8 @@ StructureDefinitionAST* parseStructureDeclaration() {
     }
     getNextToken(); // '{'
 
+    _consumeSkips();
+
     std::vector<irb::StructureMember> members;
     while (crntToken == TOKEN_MEMBER) {
         if (getNextToken() != TOKEN_IDENTIFIER) {
@@ -982,8 +991,7 @@ StructureDefinitionAST* parseStructureDeclaration() {
         irb::Type* memberType = _parseTypeWithAttributesExpression(&attributes);
         members.push_back({memberName, memberType, attributes});
 
-        while (crntToken == TOKEN_SKIP)
-            getNextToken(); //Skip
+        _consumeSkips();
     }
 
     if (crntToken != '}') {
@@ -1070,9 +1078,7 @@ EnumDefinitionAST* parseEnumDeclaration() {
 }
 
 ExpressionAST* parseExpression(int expressionPrecedence) {
-    while (crntToken == TOKEN_SKIP) {
-        getNextToken(); //Skip
-    }
+    _consumeSkips();
 
     ExpressionAST* lhs = parseMain();
     if (!lhs)

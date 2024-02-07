@@ -1,0 +1,54 @@
+; SPIR-V
+; Version: 1.6
+; Generator: Khronos SPIR-V Tools Assembler; 0
+; Bound: 98
+; Schema: 0
+               OpCapability Shader
+               OpCapability Float16
+               OpCapability Int8
+               OpCapability Int16
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %2 "testArrays" %3 %4
+               OpExecutionMode %2 OriginUpperLeft
+
+               ; Annotations
+               OpDecorate %3 DescriptorSet 0
+               OpDecorate %3 Binding 0
+               OpDecorate %_arr_float_uint_32 ArrayStride 4
+               OpMemberDecorate %_struct_6 0 Offset 0
+               OpMemberDecorate %_struct_6 1 Offset 128
+               OpDecorate %_struct_6 Block
+               OpDecorate %_struct_7 Block
+               OpMemberDecorate %_struct_7 0 Location 0
+
+               ; Types, variables and constants
+        %int = OpTypeInt 32 1
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+    %uint_32 = OpConstant %uint 32
+%_arr_float_uint_32 = OpTypeArray %float %uint_32
+  %_struct_6 = OpTypeStruct %_arr_float_uint_32 %int
+%_ptr_Uniform__struct_6 = OpTypePointer Uniform %_struct_6
+          %3 = OpVariable %_ptr_Uniform__struct_6 Uniform
+  %_struct_7 = OpTypeStruct %v4float
+%_ptr_Output__struct_7 = OpTypePointer Output %_struct_7
+          %4 = OpVariable %_ptr_Output__struct_7 Output
+       %void = OpTypeVoid
+         %38 = OpTypeFunction %void
+    %float_0 = OpConstant %float 0
+    %float_1 = OpConstant %float 1
+%_ptr_Uniform_float = OpTypePointer Uniform %float
+     %uint_0 = OpConstant %uint 0
+
+               ; Function 2
+          %2 = OpFunction %void None %38
+         %54 = OpLabel
+         %96 = OpAccessChain %_ptr_Uniform_float %3 %uint_0 %uint_0
+         %97 = OpLoad %float %96
+         %87 = OpCompositeConstruct %v4float %97 %float_0 %float_0 %float_1
+         %92 = OpCompositeConstruct %_struct_7 %87
+               OpStore %4 %92
+               OpReturn
+               OpFunctionEnd

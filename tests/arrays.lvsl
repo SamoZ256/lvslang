@@ -1,0 +1,20 @@
+struct MyBuffer {
+    member a: float[32];
+    member i: int
+}
+
+struct FragmentOut {
+    member outColor: float4 [[color(0)]]
+}
+
+fragment testArrays(myBuffer: constant struct MyBuffer* [[descriptor_set(0, 0)]]) -> struct FragmentOut {
+    var outColor: float4
+
+    var multiArray: int[32][32]
+    [[multiArray : 10] : myBuffer->i] = 1
+
+    var fragmentOut: struct FragmentOut
+    fragmentOut.outColor = float4([myBuffer->a : 0], 0.0, 0.0, 1.0)
+
+    return fragmentOut
+}

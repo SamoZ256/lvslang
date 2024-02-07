@@ -69,6 +69,13 @@ Value* getTypeValue(SPIRVBuilder* builder, Type* type, bool decorate) {
         Value* arrayV = getTypeValue(builder, arrayType->getBaseType(), decorate);
         Value* sizeV = builder->opConstant(new ConstantInt(type->getContext(), arrayType->getSize(), 32, false));
         code = "OpTypeArray " + arrayV->getName() + " " + sizeV->getName();
+
+        Value* value = builder->_addCodeToTypesVariablesConstantsBlock(type, code, getNameForRegister(type));
+
+        if (decorate)
+            builder->opDecorate(value, Decoration::ArrayStride, {std::to_string(arrayV->getType()->getBitCount(true) / 8)});
+
+        return value;
     } else if (type->getTypeID() == TypeID::Structure) {
         StructureType* structureType = static_cast<StructureType*>(type);
         Structure* structure = structureType->getStructure();

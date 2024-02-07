@@ -288,20 +288,50 @@ void _setAttributesFromList(const std::vector<irb::Attribute>& attribs, irb::Att
     }
 }
 
-void _parseAttributes(irb::Attributes* attributes) {
+void _parseAttributes(irb::Type*& type, irb::Attributes* attributes) {
     std::vector<irb::Attribute> attribs;
+    bool firstIter = true;
     while (crntToken == '[') {
-        getNextToken(); // '['
+        if (getNextToken() != '[') {
+            if (firstIter) {
+                //Array
+                bool firstIter2 = true;
+                do {
+                    if (!firstIter2)
+                        getNextToken(); // '['
+                    ExpressionAST* arraySize = parseExpression();
+                    if (!arraySize)
+                        return;
+                    
+                    if (crntToken != ']') {
+                        logError("expected ']' to match the '['");
+                        return;
+                    }
+                    getNextToken(); // ']'
+
+                    NumberExpressionAST* numArraySize = dynamic_cast<NumberExpressionAST*>(arraySize);
+                    if (!numArraySize) {
+                        logError("array size must be a constant number");
+                        return;
+                    }
+
+                    firstIter2 = false;
+
+                    type = new irb::ArrayType(context, type, numArraySize->valueU());
+                } while (crntToken == '[');
+                if (crntToken != '[')
+                    break;
+                else
+                    getNextToken(); // '['
+            } else {
+                logError("expected double '[' in an attribute");
+                return;
+            }
+        }
         if (!attributes) {
             logError("cannot use attribute on this expression");
             return;
         }
-        /*
-        if (getNextToken() != '[') {
-            logError("expected double '[' in an attribute");
-            return nullptr;
-        }
-        */
         getNextToken(); // '['
         if (!tokenIsAttrib(crntToken)) {
             logError("unknown attribute '" + std::to_string(crntToken) + "'");
@@ -331,6 +361,8 @@ void _parseAttributes(irb::Attributes* attributes) {
             getNextToken(); // ']'
         }
         attribs.push_back(attrib);
+
+        firstIter = false;
 
         if (crntToken != '[')
             break;
@@ -465,7 +497,6 @@ ExpressionAST* parseSquareBracketsExpression() {
 
     if (crntToken != ':') {
         logError("Expected ':' in a subscript expression");
-
         return nullptr;
     }
     getNextToken(); // ':'
@@ -476,7 +507,6 @@ ExpressionAST* parseSquareBracketsExpression() {
     
     if (crntToken != ']') {
         logError("Expected ']' to match the '['");
-
         return nullptr;
     }
     getNextToken(); // ']'
@@ -625,6 +655,28 @@ ExpressionAST* parseVariableDeclarationExpression(irb::Type* type, bool isConsta
         }
         std::string name = identifierStr;
         getNextToken(); // variable name
+
+        //Array
+        while (crntToken == '[') {
+            getNextToken(); // '['
+            ExpressionAST* arraySize = parseExpression();
+            if (!arraySize)
+                return nullptr;
+            
+            if (crntToken != ']') {
+                logError("expected ']' to match the '['");
+                return nullptr;
+            }
+            getNextToken(); // ']'
+
+            NumberExpressionAST* numArraySize = dynamic_cast<NumberExpressionAST*>(arraySize);
+            if (!numArraySize) {
+                logError("array size must be a constant number");
+                return nullptr;
+            }
+
+            type = new irb::ArrayType(context, type, numArraySize->valueU());
+        }
 
         ExpressionAST* initExpr = nullptr;
         if (crntToken == TOKEN_OPERATOR_ASSIGNMENT_ASSIGN) {
@@ -864,7 +916,7 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, bool isSTDF
             name = identifierStr;
             getNextToken(); // argument name
         }
-        _parseAttributes(&argAttributes);
+        _parseAttributes(type, &argAttributes);
         arguments.push_back(irb::Argument{name, type, argAttributes});
     } while (crntToken == ',');
     if (crntToken != ')') {
@@ -929,7 +981,7 @@ StructureDefinitionAST* parseStructureDeclaration() {
         std::string memberName = identifierStr;
         getNextToken(); // member name
 
-        _parseAttributes(&attributes);
+        _parseAttributes(memberType, &attributes);
 
         members.push_back({memberName, memberType, attributes});
 
@@ -1077,6 +1129,7 @@ bool mainLoop() {
             expression = parseExtern();
             break;
         case TOKEN_ATTRIB_CONSTANT:
+            getNextToken(); // 'constant'
             expression = parseVariableDeclarationExpression(_parseTypeWithAttributesExpression(), true, true);
             break;
         case TOKEN_STD_FUNCTION:
