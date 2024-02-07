@@ -1007,6 +1007,7 @@ StructureDefinitionAST* parseStructureDeclaration() {
     return new StructureDefinitionAST(structName, members);
 }
 
+//TODO: rename to 'parseEnumDefinition'
 EnumDefinitionAST* parseEnumDeclaration() {
     getNextToken(); // 'enum'
     if (crntToken != TOKEN_IDENTIFIER) {

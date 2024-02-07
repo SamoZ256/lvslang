@@ -438,13 +438,14 @@ ExpressionAST* parseParenthesisExpression() {
 //Braces
 BlockExpressionAST* parseBracesExpression() {
     std::vector<ExpressionAST*> expressions;
-    getNextToken();
+    getNextToken(); // '{'
+
+    _consumeSkips();
+
     while (crntToken != '}') {
         ExpressionAST* expr = parseExpression();
         if (!expr)
             return nullptr;
-
-        _consumeSkips();
         
         expressions.push_back(expr);
     }
@@ -553,13 +554,9 @@ IfThenBlock* _parseIfThenBlock() {
     if (!ifThenBlock->condition)
         return nullptr;
     
-    _consumeSkips();
-    
     ifThenBlock->block = parseExpression();
     if (!ifThenBlock->block)
         return nullptr;
-    
-    _consumeSkips();
 
     return ifThenBlock;
 }
@@ -1003,6 +1000,7 @@ StructureDefinitionAST* parseStructureDeclaration() {
     return new StructureDefinitionAST(structName, members);
 }
 
+//TODO: rename to 'parseEnumDefinition'
 EnumDefinitionAST* parseEnumDeclaration() {
     getNextToken(); // 'enum'
     if (crntToken != TOKEN_IDENTIFIER) {
@@ -1028,6 +1026,7 @@ EnumDefinitionAST* parseEnumDeclaration() {
             else
                 hasComma = false;
         }
+        _consumeSkips();
 
         if (crntToken != TOKEN_IDENTIFIER)
             break;
@@ -1068,6 +1067,8 @@ EnumDefinitionAST* parseEnumDeclaration() {
         values.push_back({valueName, value});
     }
 
+    _consumeSkips();
+
     if (crntToken != '}') {
         logError("expected '}' to match the '{'");
         return nullptr;
@@ -1079,12 +1080,14 @@ EnumDefinitionAST* parseEnumDeclaration() {
 
 ExpressionAST* parseExpression(int expressionPrecedence) {
     _consumeSkips();
-
+    
     ExpressionAST* lhs = parseMain();
     if (!lhs)
         return nullptr;
     
     ExpressionAST* expr = parseBinOpRHS(expressionPrecedence, lhs);
+
+    _consumeSkips();
 
     return expr;
 }
