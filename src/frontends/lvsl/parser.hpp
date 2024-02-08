@@ -5,11 +5,13 @@
 
 namespace lvslang {
 
+class AST;
+
 namespace lvsl {
 
-bool compileStandardLibrary();
+bool compileStandardLibrary(AST& ast);
 
-bool compile(const std::string& source);
+bool compile(AST& ast, const std::string& source);
 
 } //namespace lvsl
 

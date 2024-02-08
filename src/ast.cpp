@@ -299,7 +299,7 @@ irb::Type* FunctionPrototypeAST::_initialize() {
                             logError("redefinition of function '" + _name + "'");
                             return nullptr;
                         } else {
-                            value = declaration->getValue();
+                            previousDeclaration = declaration;
                         }
                     } else {
                         logError("cannot distinguish functions '" + _name + "' based on return type alone");
@@ -572,7 +572,9 @@ irb::Value* FunctionPrototypeAST::_codegen() {
             regName = "import " + regName;
             value = new irb::Value(context, nullptr, regName);
         } else {*/
-        if (!value) {
+        if (previousDeclaration) {
+            return value = previousDeclaration->getValue();
+        } else {
             if (isSTDFunction) {
                 value = builder->opStandardFunctionDeclaration(static_cast<irb::FunctionType*>(getType()), _name);
             } else {

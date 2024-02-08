@@ -63,14 +63,18 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
     }
 
     std::string extension = options.inputName.substr(options.inputName.find_last_of('.'));
+    AST ast;
     bool success;
     if (extension == ".lvsl") {
-        lvsl::compileStandardLibrary();
+        success = lvsl::compileStandardLibrary(ast);
     } else if (extension == ".metal") {
-        metal::compileStandardLibrary();
+        success = metal::compileStandardLibrary(ast);
     } else {
         throw std::runtime_error("unsupported output file extension '" + extension + "'");
     }
+
+    if (!success)
+        return false;
     
     std::string languageName;
     uint32_t languageVersionMajor, languageVersionMinor, languageVersionPatch;
@@ -79,19 +83,28 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
         languageVersionMajor = 0;
         languageVersionMinor = 7;
         languageVersionPatch = 0;
-        success = lvsl::compile(options.source);
+        success = lvsl::compile(ast, options.source);
     } else if (extension == ".metal") {
         languageName = "Metal";
         languageVersionMajor = 3;
         languageVersionMinor = 1;
         languageVersionPatch = 0;
-        success = metal::compile(options.source);
+        success = metal::compile(ast, options.source);
     } else {
         return false;
     }
     
     if (!success)
         return false;
+    
+    for (auto* expression : ast.getExpressions()) {
+        if (auto* value = expression->codegen()) {
+            std::string code = value->getRawName();
+            //HACK: check if it contains something
+            if (code.size() > 0)
+                context.codeMain += code + "\n\n";
+        }
+    }
 
     std::string code = context.codeHeader + (context.codeHeader.empty() ? "" : (irb::target == irb::Target::AIR ? "\n" : "\n\n")) + (TARGET_IS_IR(irb::target) ? builder->getCode((irb::OptimizationLevel)options.optimizationLevel, options.outputAssembly) : context.codeMain);
     if (irb::target == irb::Target::AIR)

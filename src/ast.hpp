@@ -400,6 +400,9 @@ private:
 
     irb::Function* value = nullptr;
 
+    //Redeclared function
+    FunctionPrototypeAST* previousDeclaration = nullptr;
+
     //For finding the correct overload
     std::string identifier;
 
@@ -630,6 +633,23 @@ private:
     irb::Type* _initialize() override;
 
     irb::Value* _codegen() override;
+};
+
+class AST {
+private:
+    std::vector<ExpressionAST*> expressions;
+
+public:
+    AST() {}
+    
+    inline void addExpression(ExpressionAST* expression) {
+        expressions.push_back(expression);
+    }
+
+    //Getters
+    inline const std::vector<ExpressionAST*>& getExpressions() const {
+        return expressions;
+    }
 };
 
 } //namespace lvslang

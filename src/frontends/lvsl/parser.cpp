@@ -1093,7 +1093,7 @@ ExpressionAST* parseExpression(int expressionPrecedence) {
 }
 
 //Main loop
-bool mainLoop() {
+bool mainLoop(AST& ast) {
     //Reset
     resetLastChar();
 
@@ -1144,16 +1144,10 @@ bool mainLoop() {
         }
 
         if (expression) {
-            auto* type = expression->initialize();
-            auto* value = expression->codegen();
-            if (type && value) {
-                std::string code = value->getRawName();
-                //HACK: check if it contains something
-                if (code.size() > 0)
-                    context.codeMain += code + "\n\n";
-            } else {
+            if (expression->initialize())
+                ast.addExpression(expression);
+            else
                 success = false;
-            }
         } else if (skipUntilBlockEnd) {
             //TODO: set it to 0 if outside of block
             int blocksToSkip = 1;
@@ -1173,21 +1167,19 @@ bool mainLoop() {
             success = false;
         }
     }
-
-    return success;
 }
 
 std::string standardLibrarySource = {
     #include "standard_library.inc"
 };
 
-bool compileStandardLibrary() {
+bool compileStandardLibrary(AST& ast) {
     setSource(standardLibrarySource);
 
-    return mainLoop();
+    return mainLoop(ast);
 }
 
-bool compile(const std::string& source) {
+bool compile(AST& ast, const std::string& source) {
     binopPrecedence[TOKEN_OPERATOR_LOGICAL_AND                      ] = 8;
     binopPrecedence[TOKEN_OPERATOR_LOGICAL_OR                       ] = 8;
     //binopPrecedence[TOKEN_OPERATOR_NOT                              ] = 0;
@@ -1231,7 +1223,7 @@ bool compile(const std::string& source) {
 
     setSource(source);
 
-    return mainLoop();
+    return mainLoop(ast);
 }
 
 } //namespace lvsl
