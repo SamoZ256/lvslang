@@ -438,12 +438,13 @@ int _getNextToken() {
         int op = getOperatorFromString(operatorStr);
         if (!op) {
             logError("unknown operator '" + operatorStr + "'");
-
             return 0;
         }
 
         return op;
     }
+    if (lastChar == '[')
+        operatorStr = "[";
 
     //Number
     if (isdigit(lastChar) || lastChar == '.') {

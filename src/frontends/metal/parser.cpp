@@ -486,34 +486,6 @@ BlockExpressionAST* parseBracesExpression() {
     return new BlockExpressionAST(expressions);
 }
 
-//TODO: support constant array declarations as well
-//TODO: move this into @ref parseBracesExpression
-//Square brackets
-ExpressionAST* parseSquareBracketsExpression() {
-    getNextToken(); // '['
-    ExpressionAST* ptr = parseExpression();
-    if (!ptr)
-        return nullptr;
-
-    if (crntToken != ':') {
-        logError("Expected ':' in a subscript expression");
-        return nullptr;
-    }
-    getNextToken(); // ':'
-
-    ExpressionAST* index = parseExpression();
-    if (!index)
-        return nullptr;
-    
-    if (crntToken != ']') {
-        logError("Expected ']' to match the '['");
-        return nullptr;
-    }
-    getNextToken(); // ']'
-
-    return new SubscriptExpressionAST(ptr, index);
-}
-
 //Identifier
 ExpressionAST* parseIdentifierExpression() {
     std::string idName = identifierStr;
@@ -824,8 +796,6 @@ ExpressionAST* parseMain() {
         return parseParenthesisExpression();
     case '{':
         return parseBracesExpression();
-    case '[':
-        return parseSquareBracketsExpression();
     case TOKEN_CONST:
     case TOKEN_TYPE_ENUM_MIN ... TOKEN_TYPE_ENUM_MAX:
         return parseTypeExpression();
@@ -876,10 +846,18 @@ ExpressionAST* parseBinOpRHS(int expressionPrecedence, ExpressionAST* lhs) {
                 return nullptr;
         }
 
-        if (binOp == ".")
+        if (binOp == "[") {
+            if (crntToken != ']') {
+                logError("expected ']' to match the '['");
+                return nullptr;
+            }
+            getNextToken(); // ']'
+            lhs = new SubscriptExpressionAST(lhs, rhs);
+        } else if (binOp == ".") {
             lhs = new MemberAccessExpressionAST(lhs, memberName, exprShouldBeLoadedBeforeAccessingMember);
-        else
+        } else {
             lhs = new BinaryExpressionAST(binOp, lhs, rhs);
+        }
     }
 }
 
@@ -1233,8 +1211,10 @@ bool compile(const std::string& source) {
 
     binopPrecedence[TOKEN_OPERATOR_REFERENCE                        ] = 200;
     binopPrecedence[TOKEN_OPERATOR_DEREFERENCE                      ] = 200;
-    binopPrecedence[TOKEN_OPERATOR_DOT                              ] = 400;
-    binopPrecedence[TOKEN_OPERATOR_FUNCTION_RETURN_TYPE             ] = 400;
+    binopPrecedence[TOKEN_OPERATOR_DOT                              ] = 800;
+    binopPrecedence[TOKEN_OPERATOR_FUNCTION_RETURN_TYPE             ] = 800;
+
+    binopPrecedence['['                                             ] = 400;
 
     setSource(source);
 

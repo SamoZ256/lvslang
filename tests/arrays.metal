@@ -11,12 +11,10 @@ fragment struct FragmentOut testArrays(constant struct MyBuffer* myBuffer [[desc
     float4 outColor;
 
     int multiArray[32][32];
-    //TODO: support c-style array indexing
-    [[multiArray : 10] : myBuffer->i] = 1;
+    multiArray[10][myBuffer->i] = 1;
 
     struct FragmentOut fragmentOut;
-    //TODO: same here
-    fragmentOut.outColor = float4([myBuffer->a : 0], 0.0, 0.0, 1.0);
+    fragmentOut.outColor = float4(myBuffer->a[0], 0.0, 0.0, 1.0);
 
     return fragmentOut;
 }
