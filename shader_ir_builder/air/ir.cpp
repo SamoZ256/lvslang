@@ -770,7 +770,7 @@ std::string AIRBuilder::createMetadata(const std::string& languageName, uint32_t
     return block->getCode();
 }
 
-std::string AIRBuilder::getCode(OptimizationLevel optimizationLevel, bool outputAssembly) {
+bool AIRBuilder::getCode(std::string& outputCode, OptimizationLevel optimizationLevel, bool outputAssembly, SPIRVVersion spirvVersion) {
     //Uncomment if something goes wrong
     /*
     std::string tempCode;
@@ -829,7 +829,6 @@ std::string AIRBuilder::getCode(OptimizationLevel optimizationLevel, bool output
     for (auto &function : *llvmModule)
         function.removeFnAttr(llvm::Attribute::AttrKind::Memory);
 
-    std::string outputCode;
     llvm::raw_string_ostream stream(outputCode);
     if (outputAssembly) {
         stream << *llvmModule;
@@ -838,7 +837,7 @@ std::string AIRBuilder::getCode(OptimizationLevel optimizationLevel, bool output
         llvm::WriteBitcodeToFile(*llvmModule, stream);
     }
 
-    return outputCode;
+    return true;
 }
 
 Function* AIRBuilder::opFunctionDeclaration(FunctionType* functionType, const std::string& name, const std::vector<std::pair<llvm::Attribute::AttrKind, uint64_t> >& attributes) {

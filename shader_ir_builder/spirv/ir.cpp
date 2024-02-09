@@ -1,5 +1,8 @@
 #include "ir.hpp"
 
+#include "spirv-tools/libspirv.hpp"
+#include "spirv-tools/optimizer.hpp"
+
 #include "type_value.hpp"
 
 namespace irb {
@@ -651,6 +654,91 @@ Value* SPIRVBuilder::opVariable(PointerType* type, Value* initializer)  {
         blockTypesVariablesConstants->addCode(code, value);
 
     return value;
+}
+
+bool SPIRVBuilder::getCode(std::string& outputCode, OptimizationLevel optimizationLevel, bool outputAssembly, SPIRVVersion spirvVersion)  {
+    std::string code = blockHeader->getCode() + blockDebug->getCode() + blockAnnotations->getCode() + blockTypesVariablesConstants->getCode() + blockMain->getCode();
+
+    spv_target_env targetEnv;
+    //TODO: use vulkan env?
+    switch (spirvVersion) {
+    case irb::SPIRVVersion::_1_0:
+        targetEnv = SPV_ENV_UNIVERSAL_1_0;
+        break;
+    case irb::SPIRVVersion::_1_1:
+        targetEnv = SPV_ENV_UNIVERSAL_1_1;
+        break;
+    case irb::SPIRVVersion::_1_2:
+        targetEnv = SPV_ENV_UNIVERSAL_1_2;
+        break;
+    case irb::SPIRVVersion::_1_3:
+        targetEnv = SPV_ENV_UNIVERSAL_1_3;
+        break;
+    case irb::SPIRVVersion::_1_4:
+        targetEnv = SPV_ENV_UNIVERSAL_1_4;
+        break;
+    case irb::SPIRVVersion::_1_5:
+        targetEnv = SPV_ENV_UNIVERSAL_1_5;
+        break;
+    case irb::SPIRVVersion::_1_6:
+        targetEnv = SPV_ENV_UNIVERSAL_1_6;
+        break;
+    default:
+        break;
+    }
+
+    spvtools::SpirvTools core(targetEnv);
+    spvtools::Optimizer opt(targetEnv);
+
+    auto printMsgToStderr = [](spv_message_level_t, const char* source, const spv_position_t& pos, const char* message) {
+        std::cerr << pos.line << ":" << pos.column << ": " << SET_TEXT_COLOR("31") << "error" << RESET_TEXT_COLOR() << ": " << message << std::endl;
+        //std::cout << source << std::endl;
+        //std::cout << pos.column << std::endl;
+        //for (uint32_t i = 0; i < pos.column - 1; i++)
+        //    std::cout << " ";
+        //std::cout << "^" << std::endl;
+    };
+    core.SetMessageConsumer(printMsgToStderr);
+    opt.SetMessageConsumer(printMsgToStderr);
+
+    std::vector<uint32_t> binary;
+    if (!core.Assemble(code, &binary)) {
+        IRB_ERROR("spirv assembler failed");
+        return false;
+    }
+    if (!core.Validate(binary)) {
+        IRB_ERROR("spirv validator failed");
+        return false;
+    }
+
+    switch (optimizationLevel) {
+    case OptimizationLevel::O0:
+        break;
+    //TODO: differentiate between these?
+    case OptimizationLevel::O1:
+    case OptimizationLevel::O2:
+    case OptimizationLevel::O3:
+        opt.RegisterPerformancePasses();
+        break;
+    case OptimizationLevel::Os:
+        opt.RegisterSizePasses();
+        break;
+    }
+    if (!opt.Run(binary.data(), binary.size(), &binary)) {
+        IRB_ERROR("spirv optimizer failed");
+        return false;
+    }
+
+    if (outputAssembly) {
+        if (!core.Disassemble(binary, &outputCode, SPV_BINARY_TO_TEXT_OPTION_INDENT | SPV_BINARY_TO_TEXT_OPTION_FRIENDLY_NAMES | SPV_BINARY_TO_TEXT_OPTION_COMMENT)) {
+            IRB_ERROR("spirv disassembler failed");
+            return false;
+        }
+    } else {
+        outputCode = std::string((const char*)binary.data(), binary.size() * sizeof(binary[0]) / sizeof(char));
+    }
+
+    return true;
 }
 
 Value* SPIRVBuilder::_addCodeToTypesVariablesConstantsBlock(Type* type, const std::string& code, const std::string& registerName, const std::string& userDefinedName) {

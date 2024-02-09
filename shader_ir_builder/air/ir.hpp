@@ -85,7 +85,7 @@ public:
     std::string createMetadata(const std::string& languageName, uint32_t languageVersionMajor, uint32_t languageVersionMinor, uint32_t languageVersionPatch, const std::string& sourceFilenameStr);
 
     //Getters
-    std::string getCode(OptimizationLevel optimizationLevel, bool outputAssembly) override;
+    bool getCode(std::string& outputCode, OptimizationLevel optimizationLevel, bool outputAssembly, SPIRVVersion spirvVersion) override;
 
     std::unique_ptr<llvm::Module>& getLLVMModule() {
         return llvmModule;

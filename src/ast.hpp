@@ -118,11 +118,11 @@ inline std::string getGLSLVersionString() {
     return versionStr;
 }
 
-inline void enableExtension(irb::Extension extension) {
+inline void enableExtension(std::string& codeHeader, irb::Extension extension) {
     auto& ext = irb::extensions[(int)extension];
     if (!std::get<0>(ext)) {
         if (irb::target == irb::Target::GLSL)
-            context.codeHeader += "\n\n#extension " + std::get<1>(ext) + " : enable";
+            codeHeader += "\n\n#extension " + std::get<1>(ext) + " : enable";
         else if (irb::target == irb::Target::SPIRV)
             builder->opExtension(std::get<2>(ext));
         std::get<0>(ext) = true;

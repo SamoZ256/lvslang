@@ -87,10 +87,6 @@ public:
 
     std::map<std::string, Structure*> structures;
 
-    //Code
-    std::string codeHeader;
-    std::string codeMain;
-
     uint32_t crntRegisterNumber = 2;
 
     Context() {}
@@ -100,7 +96,6 @@ public:
         crntRegisterNumber = 0;
         registerNames.clear();
         structures.clear();
-        codeMain = "";
     }
 
     void pushRegisterName(const std::string& name) {

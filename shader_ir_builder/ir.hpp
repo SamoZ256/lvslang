@@ -120,15 +120,14 @@ public:
 
     virtual Value* opCast(Value* val, Type* type) = 0;
 
-    //TODO: merge all the following functions into @ref opSTDFunctionCall_EXT
-
+    //TODO: merge into @ref opSTDFunctionCall_EXT
     virtual Value* opSample(Value* funcV, Value* texture, Value* sampler, Value* coords, Value* lod = nullptr) = 0;
 
     //Miscelanous
     virtual Value* opVariable(PointerType* type, Value* initializer = nullptr) = 0;
 
     //Getters
-    virtual std::string getCode(OptimizationLevel optimizationLevel, bool outputAssembly) = 0;
+    virtual bool getCode(std::string& outputCode, OptimizationLevel optimizationLevel, bool outputAssembly, SPIRVVersion spirvVersion) = 0;
 
     //Blocks
     Function* getActiveFunction() {
