@@ -7,6 +7,9 @@
                OpCapability Float16
                OpCapability Int8
                OpCapability Int16
+               OpExtension "SPV_KHR_8bit_storage"
+               OpExtension "SPV_KHR_16bit_storage"
+               OpExtension "SPV_AMD_gpu_shader_int16"
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
                OpEntryPoint Fragment %2 "testControlFlow" %3 %4

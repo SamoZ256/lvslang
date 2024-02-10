@@ -14,6 +14,8 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
     currentIndentation = 0;
     functionDeclarations.clear();
     source = Source{};
+    for (auto& ext : irb::extensions)
+        std::get<0>(ext) = false;
 
     irb::target = options.target;
     irb::spirvVersion = options.spirvVersion;
@@ -50,9 +52,15 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
 
     //Extensions
     //TODO: enable them only if needed
-    enableExtension(codeHeader, irb::Extension::_8bit_storage);
-    enableExtension(codeHeader, irb::Extension::_16bit_storage);
-    enableExtension(codeHeader, irb::Extension::explicit_arithmetic_types);
+    if (irb::target == irb::Target::SPIRV) {
+        enableSPIRVExtension(irb::Extension::_8bit_storage);
+        enableSPIRVExtension(irb::Extension::_16bit_storage);
+        enableSPIRVExtension(irb::Extension::explicit_arithmetic_types);
+    } else if (irb::target == irb::Target::GLSL) {
+        enableGLSLExtension(codeHeader, irb::Extension::_8bit_storage);
+        enableGLSLExtension(codeHeader, irb::Extension::_16bit_storage);
+        enableGLSLExtension(codeHeader, irb::Extension::explicit_arithmetic_types);
+    }
 
     if (irb::target == irb::Target::SPIRV) {
         builder->opImportSTD_EXT("GLSL.std.450");

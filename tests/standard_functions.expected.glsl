@@ -1,5 +1,11 @@
 #version 450
 
+#extension GL_EXT_shader_8bit_storage : enable
+
+#extension GL_EXT_shader_16bit_storage : enable
+
+#extension GL_EXT_shader_explicit_arithmetic_types : enable
+
 struct FragmentOut {
 	vec4 outColor;
 };
