@@ -9,8 +9,6 @@ GLSLVersion glslVersion = GLSLVersion::_1_10;
 
 irb::Type* crntFunctionReturnType = nullptr;
 
-uint32_t currentIndentation = 0;
-
 std::map<std::string, Variable> variables;
 std::map<std::string, std::vector<FunctionPrototypeAST*> > functionDeclarations;
 std::map<std::string, Enumeration*> enumerations;
@@ -63,13 +61,11 @@ irb::Value* NumberExpressionAST::_codegen() {
         break;
     }
     
-    if (TARGET_IS_IR(irb::target)) {
-        //TODO: find out why I do this
-        if (!context.pushedRegisterName())
-            context.pushRegisterName("const");
+    //TODO: find out why I do this
+    if (!context.pushedRegisterName())
+        context.pushRegisterName("const");
 
-        return builder->opConstant(value);
-    }
+    return builder->opConstant(value);
 
     return value;
 }
@@ -90,12 +86,8 @@ irb::Type* VariableExpressionAST::_initialize() {
 
 irb::Value* VariableExpressionAST::_codegen() {
     irb::Value* value = variable->value;
-    if (loadOnCodegen && variable->shouldBeLoaded) {
-        if (TARGET_IS_IR(irb::target))
-            value = builder->opLoad(value);
-        else
-            value = new irb::Value(context, getType(), value->getRawName());
-    }
+    if (loadOnCodegen && variable->shouldBeLoaded)
+        value = builder->opLoad(value);
 
     return value;
 }
@@ -175,37 +167,31 @@ irb::Value* BinaryExpressionAST::_codegen() {
         return nullptr;
 
     if (op == "=") {
-        if (TARGET_IS_IR(irb::target)) {
-            if (auto* unloadedVector = dynamic_cast<UnloadedSwizzledVectorValue*>(l)) {
-                irb::Value* loadedVector = builder->opLoad(unloadedVector->getUnloadedVector());
-                if (r->getType()->isScalar()) {
-                    for (auto index : unloadedVector->getIndices())
-                        loadedVector = builder->opVectorInsert(loadedVector, r, new irb::ConstantInt(context, index, 32, true)); //TODO: should it be signed?
-                } else if (r->getType()->isVector()) {
-                    //TODO: check if component count matches and if we are not accessing out of bounds
-                    for (uint8_t i = 0; i < unloadedVector->getIndices().size(); i++)
-                        loadedVector = builder->opVectorInsert(loadedVector, builder->opVectorExtract(r, new irb::ConstantInt(context, i, 32, true)), new irb::ConstantInt(context, unloadedVector->getIndices()[i], 32, true));
-                } else {
-                    logError("cannot assign to vector from type other than scalar and vector");
-                    return nullptr;
-                }
-                builder->opStore(unloadedVector->getUnloadedVector(), loadedVector);
+        if (auto* unloadedVector = dynamic_cast<UnloadedSwizzledVectorValue*>(l)) {
+            irb::Value* loadedVector = builder->opLoad(unloadedVector->getUnloadedVector());
+            if (r->getType()->isScalar()) {
+                for (auto index : unloadedVector->getIndices())
+                    loadedVector = builder->opVectorInsert(loadedVector, r, new irb::ConstantInt(context, index, 32, true)); //TODO: should it be signed?
+            } else if (r->getType()->isVector()) {
+                //TODO: check if component count matches and if we are not accessing out of bounds
+                for (uint8_t i = 0; i < unloadedVector->getIndices().size(); i++)
+                    loadedVector = builder->opVectorInsert(loadedVector, builder->opVectorExtract(r, new irb::ConstantInt(context, i, 32, true)), new irb::ConstantInt(context, unloadedVector->getIndices()[i], 32, true));
             } else {
-                builder->opStore(l, r);
+                logError("cannot assign to vector from type other than scalar and vector");
+                return nullptr;
             }
+            builder->opStore(unloadedVector->getUnloadedVector(), loadedVector);
+        } else {
+            builder->opStore(l, r);
         }
 
-        return new irb::Value(context, getType(), l->getRawName() + " = " + r->getRawName());
+        return l;
     }
 
-    if (TARGET_IS_CODE(irb::target)) {
-        return new irb::Value(context, getType(), "(" + l->getRawName() + " " + op + " " + r->getRawName() + ")");
-    } else {
-        context.pushRegisterName("op");
-        irb::Value* value = builder->opOperation(l, r, getType(), operation);
+    context.pushRegisterName("op");
+    irb::Value* value = builder->opOperation(l, r, getType(), operation);
 
-        return value;
-    }
+    return value;
 }
 
 irb::Type* BlockExpressionAST::_initialize() {
@@ -220,28 +206,13 @@ irb::Type* BlockExpressionAST::_initialize() {
 }
 
 irb::Value* BlockExpressionAST::_codegen() {
-    std::string codeStr = "{\n";
-
-    currentIndentation += 1;
-
     for (auto expr : expressions) {
         irb::Value* value = expr->codegen();
         if (!value)
             return nullptr;
-        if (TARGET_IS_CODE(irb::target)) {
-            for (uint16_t i = 0; i < currentIndentation; i++)
-                codeStr += "\t";
-            codeStr += value->getRawName() + ";\n";
-        }
     }
-
-    currentIndentation -= 1;
-
-    for (uint16_t i = 0; i < currentIndentation; i++)
-        codeStr += "\t";
-    codeStr += "}";
     
-    return new irb::Value(context, getType(), codeStr);
+    return new irb::Value(context, getType());
 }
 
 irb::Type* FunctionPrototypeAST::_initialize() {
@@ -318,274 +289,25 @@ irb::Type* FunctionPrototypeAST::_initialize() {
 }
 
 irb::Value* FunctionPrototypeAST::_codegen() {
-    if (TARGET_IS_CODE(irb::target)) {
-        if (isSTDFunction)
-            return new irb::Value(context, nullptr, "");
-            
-        std::string codeStr;
-        std::string argsStr;
-        std::string entryPointStr;
-        for (uint32_t i = 0; i < _arguments.size(); i++) {
-            irb::Argument& arg = _arguments[i];
-            auto& attr = arg.attributes;
-            if (i != 0)
-                argsStr += ", ";
-            if (irb::target == irb::Target::Metal) {
-                std::string addressSpace;
-                if (attr.addressSpace == 2)
-                    addressSpace = "constant ";
-                else if (attr.addressSpace == 1)
-                    addressSpace = "device ";
-                
-                std::string attribute;
-                if (attr.isBuffer)
-                    attribute = " [[buffer(" + std::to_string(attr.bindings.buffer) + ")]]";
-                if (attr.isTexture)
-                    attribute = " [[texture(" + std::to_string(attr.bindings.texture) + ")]]";
-                if (attr.isSampler)
-                    attribute = " [[sampler(" + std::to_string(attr.bindings.sampler) + ")]]";
-                if (attr.isInput)
-                    attribute = " [[stage_in]]";
-
-                argsStr += addressSpace + getTypeName(arg.type) + " " + arg.name + attribute;
-            } else if (irb::target == irb::Target::HLSL) {
-                argsStr += getTypeName(arg.type) + " " + arg.name;
-
-                //Entry point
-                if (functionRole != irb::FunctionRole::Normal) {
-                    if (!attr.isInput) {
-                        if (attr.isBuffer) {
-                            entryPointStr += "cbuffer "; //TODO: support other types of buffer as well
-                            //We need to get element type, since HLSL treats it without pointer
-                            entryPointStr += arg.name + "_Uniform : register(b" + std::to_string(attr.bindings.buffer) + ") {\n\t" + getTypeName(arg.type) + " " + arg.name + ";\n}";
-                        } else if (attr.isTexture) {
-                            entryPointStr += getTypeName(arg.type) + " " + arg.name + " : register(t" + std::to_string(attr.bindings.sampler) + ")";
-                        } else if (attr.isSampler) {
-                            entryPointStr += getTypeName(arg.type) + " " + arg.name + " : register(s" + std::to_string(attr.bindings.sampler) + ")";
-                        }
-                        entryPointStr += ";\n\n";
-                    }
-                }
-            } else {
-                argsStr += getTypeName(arg.type) + " " + arg.name;
-
-                //Entry point
-                if (functionRole != irb::FunctionRole::Normal) {
-                    std::string typeName;
-                    if (attr.isInput) {
-                        switch (functionRole) {
-                        case irb::FunctionRole::Vertex:
-                            //TODO: do this error check for every backend?
-                            if (!arg.type->isStructure()) {
-                                logError("Entry point argument declared with the 'input' attribute must have a structure type");
-                                return nullptr;
-                            }
-                            for (const auto& member : static_cast<irb::StructureType*>(arg.type)->getStructure()->members)
-                                entryPointStr += "layout (location = " + std::to_string(member.attributes.locationIndex) + ") in " + getTypeName(member.type) + " " + member.name + ";\n\n";
-                            break;
-                        case irb::FunctionRole::Fragment:
-                            entryPointStr += "layout (location = 0) in " + getTypeName(arg.type) + "_Input {\n\t" + getTypeName(arg.type) + " " + arg.name + ";\n};\n\n";
-                            break;
-                        default:
-                            logError("cannot use the 'input' attribute for kernel function");
-                            return nullptr;
-                        }
-                    } else {
-                        if (attr.isBuffer) {
-                            if (attr.addressSpace == 2)
-                                typeName = "uniform ";
-                            else
-                                typeName = "readonly buffer "; //TODO: support other types of buffer as well
-                            //We need to get element type, since GLSL treats it without pointer
-                            typeName += arg.name + "_Uniform {\n\t" + getTypeName(arg.type) + " " + arg.name + ";\n}";
-                        } else {
-                            typeName = "uniform " + getTypeName(arg.type);
-                        }
-                        entryPointStr += "layout (set = " + std::to_string(attr.bindings.set) + ", binding = " + std::to_string(attr.bindings.binding) + ") " + typeName;
-                        if (!attr.isBuffer)
-                            entryPointStr += " " + arg.name;
-                        entryPointStr += ";\n\n";
-                    }
-                }
-            }
-        }
-
-        if (functionRole != irb::FunctionRole::Normal) {
-            if (irb::target == irb::Target::Metal) {
-                switch (functionRole) {
-                case irb::FunctionRole::Vertex:
-                    codeStr = "vertex ";
-                    break;
-                case irb::FunctionRole::Fragment:
-                    codeStr = "fragment ";
-                    break;
-                case irb::FunctionRole::Kernel:
-                    codeStr = "kernel ";
-                    break;
-                default:
-                    break;
-                }
-            } else if (irb::target == irb::Target::HLSL) {
-                if (returnType->getTypeID() != irb::TypeID::Void) {
-                    entryPointStr += "struct " + getTypeName(returnType) + "_Output {\n\t" + getTypeName(returnType) + " output : TEXCOORD0;\n";
-                    if (functionRole == irb::FunctionRole::Vertex)
-                        entryPointStr += "\tfloat4 position : SV_Position;\n";
-                    entryPointStr += "};\n\n";
-                }
-
-                //Entry point
-                std::string argsStr;
-                for (const auto& argument : _arguments) {
-                    if (argument.attributes.isInput) {
-                        argsStr += getTypeName(argument.type) + " " + argument.name;
-                        break;
-                    }
-                }
-                entryPointStr += getTypeName(returnType) + "_Output _" + _name + "(" + argsStr + ") {\n";
-
-                //-------- Entry point call --------
-                entryPointStr += "\t//Entry point call\n";
-                std::string outputVarName = "_entryPointOutput";
-                entryPointStr += "\t" + (returnType->getTypeID() == irb::TypeID::Void ? "" : getTypeName(returnType) + " " + outputVarName + " = ") + _name + "(";
-                for (uint32_t i = 0; i < _arguments.size(); i++) {
-                    if (i != 0)
-                        entryPointStr += ", ";
-                    entryPointStr += _arguments[i].name;
-                }
-                entryPointStr += ");\n";
-
-                //-------- Output --------
-                if (returnType->getTypeID() != irb::TypeID::Void) {
-                    entryPointStr += "\n\t//Output\n\t" + getTypeName(returnType) + "_Output __output;\n\t__output.output = " + outputVarName + ";\n";
-                    if (functionRole == irb::FunctionRole::Vertex) {
-                        //TODO: support non-structure types as well
-                        if (!returnType->isStructure()) {
-                            logError("Entry point output must have a structure type");
-                            return nullptr;
-                        }
-                        irb::Structure* structure = static_cast<irb::StructureType*>(returnType)->getStructure();
-                        for (const auto& member : structure->members) {
-                            if (member.attributes.isPosition) {
-                                entryPointStr += "\t__output.position = " + outputVarName + "." + member.name + ";\n";
-                                break;
-                            }
-                        }
-                    }
-                    entryPointStr += "\n\treturn __output;\n";
-                }
-
-                entryPointStr += "}\n\n";
-            } else if (irb::target == irb::Target::GLSL) {
-                switch (functionRole) {
-                case irb::FunctionRole::Vertex:
-                    entryPointStr += "layout (location = 0) out " + getTypeName(returnType) + "_Output {\n\t" + getTypeName(returnType) + " _output;\n} _output;\n\n";
-                    break;
-                case irb::FunctionRole::Fragment:
-                    //TODO: do this error check for every backend?
-                    if (!returnType->isStructure()) {
-                        logError("Entry point argument declared with the 'input' attribute must have a structure type");
-                        return nullptr;
-                    }
-                    for (const auto& member : static_cast<irb::StructureType*>(returnType)->getStructure()->members)
-                        entryPointStr += "layout (location = " + std::to_string(member.attributes.colorIndex) + ") out " + getTypeName(member.type) + " " + member.name + ";\n\n";
-                    break;
-                default:
-                    logError("cannot use the 'output' attribute for kernel function");
-                    return nullptr;
-                }
-
-                //Entry point
-                entryPointStr += "void main() {\n";
-
-                //-------- Input --------
-                entryPointStr += "\t//Input\n";
-                for (uint32_t i = 0; i < _arguments.size(); i++) {
-                    if (functionRole == irb::FunctionRole::Vertex && _arguments[i].attributes.isInput) {
-                        //TODO: throw an error if not structure?
-                        irb::StructureType* structureType = dynamic_cast<irb::StructureType*>(_arguments[i].type);
-                        //HACK: just assemble the input structure
-                        entryPointStr += "\t" + getTypeName(structureType) + " " + _arguments[i].name + ";\n";
-                        for (const auto& member : structureType->getStructure()->members)
-                            entryPointStr += "\t" + _arguments[i].name + "." + member.name + " = " + member.name + ";\n";
-                    }
-                }
-                entryPointStr += "\n";
-
-                //-------- Entry point call --------
-                entryPointStr += "\t//Entry point call\n";
-                std::string outputVarName = "_entryPointOutput";
-                entryPointStr += "\t" + (returnType->getTypeID() == irb::TypeID::Void ? "" : getTypeName(returnType) + " " + outputVarName + " = ") + _name + "(";
-                for (uint32_t i = 0; i < _arguments.size(); i++) {
-                    if (i != 0)
-                        entryPointStr += ", ";
-                    entryPointStr += _arguments[i].name;
-                }
-
-                //-------- Output --------
-                if (returnType->getTypeID() != irb::TypeID::Void) {
-                    entryPointStr += ");\n\n\t//Output\n";
-
-                    //TODO: support other types besides structure
-                    if (!returnType->isStructure()) {
-                        logError("Only structures can be returned from an entry point function");
-                        return nullptr;
-                    }
-                    irb::StructureType* structType = static_cast<irb::StructureType*>(returnType);
-                    irb::Structure* structure = structType->getStructure();
-
-                    for (uint32_t i = 0; i < structure->members.size(); i++) {
-                        const irb::StructureMember& member = structure->members[i];
-                        std::string memberStr = outputVarName + "." + member.name;
-                        entryPointStr += "\t";
-                        if (member.attributes.isPosition) {
-                            entryPointStr += "gl_Position = " + memberStr + ";\n\t";
-                        }
-                        switch (functionRole) {
-                        case irb::FunctionRole::Vertex:
-                            entryPointStr += "_output._output." + member.name + " = " + memberStr;
-                            break;
-                        case irb::FunctionRole::Fragment:
-                            entryPointStr += member.name + " = " + memberStr;
-                            break;
-                        default:
-                            logError("'kernel' functions cannot return a value");
-                            break;
-                        }
-                        entryPointStr += ";\n";
-                    }
-                }
-                
-                entryPointStr += "}\n\n";
-            }
-        }
-        codeStr += getTypeName(returnType) + " " + _name + "(" + argsStr + ")";
-        if ((irb::target == irb::Target::GLSL || irb::target == irb::Target::HLSL) && functionRole != irb::FunctionRole::Normal)
-            codeStr += ";\n\n" + entryPointStr + codeStr;
-        if (!isDefined)
-            codeStr += ";";
-        
-        return new irb::Value(context, getType(), codeStr);
+    /*if (isSTDFunction) {
+        std::string regName = _name;
+        regName[0] = toupper(regName[0]);
+        regName = "import " + regName;
+        value = new irb::Value(context, nullptr, regName);
+    } else {*/
+    if (previousDeclaration) {
+        return value = previousDeclaration->getValue();
     } else {
-        /*if (isSTDFunction) {
-            std::string regName = _name;
-            regName[0] = toupper(regName[0]);
-            regName = "import " + regName;
-            value = new irb::Value(context, nullptr, regName);
-        } else {*/
-        if (previousDeclaration) {
-            return value = previousDeclaration->getValue();
+        if (isSTDFunction) {
+            value = builder->opStandardFunctionDeclaration(static_cast<irb::FunctionType*>(getType()), _name);
         } else {
-            if (isSTDFunction) {
-                value = builder->opStandardFunctionDeclaration(static_cast<irb::FunctionType*>(getType()), _name);
-            } else {
-                value = builder->opFunction(static_cast<irb::FunctionType*>(getType()), _name);
-                //TODO: name the function properly
-                builder->opName(value, _name + "(");
-            }
+            value = builder->opFunction(static_cast<irb::FunctionType*>(getType()), _name);
+            //TODO: name the function properly
+            builder->opName(value, _name + "(");
         }
-
-        return value;
     }
+
+    return value;
 }
 
 irb::Type* FunctionDefinitionAST::_initialize() {
@@ -625,16 +347,11 @@ irb::Value* FunctionDefinitionAST::_codegen() {
     for (uint32_t i = 0; i < declaration->arguments().size(); i++) {
         auto& arg = declaration->arguments()[i];
         if (arg.name != "") {
-            if (TARGET_IS_CODE(irb::target)) {
-                irb::Value* value = new irb::Value(context, new irb::PointerType(context, arg.type, irb::StorageClass::Function), arg.name);
-                variables[arg.name].value = value;
-            } else {
-                auto& attr = declaration->getArgumentAttributes(i);
-                context.pushRegisterName(arg.name);
-                irb::Type* type = arg.type;
-                irb::Value* argValue = builder->opFunctionParameter(declaration->getValue(), type);
-                variables[arg.name].value = argValue;
-            }
+            auto& attr = declaration->getArgumentAttributes(i);
+            context.pushRegisterName(arg.name);
+            irb::Type* type = arg.type;
+            irb::Value* argValue = builder->opFunctionParameter(declaration->getValue(), type);
+            variables[arg.name].value = argValue;
         }
     }
     
@@ -642,20 +359,13 @@ irb::Value* FunctionDefinitionAST::_codegen() {
     if (!bodyV)
         return nullptr;
     
-    if (TARGET_IS_CODE(irb::target)) {
-        std::string bodyStr = bodyV->getRawName();
-        std::string codeStr = value->getRawName() + " " + bodyStr;
-
-        value = new irb::Value(context, nullptr, codeStr);
-    } else {
-        if (!builder->getInsertBlock()->hasReturned()) {
-            if (static_cast<irb::FunctionType*>(declaration->getType())->getReturnType()->getTypeID() == irb::TypeID::Void)
-                builder->opReturn();
-            else
-                builder->opUnreachable();
-        }
-        builder->opFunctionEnd(declaration->getValue());
+    if (!builder->getInsertBlock()->hasReturned()) {
+        if (static_cast<irb::FunctionType*>(declaration->getType())->getReturnType()->getTypeID() == irb::TypeID::Void)
+            builder->opReturn();
+        else
+            builder->opUnreachable();
     }
+    builder->opFunctionEnd(declaration->getValue());
 
     return value;
 }
@@ -714,16 +424,12 @@ irb::Type* CallExpressionAST::_initialize() {
 }
 
 irb::Value* CallExpressionAST::_codegen() {
-    std::string argsStr;
     std::vector<irb::Value*> argVs(arguments.size());
     for (uint32_t i = 0; i < arguments.size(); i++) {
         ExpressionAST* arg = arguments[i];
         argVs[i] = arg->codegen();
         if (!argVs[i])
             return nullptr;
-        if (i != 0)
-            argsStr += ", ";
-        argsStr += argVs[i]->getRawName();
     }
 
     if (irb::target == irb::Target::SPIRV && !declaration->getIsSTDFunction()) {
@@ -733,33 +439,10 @@ irb::Value* CallExpressionAST::_codegen() {
         }
     }
 
-    if (TARGET_IS_CODE(irb::target)) {
-        std::string code;
-        if (callee == "sample") {
-            switch (irb::target) {
-            case irb::Target::Metal:
-                code = argVs[0]->getRawName() + ".sample(" + argVs[1]->getRawName() + ", " + argVs[2]->getRawName() + ")";
-                break;
-            case irb::Target::HLSL:
-                code = argVs[0]->getRawName() + ".SampleLevel(" + argVs[1]->getRawName() + ", " + argVs[2]->getRawName() + ", 0.0f)";
-                break;
-            case irb::Target::GLSL:
-                code = "texture(sampler2D(" + argVs[0]->getRawName() + ", " + argVs[1]->getRawName() + "), " + argVs[2]->getRawName() + ")"; //TODO: support other samplers + textures as well
-                break;
-            default:
-                break;
-            }
-        } else {
-            code = callee + "(" + argsStr + ")";
-        }
+    if (callee == "sample")
+        return builder->opSample(declaration->getValue(), argVs[0], argVs[1], argVs[2]);
 
-        return new irb::Value(context, getType(), code);
-    } else {
-        if (callee == "sample")
-            return builder->opSample(declaration->getValue(), argVs[0], argVs[1], argVs[2]);
-
-        return builder->opFunctionCall(declaration->getValue(), argVs);
-    }
+    return builder->opFunctionCall(declaration->getValue(), argVs);
 }
 
 irb::Type* ReturnExpressionAST::_initialize() {
@@ -780,13 +463,9 @@ irb::Value* ReturnExpressionAST::_codegen() {
             return nullptr;
     }
 
-    if (TARGET_IS_CODE(irb::target)) {
-        return new irb::Value(context, returnV->getType(), "return" + (returnV ? " " + returnV->getRawName() : ""));
-    } else {
-        builder->opReturn(returnV);
+    builder->opReturn(returnV);
 
-        return returnV;
-    }
+    return returnV;
 }
 
 irb::Type* IfExpressionAST::_initialize() {
@@ -807,79 +486,53 @@ irb::Type* IfExpressionAST::_initialize() {
 }
 
 irb::Value* IfExpressionAST::_codegen() {
-    if (TARGET_IS_CODE(irb::target)) {
-        std::string codeStr;
-        for (uint32_t i = 0; i < ifThenBlocks.size(); i++) {
-            if (i != 0)
-                codeStr += " else ";
-            codeStr += "if (";
-            irb::Value* condV = ifThenBlocks[i]->condition->codegen();
-            if (!condV)
-                return nullptr;
-            irb::Value* blockV = ifThenBlocks[i]->block->codegen();
-            if (!blockV)
-                return nullptr;
-            codeStr += condV->getRawName() + ") " + blockV->getRawName();
+    std::vector<irb::Block*> elseBs(ifThenBlocks.size()); //Serve as conditions except for the else block
+    std::vector<irb::Block*> thenBs(ifThenBlocks.size());
+    std::vector<irb::Block*> mergeBs(ifThenBlocks.size());
+    for (uint32_t i = 0; i < ifThenBlocks.size(); i++) {
+        if (i != 0) {
+            context.pushRegisterName("cond");
+            elseBs[i - 1] = builder->opBlock(builder->getActiveFunction());
         }
-
-        if (elseBlock) {
-            codeStr += " else ";
-            irb::Value* blockV = elseBlock->codegen();
-            if (!blockV)
-                return nullptr;
-            codeStr += blockV->getRawName();
-        }
-
-        return new irb::Value(context, nullptr, codeStr);
-    } else {
-        std::vector<irb::Block*> elseBs(ifThenBlocks.size()); //Serve as conditions except for the else block
-        std::vector<irb::Block*> thenBs(ifThenBlocks.size());
-        std::vector<irb::Block*> mergeBs(ifThenBlocks.size());
-        for (uint32_t i = 0; i < ifThenBlocks.size(); i++) {
-            if (i != 0) {
-                context.pushRegisterName("cond");
-                elseBs[i - 1] = builder->opBlock(builder->getActiveFunction());
-            }
-            context.pushRegisterName("then");
-            thenBs[i] = builder->opBlock(builder->getActiveFunction());
-            context.pushRegisterName(i == 0 ? "end" : "merge");
-            mergeBs[i] = builder->opBlock(builder->getActiveFunction());
-        }
-        irb::Block* endB = mergeBs[0];
-        if (elseBlock) {
-            context.pushRegisterName("else");
-            elseBs[elseBs.size() - 1] = builder->opBlock(builder->getActiveFunction());
-        } else {
-            elseBs[elseBs.size() - 1] = endB;
-        }
-        for (uint32_t i = 0; i < ifThenBlocks.size(); i++) {
-            irb::Value* condV = ifThenBlocks[i]->condition->codegen();
-            builder->opBlockMerge(mergeBs[i]);
-            builder->opBranchCond(condV, thenBs[i], elseBs[i]);
-
-            //Current body
-            builder->setInsertBlock(thenBs[i]);
-            irb::Value* blockV = ifThenBlocks[i]->block->codegen();
-            builder->opBranch(mergeBs[i]);
-
-            //Next condition or else block
-            builder->setInsertBlock(elseBs[i]);
-        }
-        if (elseBlock) {
-            irb::Value* blockV = elseBlock->codegen();
-            builder->opBranch(mergeBs[mergeBs.size() - 1]);
-        }
-        for (uint32_t i = mergeBs.size() - 1; i > 0; i--) {
-            builder->setInsertBlock(mergeBs[i]);
-            builder->opBranch(mergeBs[i - 1]);
-        }
-
-        //End
-        builder->setInsertBlock(endB);
-
-        //TODO: return something else
-        return endB;
+        context.pushRegisterName("then");
+        thenBs[i] = builder->opBlock(builder->getActiveFunction());
+        context.pushRegisterName(i == 0 ? "end" : "merge");
+        mergeBs[i] = builder->opBlock(builder->getActiveFunction());
     }
+    irb::Block* endB = mergeBs[0];
+    if (elseBlock) {
+        context.pushRegisterName("else");
+        elseBs[elseBs.size() - 1] = builder->opBlock(builder->getActiveFunction());
+    } else {
+        elseBs[elseBs.size() - 1] = endB;
+    }
+    for (uint32_t i = 0; i < ifThenBlocks.size(); i++) {
+        irb::Value* condV = ifThenBlocks[i]->condition->codegen();
+        builder->opBlockMerge(mergeBs[i]);
+        builder->opBranchCond(condV, thenBs[i], elseBs[i]);
+
+        //Current body
+        builder->setInsertBlock(thenBs[i]);
+        irb::Value* blockV = ifThenBlocks[i]->block->codegen();
+        builder->opBranch(mergeBs[i]);
+
+        //Next condition or else block
+        builder->setInsertBlock(elseBs[i]);
+    }
+    if (elseBlock) {
+        irb::Value* blockV = elseBlock->codegen();
+        builder->opBranch(mergeBs[mergeBs.size() - 1]);
+    }
+    for (uint32_t i = mergeBs.size() - 1; i > 0; i--) {
+        builder->setInsertBlock(mergeBs[i]);
+        builder->opBranch(mergeBs[i - 1]);
+    }
+
+    //End
+    builder->setInsertBlock(endB);
+
+    //TODO: return something else
+    return endB;
 }
 
 irb::Type* WhileExpressionAST::_initialize() {
@@ -936,41 +589,25 @@ irb::Value* WhileExpressionAST::_codegen() {
     if (!condV)
         return nullptr;
 
-    if (TARGET_IS_CODE(irb::target)) {
-        irb::Value* blockV = block->codegen();
-        if (!blockV)
-            return nullptr;
+    builder->opBranchCond(condV, thenB, endB);
 
-        std::string codeStr;
-        if (isDoWhile)
-            codeStr += "do (";
-        else
-            codeStr += "while (";
-        codeStr += condV->getRawName() + ")";
-        codeStr += blockV->getRawName();
+    //Then
+    builder->setInsertBlock(thenB);
+    irb::Value* blockV = block->codegen();
+    if (!blockV)
+        return nullptr;
+    builder->opBranch(afterThenB);
 
-        return new irb::Value(context, nullptr, codeStr);
-    } else {
-        builder->opBranchCond(condV, thenB, endB);
-
-        //Then
-        builder->setInsertBlock(thenB);
-        irb::Value* blockV = block->codegen();
-        if (!blockV)
-            return nullptr;
-        builder->opBranch(afterThenB);
-
-        //After then
-        if (irb::target == irb::Target::SPIRV) {
-            builder->setInsertBlock(afterThenB);
-            builder->opBranch(mergeB);
-        }
-
-        //End
-        builder->setInsertBlock(endB);
-
-        return endB;
+    //After then
+    if (irb::target == irb::Target::SPIRV) {
+        builder->setInsertBlock(afterThenB);
+        builder->opBranch(mergeB);
     }
+
+    //End
+    builder->setInsertBlock(endB);
+
+    return endB;
 }
 
 irb::Type* VariableDeclarationExpressionAST::_initialize() {
@@ -1027,33 +664,14 @@ irb::Value* VariableDeclarationExpressionAST::_codegen() {
             type = initV->getType();
         
         irb::PointerType* varType = new irb::PointerType(context, type, irb::StorageClass::Function);
-        if (TARGET_IS_IR(irb::target)) {
-            context.pushRegisterName(varName);
-            if (isConstant && isGlobal)
-                value = initV;
-            else
-                value = builder->opVariable(varType, (initExpression && initExpression->isConstant() ? initV : nullptr));
-            if (initExpression && !initExpression->isConstant())
-                builder->opStore(value, initV);
-            variables[varName].value = value;
-        } else {
-            std::string codeStr;
-            if (isConstant) {
-                if (irb::target == irb::Target::Metal && isGlobal)
-                    codeStr += "constant ";
-                else
-                    codeStr += "const ";
-            }
-
-            codeStr += getTypeNameBegin(type) + " " + varName + getTypeNameEnd(type);
-            if (initExpression)
-                codeStr += " = " + initV->getRawName();
-            if (isGlobal)
-                codeStr += ";";
-
-            value = new irb::Value(context, varType, codeStr);
-            variables[varName].value = new irb::Value(context, varType, varName);
-        }
+        context.pushRegisterName(varName);
+        if (isConstant && isGlobal)
+            value = initV;
+        else
+            value = builder->opVariable(varType, (initExpression && initExpression->isConstant() ? initV : nullptr));
+        if (initExpression && !initExpression->isConstant())
+            builder->opStore(value, initV);
+        variables[varName].value = value;
     }
 
     return value;
@@ -1084,15 +702,11 @@ irb::Value* SubscriptExpressionAST::_codegen() {
     if (!ptrV || !indexV)
         return nullptr;
 
-    if (TARGET_IS_CODE(irb::target)) {
-        return new irb::Value(context, getType(), ptrV->getRawName() + "[" + indexV->getRawName() + "]");
-    } else {
-        irb::Value* value = builder->opGetElementPtr(static_cast<irb::PointerType*>(getType()), ptrV, {indexV});
-        if (loadOnCodegen)
-            value = builder->opLoad(value);
+    irb::Value* value = builder->opGetElementPtr(static_cast<irb::PointerType*>(getType()), ptrV, {indexV});
+    if (loadOnCodegen)
+        value = builder->opLoad(value);
 
-        return value;
-    }
+    return value;
 }
 
 irb::Type* MemberAccessExpressionAST::_initialize() {
@@ -1148,84 +762,68 @@ irb::Value* MemberAccessExpressionAST::_codegen() {
     irb::Value* exprV = expression->codegen();
     if (!exprV)
         return nullptr;
-    if (exprShouldBeLoadedBeforeAccessingMember) {
-        if (irb::target == irb::Target::AIR)
-            exprV = builder->opLoad(exprV);
-        else if (irb::target == irb::Target::Metal)
-            exprV = new irb::Value(context, exprV->getType()->getElementType(), "(*" + exprV->getRawName() + ")");
-    }
+    if (irb::target == irb::Target::AIR && exprShouldBeLoadedBeforeAccessingMember)
+        exprV = builder->opLoad(exprV);
     irb::PointerType* exprType = static_cast<irb::PointerType*>(exprV->getType());
     irb::Type* elementExprType = exprType->getElementType();
     if (elementExprType->isStructure()) {
-        if (TARGET_IS_CODE(irb::target)) {
-            return new irb::Value(context, getType(), exprV->getRawName() + "." + memberName);
-        } else {
-            irb::PointerType* type = (loadOnCodegen ? new irb::PointerType(context, getType(), irb::StorageClass::Function) : static_cast<irb::PointerType*>(getType()));
-            irb::Value* indexV = builder->opConstant(new irb::ConstantInt(context, memberIndex, 32, true));
-            irb::Value* elementV = builder->opGetElementPtr(type, exprV, {indexV});
-            if (loadOnCodegen)
-                elementV = builder->opLoad(elementV);
+        irb::PointerType* type = (loadOnCodegen ? new irb::PointerType(context, getType(), irb::StorageClass::Function) : static_cast<irb::PointerType*>(getType()));
+        irb::Value* indexV = builder->opConstant(new irb::ConstantInt(context, memberIndex, 32, true));
+        irb::Value* elementV = builder->opGetElementPtr(type, exprV, {indexV});
+        if (loadOnCodegen)
+            elementV = builder->opLoad(elementV);
 
-            return elementV;
-        }
+        return elementV;
     } else if (elementExprType->isVector()) {
         irb::Type* type;
         if (memberName.size() == 1)
             type = elementExprType->getBaseType();
         else
             type = new irb::VectorType(context, elementExprType->getBaseType(), memberName.size());
-        if (TARGET_IS_CODE(irb::target)) {
-            irb::Type* trueType = type;
-            //HACK: get the pointer type
-            if (!loadOnCodegen)
-                trueType = new irb::PointerType(context, type, irb::StorageClass::Function);
-            return new irb::Value(context, trueType, exprV->getRawName() + "." + memberName);
+        irb::Value* loadedVector;
+        std::vector<irb::Value*> components;
+        std::vector<uint8_t> indices;
+        if (loadOnCodegen) {
+            loadedVector = builder->opLoad(exprV);
+            components.reserve(memberName.size());
         } else {
-            irb::Value* loadedVector;
-            std::vector<irb::Value*> components;
-            std::vector<uint8_t> indices;
-            if (loadOnCodegen) {
-                loadedVector = builder->opLoad(exprV);
-                components.reserve(memberName.size());
-            } else {
-                indices.reserve(memberName.size());
+            indices.reserve(memberName.size());
+        }
+        for (uint8_t i = 0; i < memberName.size(); i++) {
+            int8_t index;
+            switch (memberName[i]) {
+            case 'x':
+            case 'r':
+                index = 0;
+                break;
+            case 'y':
+            case 'g':
+                index = 1;
+                break;
+            case 'z':
+            case 'b':
+                index = 2;
+                break;
+            case 'w':
+            case 'a':
+                index = 3;
+                break;
+            default:
+                index = -1;
+                break;
             }
-            for (uint8_t i = 0; i < memberName.size(); i++) {
-                int8_t index;
-                switch (memberName[i]) {
-                case 'x':
-                case 'r':
-                    index = 0;
-                    break;
-                case 'y':
-                case 'g':
-                    index = 1;
-                    break;
-                case 'z':
-                case 'b':
-                    index = 2;
-                    break;
-                case 'w':
-                case 'a':
-                    index = 3;
-                    break;
-                default:
-                    index = -1;
-                    break;
-                }
-                if (loadOnCodegen)
-                    components.push_back(builder->opVectorExtract(loadedVector, new irb::ConstantInt(context, index, 32, false)));
-                else
-                    indices.push_back(index);
-            }
-            
-            if (loadOnCodegen) {
-                if (components.size() == 1)
-                    return components[0];
-                return builder->opConstruct(static_cast<irb::VectorType*>(type), components);
-            } else {
-                return new UnloadedSwizzledVectorValue(context, exprV, indices);
-            }
+            if (loadOnCodegen)
+                components.push_back(builder->opVectorExtract(loadedVector, new irb::ConstantInt(context, index, 32, false)));
+            else
+                indices.push_back(index);
+        }
+        
+        if (loadOnCodegen) {
+            if (components.size() == 1)
+                return components[0];
+            return builder->opConstruct(static_cast<irb::VectorType*>(type), components);
+        } else {
+            return new UnloadedSwizzledVectorValue(context, exprV, indices);
         }
     } else {
         logError("the '.' operator only operates on structures and vectors");
@@ -1247,37 +845,9 @@ irb::Type* StructureDefinitionAST::_initialize() {
 }
 
 irb::Value* StructureDefinitionAST::_codegen() {
-    std::string codeStr = "struct " + name + " {\n";
-    for (auto& member : members) {
-        std::string attributesEnd;
-        if (irb::target == irb::Target::Metal) {
-            if (member.attributes.isPosition)
-                attributesEnd += " [[position]]";
-            if (member.attributes.locationIndex != -1)
-                attributesEnd += " [[attribute(" + std::to_string(member.attributes.locationIndex) + ")]]";
-            if (member.attributes.colorIndex != -1)
-                attributesEnd += " [[color(" + std::to_string(member.attributes.colorIndex) + ")]]";
-        } else if (irb::target == irb::Target::HLSL) {
-            //TODO: add commas between attributes
-            //TODO: uncomment?
-            //if (member.attributes.isPosition)
-            //    attributesEnd += " : SV_Position";
-            if (member.attributes.locationIndex != -1)
-                attributesEnd += " : TEXCOORD" + std::to_string(member.attributes.locationIndex); //TODO: don't always use texcoord?
-            if (member.attributes.colorIndex != -1)
-                attributesEnd += " : SV_Target" + std::to_string(member.attributes.colorIndex); //TODO: check if this is correct
-        }
-        codeStr += "\t" + getTypeNameBegin(member.type) + " " + member.name + getTypeNameEnd(member.type) + attributesEnd + ";\n";
-    }
-    codeStr += "};";
+    context.pushRegisterName(name);
 
-    if (TARGET_IS_IR(irb::target)) {
-        context.pushRegisterName(name);
-
-        return builder->opStructureDefinition(static_cast<irb::StructureType*>(getType()));
-    } else {
-        return new irb::Value(context, getType(), codeStr);
-    }
+    return builder->opStructureDefinition(static_cast<irb::StructureType*>(getType()));
 }
 
 irb::Type* EnumDefinitionAST::_initialize() {
@@ -1293,17 +863,7 @@ irb::Type* EnumDefinitionAST::_initialize() {
 }
 
 irb::Value* EnumDefinitionAST::_codegen() {
-    std::string codeStr;
-    if (irb::target == irb::Target::Metal || irb::target == irb::Target::HLSL) {
-        codeStr = "enum " + name + " {\n";
-        for (auto& value : values)
-            codeStr += "\t" + value.name + " = " + std::to_string(value.value) + ",\n";
-        codeStr += "};";
-    } else {
-        codeStr = "//Enum '" + name + "'";
-    }
-
-    return new irb::Value(context, getType(), codeStr);
+    return new irb::Value(context, getType());
 }
 
 irb::Type* EnumValueExpressionAST::_initialize() {
@@ -1311,14 +871,7 @@ irb::Type* EnumValueExpressionAST::_initialize() {
 }
 
 irb::Value* EnumValueExpressionAST::_codegen() {
-    if (TARGET_IS_IR(irb::target)) {
-        return builder->opConstant(new irb::ConstantValue(context, enumeration->type, std::to_string(value.value)));
-    } else {
-        if (irb::target == irb::Target::Metal || irb::target == irb::Target::HLSL)
-            return new irb::Value(context, enumeration->type, value.name);
-        else
-            return new irb::Value(context, enumeration->type, std::to_string(value.value));
-    }
+    return builder->opConstant(new irb::ConstantValue(context, enumeration->type, std::to_string(value.value)));
 }
 
 irb::Type* InitializerListExpressionAST::_initialize() {
@@ -1393,9 +946,6 @@ irb::Value* InitializerListExpressionAST::_codegen() {
             component = builder->opCast(component, (getType()->isScalar() ? getType() : getType()->getBaseType()));
         components.push_back(component);
     }
-
-    //HACK: for code backends
-    std::vector<irb::Value*> originalComponents = components;
     
     //"Unpack" the vectors
     if (getType()->isVector()) {
@@ -1405,68 +955,54 @@ irb::Value* InitializerListExpressionAST::_codegen() {
                 components.erase(components.begin() + i);
                 for (uint8_t j = 0; j < vectorType->getComponentCount(); j++) {
                     irb::Value* vectorComponent;
-                    if (TARGET_IS_IR(irb::target))
-                        vectorComponent = builder->opCast(builder->opVectorExtract(component, new irb::ConstantInt(context, j, 32, true)), getType()->getBaseType());
-                    else
-                        vectorComponent = new irb::Value(context, vectorType->getBaseType(), component->getRawName() + "[" + std::to_string(j) + "]");
+                    vectorComponent = builder->opCast(builder->opVectorExtract(component, new irb::ConstantInt(context, j, 32, true)), getType()->getBaseType());
                     components.insert(components.begin() + i + j, vectorComponent);
                 }
             }
         }
     }
 
-    if (TARGET_IS_IR(irb::target)) {
-        if (getType()->isScalar())
-            return builder->opCast(components[0], getType());
-        if (getType()->isArray()) {
-            //TODO: implement this
-            logError("array initializer lists are not supported for IR backends yet");
-            return nullptr;
-        }
-        if (getType()->isVector()) {
-            irb::VectorType* vectorType = static_cast<irb::VectorType*>(getType());
-            //Fill the list in case it is just a one value initializer
-            if (components.size() == 1) {
-                components.reserve(vectorType->getComponentCount());
-                for (uint8_t i = 1; i < vectorType->getComponentCount(); i++)
-                    components.push_back(components[0]);
-            }
-            context.pushRegisterName("const_vector");
-
-            return builder->opConstruct(vectorType, components);
-        }
-        if (getType()->isMatrix()) {
-            irb::MatrixType* matrixType = static_cast<irb::MatrixType*>(getType());
-            //Fill the list in case it is just a one value initializer
-            if (components.size() == 1) {
-                components.reserve(matrixType->getColumnCount());
-                irb::Value* component;
-                if (components[0]->getType()->isVector()) {
-                    component = components[0];
-                } else if (components[0]->getType()->isScalar()) {
-                    component = builder->opConstruct(matrixType->getComponentType(), std::vector(matrixType->getComponentType()->getComponentCount(), components[0]));
-                } else {
-                    logError("cannot initialize matrix with a value of type '" + components[0]->getType()->getDebugName() + "'");
-                    return nullptr;
-                }
-                for (uint8_t i = 1; i < matrixType->getColumnCount(); i++)
-                    components.push_back(component);
-            }
-
-            return builder->opConstruct(matrixType, components);
-        }
-
+    if (getType()->isScalar())
+        return builder->opCast(components[0], getType());
+    if (getType()->isArray()) {
+        //TODO: implement this
+        logError("array initializer lists are not supported for IR backends yet");
         return nullptr;
-    } else {
-        std::string codeStr = getTypeName(getType()) + "(";
-        for (uint32_t i = 0; i < originalComponents.size(); i++) {
-            if (i != 0)
-                codeStr += ", ";
-            codeStr += originalComponents[i]->getRawName();
+    }
+    if (getType()->isVector()) {
+        irb::VectorType* vectorType = static_cast<irb::VectorType*>(getType());
+        //Fill the list in case it is just a one value initializer
+        if (components.size() == 1) {
+            components.reserve(vectorType->getComponentCount());
+            for (uint8_t i = 1; i < vectorType->getComponentCount(); i++)
+                components.push_back(components[0]);
+        }
+        context.pushRegisterName("const_vector");
+
+        return builder->opConstruct(vectorType, components);
+    }
+    if (getType()->isMatrix()) {
+        irb::MatrixType* matrixType = static_cast<irb::MatrixType*>(getType());
+        //Fill the list in case it is just a one value initializer
+        if (components.size() == 1) {
+            components.reserve(matrixType->getColumnCount());
+            irb::Value* component;
+            if (components[0]->getType()->isVector()) {
+                component = components[0];
+            } else if (components[0]->getType()->isScalar()) {
+                component = builder->opConstruct(matrixType->getComponentType(), std::vector(matrixType->getComponentType()->getComponentCount(), components[0]));
+            } else {
+                logError("cannot initialize matrix with a value of type '" + components[0]->getType()->getDebugName() + "'");
+                return nullptr;
+            }
+            for (uint8_t i = 1; i < matrixType->getColumnCount(); i++)
+                components.push_back(component);
         }
 
-        return new irb::Value(context, getType(), codeStr + ")");
+        return builder->opConstruct(matrixType, components);
     }
+
+    return nullptr;
 }
 
 } //namespace lvslang

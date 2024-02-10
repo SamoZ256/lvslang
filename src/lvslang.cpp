@@ -12,7 +12,6 @@ namespace lvslang {
 
 bool compile(const CompileOptions& options, std::string& outputCode) {
     context.reset();
-    currentIndentation = 0;
     functionDeclarations.clear();
     source = Source{};
     for (auto& ext : irb::extensions)

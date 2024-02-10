@@ -19,7 +19,6 @@ extern irb::IRBuilder* builder;
 extern GLSLVersion glslVersion;
 
 extern FunctionPrototypeAST* crntFunction;
-extern uint32_t currentIndentation;
 
 struct EnumValue {
     std::string name;
@@ -195,12 +194,8 @@ public:
         source.crntDebugLine = oldDebugLine;
         source.crntDebugChar = oldDebugChar;
         
-        if (requiredType) {
-            if (TARGET_IS_IR(irb::target))
-                return builder->opCast(value, requiredType);
-            else if (!value->getType()->equals(requiredType) && !type->equals(requiredType))
-                return new irb::Value(context, requiredType, getTypeName(requiredType) + "(" + value->getRawName() + ")");
-        }
+        if (requiredType)
+            return builder->opCast(value, requiredType);
         
         return value;
     }
@@ -225,8 +220,16 @@ public:
         return type;
     }
 
+    inline irb::Type* getRequiredType() const {
+        return requiredType;
+    }
+
+    inline bool getLoadOnCodegen() const {
+        return loadOnCodegen;
+    }
+
     //Debugging
-    inline void setDebugInfo() {
+    inline void setDebugInfo() const {
         source.crntDebugLine = debugLine;
         source.crntDebugChar = debugChar;
     }
@@ -271,15 +274,15 @@ public:
     }
 
     //Getters
-    double valueD() {
+    inline double valueD() const {
         return _valueD;
     }
 
-    long valueL() {
+    inline long valueL() const {
         return _valueL;
     }
 
-    unsigned long valueU() {
+    inline unsigned long valueU() const {
         return _valueU;
     }
 
@@ -304,7 +307,14 @@ public:
         return true;
     }
 
-    std::string& name() { return _name; }
+    //Getters
+    inline const std::string& name() const {
+        return _name;
+    }
+
+    inline Variable* getVariable() const {
+        return variable;
+    }
 
 private:
     std::string _name;
@@ -322,6 +332,19 @@ class BinaryExpressionAST : public ExpressionAST {
 public:
     BinaryExpressionAST(const std::string& aOperator, ExpressionAST* aLHS, ExpressionAST* aRHS) : op(aOperator), lhs(aLHS), rhs(aRHS) {}
 
+    //Getters
+    inline const ExpressionAST* getLHS() const {
+        return lhs;
+    }
+
+    inline const ExpressionAST* getRHS() const {
+        return rhs;
+    }
+
+    inline const std::string& getOp() const {
+        return op;
+    }
+
 private:
     std::string op;
     ExpressionAST* lhs;
@@ -338,6 +361,11 @@ private:
 class BlockExpressionAST : public ExpressionAST {
 public:
     BlockExpressionAST(std::vector<ExpressionAST*> aExpressions) : expressions(aExpressions) {}
+
+    //Getters
+    inline const std::vector<ExpressionAST*>& getExpressions() const {
+        return expressions;
+    }
 
 private:
     std::vector<ExpressionAST*> expressions;
@@ -361,7 +389,7 @@ public:
         return _arguments;
     }
 
-    inline irb::Attributes& getArgumentAttributes(uint32_t index) {
+    inline const irb::Attributes& getArgumentAttributes(uint32_t index) const {
         return _arguments[index].attributes;
     }
 
@@ -418,12 +446,22 @@ private:
 
 //Function definition
 class FunctionDefinitionAST : public ExpressionAST {
-private:
-    FunctionPrototypeAST* declaration;
-    BlockExpressionAST* body;
-
 public:
     FunctionDefinitionAST(FunctionPrototypeAST* aDeclaration, BlockExpressionAST* aBody) : declaration(aDeclaration), body(aBody) {}
+
+    //Getters
+    inline const FunctionPrototypeAST* getPrototype() const {
+        return declaration;
+    }
+
+    inline const BlockExpressionAST* getBody() const {
+        return body;
+    }
+
+private:
+    //TODO: rename to prototype
+    FunctionPrototypeAST* declaration;
+    BlockExpressionAST* body;
 
     irb::Type* _initialize() override;
 
@@ -431,9 +469,19 @@ public:
 };
 
 //Function call
+//TODO: rename to FunctionCallAST
 class CallExpressionAST : public ExpressionAST {
 public:
     CallExpressionAST(const std::string& aCallee, std::vector<ExpressionAST*> aArguments) : callee(aCallee), arguments(aArguments) {}
+
+    //Getters
+    inline const std::string& getCallee() const {
+        return callee;
+    }
+
+    inline const std::vector<ExpressionAST*>& getArguments() const {
+        return arguments;
+    }
 
 private:
     std::string callee;
@@ -450,6 +498,11 @@ private:
 class ReturnExpressionAST : public ExpressionAST {
 public:
     ReturnExpressionAST(ExpressionAST* aExpression) : expression(aExpression) {}
+
+    //Getters
+    inline const ExpressionAST* getExpression() const {
+        return expression;
+    }
 
 private:
     ExpressionAST* expression;
@@ -469,6 +522,15 @@ struct IfThenBlock {
 class IfExpressionAST : public ExpressionAST {
 public:
     IfExpressionAST(const std::vector<IfThenBlock*>& aIfThenBlocks, ExpressionAST* aElseBlock) : ifThenBlocks(aIfThenBlocks), elseBlock(aElseBlock) {}
+
+    //Getters
+    inline const std::vector<IfThenBlock*>& getIfThenBlocks() const {
+        return ifThenBlocks;
+    }
+
+    inline const ExpressionAST* getElseBlock() const {
+        return elseBlock;
+    }
 
 private:
     std::vector<IfThenBlock*> ifThenBlocks;
@@ -506,6 +568,19 @@ class WhileExpressionAST : public ExpressionAST {
 public:
     WhileExpressionAST(ExpressionAST* aCondition, ExpressionAST* aBlock, bool aIsDoWhile) : condition(aCondition), block(aBlock), isDoWhile(aIsDoWhile) {}
 
+    //Getters
+    inline const ExpressionAST* getCondition() const {
+        return condition;
+    }
+
+    inline const ExpressionAST* getBlock() const {
+        return block;
+    }
+
+    inline bool getIsDoWhile() const {
+        return isDoWhile;
+    }
+
 private:
     ExpressionAST* condition;
     ExpressionAST* block;
@@ -529,7 +604,21 @@ class VariableDeclarationExpressionAST : public ExpressionAST {
 public:
     VariableDeclarationExpressionAST(const std::vector<VariableDeclaration>& aVariableNames, bool aIsGlobal, bool aIsConstant) : variableNames(aVariableNames), isGlobal(aIsGlobal), isConstant(aIsConstant) {}
 
+    //Getters
+    inline const std::vector<VariableDeclaration>& getVariableDeclarations() const {
+        return variableNames;
+    }
+
+    inline bool getIsGlobal() const {
+        return isGlobal;
+    }
+
+    inline bool getIsConstant() const {
+        return isConstant;
+    }
+
 private:
+    //TODO: rename to variableDeclarations
     std::vector<VariableDeclaration> variableNames;
     bool isGlobal;
     bool isConstant;
@@ -543,6 +632,15 @@ private:
 class SubscriptExpressionAST : public ExpressionAST {
 public:
     SubscriptExpressionAST(ExpressionAST* aPtr, ExpressionAST* aIndex) : ptr(aPtr), index(aIndex) {}
+
+    //Getters
+    inline const ExpressionAST* getPtr() const {
+        return ptr;
+    }
+
+    inline const ExpressionAST* getIndex() const {
+        return index;
+    }
 
 private:
     ExpressionAST* ptr;
@@ -559,6 +657,23 @@ class MemberAccessExpressionAST : public ExpressionAST {
 public:
     MemberAccessExpressionAST(ExpressionAST* aExpression, const std::string& aMemberName, bool aExprShouldBeLoadedBeforeAccessingMember) : expression(aExpression), memberName(aMemberName), exprShouldBeLoadedBeforeAccessingMember(aExprShouldBeLoadedBeforeAccessingMember) {}
 
+    //Getters
+    inline const ExpressionAST* getExpression() const {
+        return expression;
+    }
+
+    inline const std::string& getMemberName() const {
+        return memberName;
+    }
+
+    inline bool getExprShouldBeLoadedBeforeAccessingMember() const {
+        return exprShouldBeLoadedBeforeAccessingMember;
+    }
+
+    inline uint32_t getMemberIndex() const {
+        return memberIndex;
+    }
+
 private:
     ExpressionAST* expression;
     std::string memberName;
@@ -573,12 +688,21 @@ private:
 
 //Structure definition
 class StructureDefinitionAST : public ExpressionAST {
+public:
+    StructureDefinitionAST(const std::string& aName, const std::vector<irb::StructureMember>& aMembers) : name(aName), members(aMembers) {}
+
+    //Getters
+    inline const std::string& getName() const {
+        return name;
+    }
+
+    inline const std::vector<irb::StructureMember>& getMembers() const {
+        return members;
+    }
+
 private:
     std::string name;
     std::vector<irb::StructureMember> members;
-
-public:
-    StructureDefinitionAST(const std::string& aName, const std::vector<irb::StructureMember>& aMembers) : name(aName), members(aMembers) {}
 
     irb::Type* _initialize() override;
 
@@ -589,6 +713,15 @@ public:
 class EnumDefinitionAST : public ExpressionAST {
 public:
     EnumDefinitionAST(const std::string& aName, const std::vector<EnumValue>& aValues) : name(aName), values(aValues) {}
+
+    //Getters
+    inline const std::string& getName() const {
+        return name;
+    }
+
+    inline const std::vector<EnumValue>& getValues() const {
+        return values;
+    }
 
 private:
     std::string name;
@@ -604,6 +737,15 @@ private:
 class EnumValueExpressionAST : public ExpressionAST {
 public:
     EnumValueExpressionAST(Enumeration* aEnumeration, EnumValue& aValue) : enumeration(aEnumeration), value(aValue) {}
+
+    //Getters
+    inline Enumeration* getEnumeration() const {
+        return enumeration;
+    }
+
+    inline EnumValue& getValue() const {
+        return value;
+    }
 
 private:
     Enumeration* enumeration;
@@ -629,6 +771,15 @@ public:
         }
 
         return true;
+    }
+
+    //Getters
+    inline irb::Type* getListType() const {
+        return listType;
+    }
+
+    inline const std::vector<ExpressionAST*>& getExpressions() const {
+        return expressions;
     }
 
 private:

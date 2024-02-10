@@ -42,6 +42,8 @@ add_library(lvslang_lib SHARED
     src/common.cpp
     src/type_name.cpp
     src/ast.cpp
+    #src/ir_writer.cpp
+    src/code_writer.cpp
     src/lvslang.cpp
     src/frontends/lvsl/lexer.cpp
     src/frontends/lvsl/parser.cpp

@@ -5,6 +5,10 @@
 
 namespace lvslang {
 
+struct CodeValue {
+    std::string code;
+};
+
 class CodeWriter {
 public:
     CodeWriter(irb::Target aTarget, const AST& aAST) : target(aTarget), ast(aAST) {}
@@ -37,11 +41,10 @@ public:
         
         std::string code;
         for (auto* expression : ast.getExpressions()) {
-            if (auto* value = expression->codegen()) {
-                std::string crntCode = value->getRawName();
+            if (auto* value = codegenExpression(expression)) {
                 //HACK: check if it contains something
-                if (crntCode.size() > 0)
-                    code += crntCode + "\n\n";
+                if (value->code.size() > 0)
+                    code += value->code + "\n\n";
             } else {
                 return false;
             }
@@ -55,6 +58,44 @@ public:
 private:
     irb::Target target;
     const AST& ast;
+
+    uint32_t currentIndentation = 0;
+
+    CodeValue* codegenExpression(const ExpressionAST* expression);
+
+    CodeValue* codegenNumberExpression(const NumberExpressionAST* expression);
+
+    CodeValue* codegenVariableExpression(const VariableExpressionAST* expression);
+
+    CodeValue* codegenBinaryExpression(const BinaryExpressionAST* expression);
+
+    CodeValue* codegenBlockExpression(const BlockExpressionAST* expression);
+
+    CodeValue* codegenFunctionPrototype(const FunctionPrototypeAST* expression);
+
+    CodeValue* codegenFunctionDefinition(const FunctionDefinitionAST* expression);
+
+    CodeValue* codegenFunctionCall(const CallExpressionAST* expression);
+
+    CodeValue* codegenReturnExpression(const ReturnExpressionAST* expression);
+
+    CodeValue* codegenIfExpression(const IfExpressionAST* expression);
+
+    CodeValue* codegenWhileExpression(const WhileExpressionAST* expression);
+
+    CodeValue* codegenVariableDeclaration(const VariableDeclarationExpressionAST* expression);
+
+    CodeValue* codegenSubscriptExpression(const SubscriptExpressionAST* expression);
+
+    CodeValue* codegenMemberAccessExpression(const MemberAccessExpressionAST* expression);
+
+    CodeValue* codegenStructureDefinition(const StructureDefinitionAST* expression);
+
+    CodeValue* codegenEnumDefinition(const EnumDefinitionAST* expression);
+
+    CodeValue* codegenEnumValueExpression(const EnumValueExpressionAST* expression);
+
+    CodeValue* codegenInitializerListExpression(const InitializerListExpressionAST* expression);
 };
 
 } //namespace lvslang
