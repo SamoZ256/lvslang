@@ -9,6 +9,7 @@ namespace irb {
 
 struct AIREntryPoint {
     Value* value;
+    std::string name;
     FunctionRole functionRole;
     Type* returnType;
     std::vector<Argument> arguments;

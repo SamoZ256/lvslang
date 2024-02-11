@@ -4,17 +4,17 @@ target triple = "air64-apple-macosx14.0.0"
 %FragmentOut = type { <4 x float> }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
-define i1 @forwardDeclaredFunction.i32.v3i32(i32 %a0, <3 x i32> %b) local_unnamed_addr #0 {
+define i1 @forwardDeclaredFunction.i32.v3i32(i32 %a, <3 x i32> %b) local_unnamed_addr #0 {
 entry0:
   %0 = extractelement <3 x i32> %b, i64 0
-  %op = icmp eq i32 %0, %a0
+  %op = icmp eq i32 %0, %a
   %1 = extractelement <3 x i32> %b, i64 1
-  %op0 = icmp eq i32 %1, %a0
-  %op1 = or i1 %op, %op0
+  %op1 = icmp eq i32 %1, %a
+  %op2 = or i1 %op, %op1
   %2 = extractelement <3 x i32> %b, i64 2
-  %op2 = icmp eq i32 %2, %a0
-  %op3 = or i1 %op2, %op1
-  ret i1 %op3
+  %op3 = icmp eq i32 %2, %a
+  %op4 = or i1 %op3, %op2
+  ret i1 %op4
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn

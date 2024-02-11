@@ -48,23 +48,6 @@ inline void error(const std::string& msg, const std::string& funcName) {
     std::cout << "[IRB:error]::" << funcName << ": " << msg << std::endl;
 }
 
-enum class Target {
-    None,
-    Metal,
-    HLSL,
-    GLSL,
-    SPIRV,
-    AIR,
-
-    MaxEnum
-};
-
-#define CASE_TARGET_CODE Target::Metal ... Target::GLSL
-#define CASE_TARGET_IR Target::SPIRV ... Target::SPIRV
-
-#define TARGET_IS_CODE(target) ((int)target >= (int)irb::Target::Metal && (int)target <= (int)irb::Target::GLSL)
-#define TARGET_IS_IR(target) ((int)target >= (int)irb::Target::SPIRV && (int)target <= (int)irb::Target::AIR)
-
 enum class SPIRVVersion {
     //1.x
     _1_0,

@@ -15,7 +15,7 @@ public:
 
     void end(IRBuilder* builder) override;
 
-    void addArgument(Value* argument);
+    void addArgument(Value* argument, const std::string& name);
 
 private:
     uint32_t argumentIndex = 0;

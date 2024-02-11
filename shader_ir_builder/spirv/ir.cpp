@@ -221,6 +221,9 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
     for (const auto& argument : arguments) {
         Type* type = argument.type;
         const auto& attr = argument.attributes;
+        //Get element type in case of buffer
+        if (attr.isBuffer)
+            type = type->getElementType();
 
         StorageClass storageClass = StorageClass::MaxEnum;
         //TODO: do not hardcode the storage classes
@@ -387,7 +390,9 @@ Function* SPIRVBuilder::opFunction(FunctionType* functionType, const std::string
 }
 
 Value* SPIRVBuilder::opFunctionParameter(Function* function, Type* type) {
-    type = new PointerType(context, type, StorageClass::Function);
+    //HACK: only get pointer if its not a pointer already (buffers need this)
+    if (!type->isPointer())
+        type = new PointerType(context, type, StorageClass::Function);
     Value* value = new Value(context, type, context.popRegisterName());
     static_cast<SPIRVBlock*>(function->getFunctionBlock())->addCode("OpFunctionParameter " + getTypeValue(this, type)->getName(), value);
 

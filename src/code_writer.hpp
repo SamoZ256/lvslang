@@ -11,20 +11,20 @@ struct CodeValue {
 
 class CodeWriter {
 public:
-    CodeWriter(irb::Target aTarget, const AST& aAST) : target(aTarget), ast(aAST) {}
+    CodeWriter(Target aTarget, const AST& aAST) : target(aTarget), ast(aAST) {}
 
     bool write(std::string& outputCode) {
         std::string codeHeader;
         switch (target) {
-        case irb::Target::None:
+        case Target::None:
             IRB_ERROR("No target specified");
             break;
-        case irb::Target::Metal:
+        case Target::Metal:
             codeHeader = "#include <metal_stdlib>\nusing namespace metal;";
             break;
-        case irb::Target::HLSL:
+        case Target::HLSL:
             break;
-        case irb::Target::GLSL:
+        case Target::GLSL:
             codeHeader = "#version " + getGLSLVersionString()/* + " core"*/;
             break;
         default:
@@ -33,7 +33,7 @@ public:
         }
         
         //TODO: enable them only if needed
-        if (irb::target == irb::Target::GLSL) {
+        if (target == Target::GLSL) {
             enableGLSLExtension(codeHeader, irb::Extension::_8bit_storage);
             enableGLSLExtension(codeHeader, irb::Extension::_16bit_storage);
             enableGLSLExtension(codeHeader, irb::Extension::explicit_arithmetic_types);
@@ -56,7 +56,7 @@ public:
     }
 
 private:
-    irb::Target target;
+    Target target;
     const AST& ast;
 
     uint32_t currentIndentation = 0;

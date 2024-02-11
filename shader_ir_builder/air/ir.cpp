@@ -99,8 +99,8 @@ static std::map<std::string, StandardFunctionInfo> standardFunctionLUT = {
 */
 
 void AIRBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, const std::string& name, Type* returnType, const std::vector<Argument>& arguments) {
-    entryPoints.push_back({entryPoint, functionRole, returnType, arguments});
     if (FunctionType* functionType = dynamic_cast<FunctionType*>(entryPoint->getType())) {
+        entryPoints.push_back({entryPoint, name + functionType->getTemplateName(), functionRole, returnType, arguments});
         llvm::Function* llvmFunction = static_cast<llvm::Function*>(entryPoint->getHandle());
         for (uint32_t i = 0; i < functionType->getArguments().size(); i++) {
             Type* argumentType = functionType->getArguments()[i];
@@ -158,8 +158,8 @@ Function* AIRBuilder::opFunction(FunctionType* functionType, const std::string& 
 }
 
 Value* AIRBuilder::opFunctionParameter(Function* function, Type* type) {
-    Value* argValue = new Value(context, type, context.popRegisterName());
-    static_cast<AIRFunction*>(function)->addArgument(argValue);
+    Value* argValue = new Value(context, type);
+    static_cast<AIRFunction*>(function)->addArgument(argValue, context.popRegisterName());
     //This is required in order to maintain consistency with SPIRV
     Value* value = opVariable(new PointerType(context, type, StorageClass::Function), argValue);
 
@@ -188,7 +188,7 @@ Value* AIRBuilder::opOperation(Value* l, Value* r, Type* type, Operation operati
     if (l->getType()->isVector() && r->getType()->isScalar())
         r = opConstruct(static_cast<VectorType*>(type), std::vector<Value*>(static_cast<VectorType*>(type)->getComponentCount(), r)); //TODO: check if the type is vector
 
-    Value* value = new Value(context, (type->getTypeID() == TypeID::Bool && l->getType()->isVector() ? new VectorType(context, type, static_cast<VectorType*>(l->getType())->getComponentCount()) : type), context.popRegisterName());
+    Value* value = new Value(context, (type->getTypeID() == TypeID::Bool && l->getType()->isVector() ? new VectorType(context, type, static_cast<VectorType*>(l->getType())->getComponentCount()) : type));
     
     bool needsOrd = (operation == Operation::GreaterThan || operation == Operation::GreaterThanEqual || operation == Operation::LessThan || operation == Operation::LessThanEqual);
     bool signSensitive = (operation == Operation::Divide || operation == Operation::Modulo || operation == Operation::Remainder || needsOrd);
@@ -199,100 +199,101 @@ Value* AIRBuilder::opOperation(Value* l, Value* r, Type* type, Operation operati
     //TODO: do not use l for getting op prefix?
     std::string prefix = (needsPrefix ? getTypeOpPrefix(l->getType(), signSensitive, false) : "");
 
+    std::string valueName = context.popRegisterName();
     llvm::Value* llvmValue;
     switch (operation) {
         case Operation::Add:
             if (prefix == "f")
-                llvmValue = handle->CreateFAdd(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateFAdd(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             else
-                llvmValue = handle->CreateAdd(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateAdd(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             break;
         case Operation::Subtract:
             if (prefix == "f")
-                llvmValue = handle->CreateFSub(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateFSub(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             else
-                llvmValue = handle->CreateSub(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateSub(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             break;
         case Operation::Multiply:
             if (prefix == "f")
-                llvmValue = handle->CreateFMul(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateFMul(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             else
-                llvmValue = handle->CreateMul(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateMul(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             break;
         case Operation::Divide:
             if (prefix == "f")
-                llvmValue = handle->CreateFDiv(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateFDiv(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             else if (prefix == "s")
-                llvmValue = handle->CreateSDiv(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateSDiv(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             else
-                llvmValue = handle->CreateUDiv(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateUDiv(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             break;
         case Operation::Modulo:
             IRB_ERROR("modulo is not supported in AIR");
             break;
         case Operation::Remainder:
             if (prefix == "f")
-                llvmValue = handle->CreateFRem(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateFRem(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             else if (prefix == "s")
-                llvmValue = handle->CreateSRem(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateSRem(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             else
-                llvmValue = handle->CreateURem(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateURem(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             break;
         case Operation::And:
-            llvmValue = handle->CreateAnd(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+            llvmValue = handle->CreateAnd(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             break;
         case Operation::Or:
-            llvmValue = handle->CreateOr(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+            llvmValue = handle->CreateOr(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             break;
         case Operation::Equal:
             //TODO: support unordered
             if (prefix == "f")
-                llvmValue = handle->CreateFCmpOEQ(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateFCmpOEQ(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             else
-                llvmValue = handle->CreateICmpEQ(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateICmpEQ(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             break;
         case Operation::NotEqual:
             //TODO: support unordered
             if (prefix == "f")
-                llvmValue = handle->CreateFCmpONE(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateFCmpONE(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             else
-                llvmValue = handle->CreateICmpNE(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateICmpNE(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             break;
         case Operation::GreaterThan:
             //TODO: support unordered
             if (prefix == "f")
-                llvmValue = handle->CreateFCmpOGT(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateFCmpOGT(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             else if (prefix == "s")
-                llvmValue = handle->CreateICmpSGT(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateICmpSGT(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             else
-                llvmValue = handle->CreateICmpUGT(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateICmpUGT(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             break;
         case Operation::GreaterThanEqual:
             //TODO: support unordered
             if (prefix == "f")
-                llvmValue = handle->CreateFCmpOGE(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateFCmpOGE(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             else if (prefix == "s")
-                llvmValue = handle->CreateICmpSGE(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateICmpSGE(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             else
-                llvmValue = handle->CreateICmpUGE(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateICmpUGE(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             break;
         case Operation::LessThan:
             //TODO: support unordered
             if (prefix == "f")
-                llvmValue = handle->CreateFCmpOLT(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateFCmpOLT(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             else if (prefix == "s")
-                llvmValue = handle->CreateICmpSLT(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateICmpSLT(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             else
-                llvmValue = handle->CreateICmpULT(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateICmpULT(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             break;
         case Operation::LessThanEqual:
             //TODO: support unordered
             if (prefix == "f")
-                llvmValue = handle->CreateFCmpOLE(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateFCmpOLE(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             else if (prefix == "s")
-                llvmValue = handle->CreateICmpSLE(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateICmpSLE(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             else
-                llvmValue = handle->CreateICmpULE(getValueLLVMHandle(l), getValueLLVMHandle(r), value->getRawName());
+                llvmValue = handle->CreateICmpULE(getValueLLVMHandle(l), getValueLLVMHandle(r), valueName);
             break;
         default:
             IRB_ERROR("unsupported operation");
@@ -322,9 +323,9 @@ Value* AIRBuilder::opLoad(Value* v) {
     }
 
     Type* elementType = v->getType()->getElementType();
-    Value* value = new Value(context, elementType, context.popRegisterName());
+    Value* value = new Value(context, elementType);
 
-    value->setHandle(handle->CreateLoad(getTypeLLVMHandle(elementType), getValueLLVMHandle(v), value->getRawName()));
+    value->setHandle(handle->CreateLoad(getTypeLLVMHandle(elementType), getValueLLVMHandle(v), context.popRegisterName()));
 
     return value;
 }
@@ -357,13 +358,13 @@ Value* AIRBuilder::opFunctionCall(Value* funcV, const std::vector<Value*>& argum
         return nullptr;
     }
 
-    Value* value = new Value(context, type->getReturnType(), context.popRegisterName());
+    Value* value = new Value(context, type->getReturnType());
 
     std::vector<llvm::Value*> llvmArguments;
     llvmArguments.reserve(arguments.size());
     for (const auto& argument : arguments)
         llvmArguments.push_back(getValueLLVMHandle(argument));
-    value->setHandle(handle->CreateCall(static_cast<llvm::FunctionType*>(getTypeLLVMHandle(type)), getValueLLVMHandle(funcV), llvmArguments, value->getRawName()));
+    value->setHandle(handle->CreateCall(static_cast<llvm::FunctionType*>(getTypeLLVMHandle(type)), getValueLLVMHandle(funcV), llvmArguments, context.popRegisterName()));
 
     return value;
 }
@@ -407,17 +408,17 @@ Value* AIRBuilder::opConstruct(Type* type, const std::vector<Value*>& components
 }
 
 Value* AIRBuilder::opVectorExtract(Value* vec, ConstantInt* index) {
-    Value* value = new Value(context, vec->getType()->getBaseType(), context.popRegisterName());
+    Value* value = new Value(context, vec->getType()->getBaseType());
 
-    value->setHandle(handle->CreateExtractElement(getValueLLVMHandle(vec), getValueLLVMHandle(index), value->getRawName()));
+    value->setHandle(handle->CreateExtractElement(getValueLLVMHandle(vec), getValueLLVMHandle(index), context.popRegisterName()));
 
     return value;
 }
 
 Value* AIRBuilder::opVectorInsert(Value* vec, Value* val, ConstantInt* index) {
-    Value* value = new Value(context, vec->getType(), context.popRegisterName());
+    Value* value = new Value(context, vec->getType());
 
-    value->setHandle(handle->CreateInsertElement(getValueLLVMHandle(vec), getValueLLVMHandle(val), getValueLLVMHandle(index), value->getRawName()));
+    value->setHandle(handle->CreateInsertElement(getValueLLVMHandle(vec), getValueLLVMHandle(val), getValueLLVMHandle(index), context.popRegisterName()));
 
     return value;
 }
@@ -428,7 +429,7 @@ Value* AIRBuilder::opGetElementPtr(PointerType* elementType, Value* ptr, const s
         return nullptr;
     }
     //elementType->setAddressSpace(static_cast<PointerType*>(ptr->getType())->getAddressSpace());
-    Value* value = new Value(context, elementType, context.popRegisterName());
+    Value* value = new Value(context, elementType);
 
     std::vector<llvm::Value*> llvmIndexes;
     llvmIndexes.reserve(indexes.size() + 1);
@@ -436,7 +437,7 @@ Value* AIRBuilder::opGetElementPtr(PointerType* elementType, Value* ptr, const s
     llvmIndexes.push_back(handle->getInt32(0));
     for (const auto& index : indexes)
         llvmIndexes.push_back(getValueLLVMHandle(index));
-    value->setHandle(handle->CreateInBoundsGEP(getTypeLLVMHandle(ptr->getType()->getElementType()), getValueLLVMHandle(ptr), llvmIndexes, value->getRawName()));
+    value->setHandle(handle->CreateInBoundsGEP(getTypeLLVMHandle(ptr->getType()->getElementType()), getValueLLVMHandle(ptr), llvmIndexes, context.popRegisterName()));
 
     return value;
 }
@@ -462,9 +463,9 @@ Value* AIRBuilder::opCast(Value* val, Type* type) {
         if (type->getTypeID() == TypeID::Float && castFromType->getTypeID() == TypeID::Float) {
             Value* value = new Value(context, type);
             if (castFromType->getBitCount() > type->getBitCount())
-                value->setHandle(handle->CreateFPTrunc(getValueLLVMHandle(val), getTypeLLVMHandle(type), value->getRawName()));
+                value->setHandle(handle->CreateFPTrunc(getValueLLVMHandle(val), getTypeLLVMHandle(type), context.popRegisterName()));
             else
-                value->setHandle(handle->CreateFPExt(getValueLLVMHandle(val), getTypeLLVMHandle(type), value->getRawName()));
+                value->setHandle(handle->CreateFPExt(getValueLLVMHandle(val), getTypeLLVMHandle(type), context.popRegisterName()));
 
             return value;
         }
@@ -496,9 +497,9 @@ Value* AIRBuilder::opSample(Value* funcV, Value* texture, Value* sampler, Value*
 }
 
 Value* AIRBuilder::opVariable(PointerType* type, Value* initializer) {
-    Value* value = new Value(context, type, context.popRegisterName());
+    Value* value = new Value(context, type);
     
-    value->setHandle(handle->CreateAlloca(getTypeLLVMHandle(type->getElementType()), nullptr, value->getRawName()));
+    value->setHandle(handle->CreateAlloca(getTypeLLVMHandle(type->getElementType()), nullptr, context.popRegisterName()));
 
     if (initializer)
         opStore(value, initializer);
@@ -694,7 +695,7 @@ std::string AIRBuilder::createMetadata(const std::string& languageName, uint32_t
             }
         }
 
-        block->addCode("!{ptr @" + entryPoint.value->getRawName() + ", " + entryPointOutputs->getName() + ", " + entryPointInputs->getName() + "}", entryPointInfo);
+        block->addCode("!{ptr @" + entryPoint.name + ", " + entryPointOutputs->getName() + ", " + entryPointInputs->getName() + "}", entryPointInfo);
         block->addCode("!{" + outputsStr + "}", entryPointOutputs); //TODO: here
         //TODO: add output information
         block->addCode("!{" + inputsStr + "}", entryPointInputs); //TODO: here

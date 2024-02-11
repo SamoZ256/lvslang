@@ -7,18 +7,18 @@ namespace lvslang {
 
 class IRWriter {
 public:
-    IRWriter(irb::Target aTarget, const AST& aAST, irb::OptimizationLevel aOptimizationLevel, bool aOutputAssembly, bool aIncludeDebugInformation, std::string aSourceFilename, irb::SPIRVVersion aSpirvVersion, std::string aLanguageName, uint32_t aLanguageVersionMajor, uint32_t aLanguageVersionMinor, uint32_t aLanguageVersionPatch) : target(aTarget), ast(aAST), optimizationLevel(aOptimizationLevel), outputAssembly(aOutputAssembly), includeDebugInformation(aIncludeDebugInformation), sourceFilename(aSourceFilename), spirvVersion(aSpirvVersion), languageName(aLanguageName), languageVersionMajor(aLanguageVersionMajor), languageVersionMinor(aLanguageVersionMinor), languageVersionPatch(aLanguageVersionPatch) {}
+    IRWriter(Target aTarget, const AST& aAST, irb::OptimizationLevel aOptimizationLevel, bool aOutputAssembly, bool aIncludeDebugInformation, std::string aSourceFilename, irb::SPIRVVersion aSpirvVersion, std::string aLanguageName, uint32_t aLanguageVersionMajor, uint32_t aLanguageVersionMinor, uint32_t aLanguageVersionPatch) : target(aTarget), ast(aAST), optimizationLevel(aOptimizationLevel), outputAssembly(aOutputAssembly), includeDebugInformation(aIncludeDebugInformation), sourceFilename(aSourceFilename), spirvVersion(aSpirvVersion), languageName(aLanguageName), languageVersionMajor(aLanguageVersionMajor), languageVersionMinor(aLanguageVersionMinor), languageVersionPatch(aLanguageVersionPatch) {}
 
     bool write(std::string& outputCode) {
         std::string codeHeader;
         switch (target) {
-        case irb::Target::None:
+        case Target::None:
             IRB_ERROR("No target specified");
             break;
-        case irb::Target::SPIRV:
+        case Target::SPIRV:
             builder = new irb::SPIRVBuilder(context, "Lvslang", includeDebugInformation);
             break;
-        case irb::Target::AIR:
+        case Target::AIR:
             //TODO: support other data layouts as well
             if (includeDebugInformation)
                 codeHeader = "source_filename = \"" + sourceFilename + "\"\n";
@@ -32,7 +32,7 @@ public:
         }
         
         //TODO: enable them only if needed
-        if (irb::target == irb::Target::SPIRV) {
+        if (target == Target::SPIRV) {
             enableSPIRVExtension(irb::Extension::_8bit_storage);
             enableSPIRVExtension(irb::Extension::_16bit_storage);
             enableSPIRVExtension(irb::Extension::explicit_arithmetic_types);
@@ -43,22 +43,22 @@ public:
         
         std::string code;
         for (auto* expression : ast.getExpressions()) {
-            if (!expression->codegen())
+            if (!codegenExpression(expression))
                 return false;
         }
         bool success = builder->getCode(code, (irb::OptimizationLevel)optimizationLevel, outputAssembly, spirvVersion);
         if (!success)
             return false;
 
-        if (irb::target == irb::Target::AIR)
+        if (target == Target::AIR)
             code += static_cast<irb::AIRBuilder*>(builder)->createMetadata(languageName, languageVersionMajor, languageVersionMinor, languageVersionPatch, sourceFilename);
-        outputCode = codeHeader + (codeHeader.empty() ? "" : (irb::target == irb::Target::AIR ? "\n" : "\n\n")) + code;
+        outputCode = codeHeader + (codeHeader.empty() ? "" : (target == Target::AIR ? "\n" : "\n\n")) + code;
 
         return true;
     }
 
 private:
-    irb::Target target;
+    Target target;
     const AST& ast;
 
     irb::OptimizationLevel optimizationLevel;
@@ -68,6 +68,42 @@ private:
     irb::SPIRVVersion spirvVersion;
     std::string languageName;
     uint32_t languageVersionMajor, languageVersionMinor, languageVersionPatch;
+
+    irb::Value* codegenExpression(const ExpressionAST* expression);
+
+    irb::Value* codegenNumberExpression(const NumberExpressionAST* expression);
+
+    irb::Value* codegenVariableExpression(const VariableExpressionAST* expression);
+
+    irb::Value* codegenBinaryExpression(const BinaryExpressionAST* expression);
+
+    irb::Value* codegenBlockExpression(const BlockExpressionAST* expression);
+
+    irb::Value* codegenFunctionPrototype(const FunctionPrototypeAST* expression);
+
+    irb::Value* codegenFunctionDefinition(const FunctionDefinitionAST* expression);
+
+    irb::Value* codegenFunctionCall(const CallExpressionAST* expression);
+
+    irb::Value* codegenReturnExpression(const ReturnExpressionAST* expression);
+
+    irb::Value* codegenIfExpression(const IfExpressionAST* expression);
+
+    irb::Value* codegenWhileExpression(const WhileExpressionAST* expression);
+
+    irb::Value* codegenVariableDeclaration(const VariableDeclarationExpressionAST* expression);
+
+    irb::Value* codegenSubscriptExpression(const SubscriptExpressionAST* expression);
+
+    irb::Value* codegenMemberAccessExpression(const MemberAccessExpressionAST* expression);
+
+    irb::Value* codegenStructureDefinition(const StructureDefinitionAST* expression);
+
+    irb::Value* codegenEnumDefinition(const EnumDefinitionAST* expression);
+
+    irb::Value* codegenEnumValueExpression(const EnumValueExpressionAST* expression);
+
+    irb::Value* codegenInitializerListExpression(const InitializerListExpressionAST* expression);
 };
 
 } //namespace lvslang

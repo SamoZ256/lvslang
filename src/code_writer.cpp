@@ -53,7 +53,7 @@ CodeValue* CodeWriter::codegenExpression(const ExpressionAST* expression) {
     source.crntDebugChar = oldDebugChar;
     
     if (expression->getRequiredType() && !expression->getType()->equals(expression->getRequiredType()))
-        return new CodeValue{getTypeName(expression->getRequiredType()) + "(" + value->code + ")"};
+        return new CodeValue{getTypeName(target, expression->getRequiredType()) + "(" + value->code + ")"};
     
     return value;
 }
@@ -81,7 +81,7 @@ CodeValue* CodeWriter::codegenNumberExpression(const NumberExpressionAST* expres
 }
 
 CodeValue* CodeWriter::codegenVariableExpression(const VariableExpressionAST* expression) {
-    return new CodeValue{expression->getVariable()->value->getRawName()};
+    return new CodeValue{expression->getName()};
 }
 
 CodeValue* CodeWriter::codegenBinaryExpression(const BinaryExpressionAST* expression) {
@@ -133,7 +133,7 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
         auto& attr = arg.attributes;
         if (i != 0)
             argsStr += ", ";
-        if (irb::target == irb::Target::Metal) {
+        if (target == Target::Metal) {
             std::string addressSpace;
             if (attr.addressSpace == 2)
                 addressSpace = "constant ";
@@ -150,9 +150,9 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
             if (attr.isInput)
                 attribute = " [[stage_in]]";
 
-            argsStr += addressSpace + getTypeName(arg.type) + " " + arg.name + attribute;
-        } else if (irb::target == irb::Target::HLSL) {
-            argsStr += getTypeName(arg.type) + " " + arg.name;
+            argsStr += addressSpace + getTypeName(target, arg.type) + " " + arg.name + attribute;
+        } else if (target == Target::HLSL) {
+            argsStr += getTypeName(target, (attr.isBuffer ? arg.type->getElementType() : arg.type)) + " " + arg.name;
 
             //Entry point
             if (expression->getFunctionRole() != irb::FunctionRole::Normal) {
@@ -160,17 +160,17 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
                     if (attr.isBuffer) {
                         entryPointStr += "cbuffer "; //TODO: support other types of buffer as well
                         //We need to get element type, since HLSL treats it without pointer
-                        entryPointStr += arg.name + "_Uniform : register(b" + std::to_string(attr.bindings.buffer) + ") {\n\t" + getTypeName(arg.type) + " " + arg.name + ";\n}";
+                        entryPointStr += arg.name + "_Uniform : register(b" + std::to_string(attr.bindings.buffer) + ") {\n\t" + getTypeName(target, arg.type->getElementType()) + " " + arg.name + ";\n}";
                     } else if (attr.isTexture) {
-                        entryPointStr += getTypeName(arg.type) + " " + arg.name + " : register(t" + std::to_string(attr.bindings.sampler) + ")";
+                        entryPointStr += getTypeName(target, arg.type) + " " + arg.name + " : register(t" + std::to_string(attr.bindings.sampler) + ")";
                     } else if (attr.isSampler) {
-                        entryPointStr += getTypeName(arg.type) + " " + arg.name + " : register(s" + std::to_string(attr.bindings.sampler) + ")";
+                        entryPointStr += getTypeName(target, arg.type) + " " + arg.name + " : register(s" + std::to_string(attr.bindings.sampler) + ")";
                     }
                     entryPointStr += ";\n\n";
                 }
             }
         } else {
-            argsStr += getTypeName(arg.type) + " " + arg.name;
+            argsStr += getTypeName(target, (attr.isBuffer ? arg.type->getElementType() : arg.type)) + " " + arg.name;
 
             //Entry point
             if (expression->getFunctionRole() != irb::FunctionRole::Normal) {
@@ -184,10 +184,10 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
                             return nullptr;
                         }
                         for (const auto& member : static_cast<irb::StructureType*>(arg.type)->getStructure()->members)
-                            entryPointStr += "layout (location = " + std::to_string(member.attributes.locationIndex) + ") in " + getTypeName(member.type) + " " + member.name + ";\n\n";
+                            entryPointStr += "layout (location = " + std::to_string(member.attributes.locationIndex) + ") in " + getTypeName(target, member.type) + " " + member.name + ";\n\n";
                         break;
                     case irb::FunctionRole::Fragment:
-                        entryPointStr += "layout (location = 0) in " + getTypeName(arg.type) + "_Input {\n\t" + getTypeName(arg.type) + " " + arg.name + ";\n};\n\n";
+                        entryPointStr += "layout (location = 0) in " + getTypeName(target, arg.type) + "_Input {\n\t" + getTypeName(target, arg.type) + " " + arg.name + ";\n};\n\n";
                         break;
                     default:
                         logError("cannot use the 'input' attribute for kernel function");
@@ -200,9 +200,9 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
                         else
                             typeName = "readonly buffer "; //TODO: support other types of buffer as well
                         //We need to get element type, since GLSL treats it without pointer
-                        typeName += arg.name + "_Uniform {\n\t" + getTypeName(arg.type) + " " + arg.name + ";\n}";
+                        typeName += arg.name + "_Uniform {\n\t" + getTypeName(target, arg.type->getElementType()) + " " + arg.name + ";\n}";
                     } else {
-                        typeName = "uniform " + getTypeName(arg.type);
+                        typeName = "uniform " + getTypeName(target, arg.type);
                     }
                     entryPointStr += "layout (set = " + std::to_string(attr.bindings.set) + ", binding = " + std::to_string(attr.bindings.binding) + ") " + typeName;
                     if (!attr.isBuffer)
@@ -214,7 +214,7 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
     }
 
     if (expression->getFunctionRole() != irb::FunctionRole::Normal) {
-        if (irb::target == irb::Target::Metal) {
+        if (target == Target::Metal) {
             switch (expression->getFunctionRole()) {
             case irb::FunctionRole::Vertex:
                 codeStr = "vertex ";
@@ -228,9 +228,9 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
             default:
                 break;
             }
-        } else if (irb::target == irb::Target::HLSL) {
+        } else if (target == Target::HLSL) {
             if (expression->getReturnType()->getTypeID() != irb::TypeID::Void) {
-                entryPointStr += "struct " + getTypeName(expression->getReturnType()) + "_Output {\n\t" + getTypeName(expression->getReturnType()) + " output : TEXCOORD0;\n";
+                entryPointStr += "struct " + getTypeName(target, expression->getReturnType()) + "_Output {\n\t" + getTypeName(target, expression->getReturnType()) + " output : TEXCOORD0;\n";
                 if (expression->getFunctionRole() == irb::FunctionRole::Vertex)
                     entryPointStr += "\tfloat4 position : SV_Position;\n";
                 entryPointStr += "};\n\n";
@@ -240,16 +240,16 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
             std::string argsStr;
             for (const auto& argument : expression->arguments()) {
                 if (argument.attributes.isInput) {
-                    argsStr += getTypeName(argument.type) + " " + argument.name;
+                    argsStr += getTypeName(target, argument.type) + " " + argument.name;
                     break;
                 }
             }
-            entryPointStr += getTypeName(expression->getReturnType()) + "_Output _" + expression->name() + "(" + argsStr + ") {\n";
+            entryPointStr += getTypeName(target, expression->getReturnType()) + "_Output _" + expression->name() + "(" + argsStr + ") {\n";
 
             //-------- Entry point call --------
             entryPointStr += "\t//Entry point call\n";
             std::string outputVarName = "_entryPointOutput";
-            entryPointStr += "\t" + (expression->getReturnType()->getTypeID() == irb::TypeID::Void ? "" : getTypeName(expression->getReturnType()) + " " + outputVarName + " = ") + expression->name() + "(";
+            entryPointStr += "\t" + (expression->getReturnType()->getTypeID() == irb::TypeID::Void ? "" : getTypeName(target, expression->getReturnType()) + " " + outputVarName + " = ") + expression->name() + "(";
             for (uint32_t i = 0; i < expression->arguments().size(); i++) {
                 if (i != 0)
                     entryPointStr += ", ";
@@ -259,7 +259,7 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
 
             //-------- Output --------
             if (expression->getReturnType()->getTypeID() != irb::TypeID::Void) {
-                entryPointStr += "\n\t//Output\n\t" + getTypeName(expression->getReturnType()) + "_Output __output;\n\t__output.output = " + outputVarName + ";\n";
+                entryPointStr += "\n\t//Output\n\t" + getTypeName(target, expression->getReturnType()) + "_Output __output;\n\t__output.output = " + outputVarName + ";\n";
                 if (expression->getFunctionRole() == irb::FunctionRole::Vertex) {
                     //TODO: support non-structure types as well
                     if (!expression->getReturnType()->isStructure()) {
@@ -278,10 +278,10 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
             }
 
             entryPointStr += "}\n\n";
-        } else if (irb::target == irb::Target::GLSL) {
+        } else if (target == Target::GLSL) {
             switch (expression->getFunctionRole()) {
             case irb::FunctionRole::Vertex:
-                entryPointStr += "layout (location = 0) out " + getTypeName(expression->getReturnType()) + "_Output {\n\t" + getTypeName(expression->getReturnType()) + " _output;\n} _output;\n\n";
+                entryPointStr += "layout (location = 0) out " + getTypeName(target, expression->getReturnType()) + "_Output {\n\t" + getTypeName(target, expression->getReturnType()) + " _output;\n} _output;\n\n";
                 break;
             case irb::FunctionRole::Fragment:
                 //TODO: do this error check for every backend?
@@ -290,7 +290,7 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
                     return nullptr;
                 }
                 for (const auto& member : static_cast<irb::StructureType*>(expression->getReturnType())->getStructure()->members)
-                    entryPointStr += "layout (location = " + std::to_string(member.attributes.colorIndex) + ") out " + getTypeName(member.type) + " " + member.name + ";\n\n";
+                    entryPointStr += "layout (location = " + std::to_string(member.attributes.colorIndex) + ") out " + getTypeName(target, member.type) + " " + member.name + ";\n\n";
                 break;
             default:
                 logError("cannot use the 'output' attribute for kernel function");
@@ -307,7 +307,7 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
                     //TODO: throw an error if not structure?
                     irb::StructureType* structureType = dynamic_cast<irb::StructureType*>(expression->arguments()[i].type);
                     //HACK: just assemble the input structure
-                    entryPointStr += "\t" + getTypeName(structureType) + " " + expression->arguments()[i].name + ";\n";
+                    entryPointStr += "\t" + getTypeName(target, structureType) + " " + expression->arguments()[i].name + ";\n";
                     for (const auto& member : structureType->getStructure()->members)
                         entryPointStr += "\t" + expression->arguments()[i].name + "." + member.name + " = " + member.name + ";\n";
                 }
@@ -317,7 +317,7 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
             //-------- Entry point call --------
             entryPointStr += "\t//Entry point call\n";
             std::string outputVarName = "_entryPointOutput";
-            entryPointStr += "\t" + (expression->getReturnType()->getTypeID() == irb::TypeID::Void ? "" : getTypeName(expression->getReturnType()) + " " + outputVarName + " = ") + expression->name() + "(";
+            entryPointStr += "\t" + (expression->getReturnType()->getTypeID() == irb::TypeID::Void ? "" : getTypeName(target, expression->getReturnType()) + " " + outputVarName + " = ") + expression->name() + "(";
             for (uint32_t i = 0; i < expression->arguments().size(); i++) {
                 if (i != 0)
                     entryPointStr += ", ";
@@ -361,8 +361,8 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
             entryPointStr += "}\n\n";
         }
     }
-    codeStr += getTypeName(expression->getReturnType()) + " " + expression->name() + "(" + argsStr + ")";
-    if ((irb::target == irb::Target::GLSL || irb::target == irb::Target::HLSL) && expression->getFunctionRole() != irb::FunctionRole::Normal)
+    codeStr += getTypeName(target, expression->getReturnType()) + " " + expression->name() + "(" + argsStr + ")";
+    if ((target == Target::GLSL || target == Target::HLSL) && expression->getFunctionRole() != irb::FunctionRole::Normal)
         codeStr += ";\n\n" + entryPointStr + codeStr;
     if (!expression->getIsDefined())
         codeStr += ";";
@@ -406,14 +406,14 @@ CodeValue* CodeWriter::codegenFunctionCall(const CallExpressionAST* expression) 
 
     std::string code;
     if (expression->getCallee() == "sample") {
-        switch (irb::target) {
-        case irb::Target::Metal:
+        switch (target) {
+        case Target::Metal:
             code = argVs[0]->code + ".sample(" + argVs[1]->code + ", " + argVs[2]->code + ")";
             break;
-        case irb::Target::HLSL:
+        case Target::HLSL:
             code = argVs[0]->code + ".SampleLevel(" + argVs[1]->code + ", " + argVs[2]->code + ", 0.0f)";
             break;
-        case irb::Target::GLSL:
+        case Target::GLSL:
             code = "texture(sampler2D(" + argVs[0]->code + ", " + argVs[1]->code + "), " + argVs[2]->code + ")"; //TODO: support other samplers + textures as well
             break;
         default:
@@ -501,13 +501,13 @@ CodeValue* CodeWriter::codegenVariableDeclaration(const VariableDeclarationExpre
         
         irb::PointerType* varType = new irb::PointerType(context, type, irb::StorageClass::Function);
         if (expression->getIsConstant()) {
-            if (irb::target == irb::Target::Metal && expression->getIsGlobal())
+            if (target == Target::Metal && expression->getIsGlobal())
                 codeStr += "constant ";
             else
                 codeStr += "const ";
         }
 
-        codeStr += getTypeNameBegin(type) + " " + varName + getTypeNameEnd(type);
+        codeStr += getTypeNameBegin(target, type) + " " + varName + getTypeNameEnd(type);
         if (initExpression)
             codeStr += " = " + initV->code;
         if (expression->getIsGlobal())
@@ -534,8 +534,9 @@ CodeValue* CodeWriter::codegenMemberAccessExpression(const MemberAccessExpressio
         return nullptr;
     irb::PointerType* exprType = static_cast<irb::PointerType*>(expression->getExpression()->getType());
     irb::Type* elementExprType = exprType->getElementType();
-    if (target == irb::Target::Metal && expression->getExprShouldBeLoadedBeforeAccessingMember()) {
-        exprV = new CodeValue{"(*" + exprV->code + ")"};
+    if (expression->getExprShouldBeLoadedBeforeAccessingMember()) {
+        if (target == Target::Metal)
+            exprV = new CodeValue{"(*" + exprV->code + ")"};
         elementExprType = elementExprType->getElementType();
     }
     if (elementExprType->isStructure()) {
@@ -561,14 +562,14 @@ CodeValue* CodeWriter::codegenStructureDefinition(const StructureDefinitionAST* 
     std::string codeStr = "struct " + expression->getName() + " {\n";
     for (auto& member : expression->getMembers()) {
         std::string attributesEnd;
-        if (irb::target == irb::Target::Metal) {
+        if (target == Target::Metal) {
             if (member.attributes.isPosition)
                 attributesEnd += " [[position]]";
             if (member.attributes.locationIndex != -1)
                 attributesEnd += " [[attribute(" + std::to_string(member.attributes.locationIndex) + ")]]";
             if (member.attributes.colorIndex != -1)
                 attributesEnd += " [[color(" + std::to_string(member.attributes.colorIndex) + ")]]";
-        } else if (irb::target == irb::Target::HLSL) {
+        } else if (target == Target::HLSL) {
             //TODO: add commas between attributes
             //TODO: uncomment?
             //if (member.attributes.isPosition)
@@ -578,7 +579,7 @@ CodeValue* CodeWriter::codegenStructureDefinition(const StructureDefinitionAST* 
             if (member.attributes.colorIndex != -1)
                 attributesEnd += " : SV_Target" + std::to_string(member.attributes.colorIndex); //TODO: check if this is correct
         }
-        codeStr += "\t" + getTypeNameBegin(member.type) + " " + member.name + getTypeNameEnd(member.type) + attributesEnd + ";\n";
+        codeStr += "\t" + getTypeNameBegin(target, member.type) + " " + member.name + getTypeNameEnd(member.type) + attributesEnd + ";\n";
     }
     codeStr += "};";
 
@@ -587,7 +588,7 @@ CodeValue* CodeWriter::codegenStructureDefinition(const StructureDefinitionAST* 
 
 CodeValue* CodeWriter::codegenEnumDefinition(const EnumDefinitionAST* expression) {
     std::string codeStr;
-    if (irb::target == irb::Target::Metal || irb::target == irb::Target::HLSL) {
+    if (target == Target::Metal || target == Target::HLSL) {
         codeStr = "enum " + expression->getName() + " {\n";
         for (auto& value : expression->getValues())
             codeStr += "\t" + value.name + " = " + std::to_string(value.value) + ",\n";
@@ -600,14 +601,14 @@ CodeValue* CodeWriter::codegenEnumDefinition(const EnumDefinitionAST* expression
 }
 
 CodeValue* CodeWriter::codegenEnumValueExpression(const EnumValueExpressionAST* expression) {
-    if (target == irb::Target::Metal || target == irb::Target::HLSL)
+    if (target == Target::Metal || target == Target::HLSL)
         return new CodeValue{expression->getValue().name};
     else
         return new CodeValue{std::to_string(expression->getValue().value)};
 }
 
 CodeValue* CodeWriter::codegenInitializerListExpression(const InitializerListExpressionAST* expression) {
-    std::string codeStr = getTypeName(expression->getType()) + "(";
+    std::string codeStr = getTypeName(target, expression->getType()) + "(";
     for (uint32_t i = 0; i < expression->getExpressions().size(); i++) {
         CodeValue* component = codegenExpression(expression->getExpressions()[i]);
         if (!component)

@@ -13,13 +13,13 @@ std::string getTypeNameBegin_HLSL(irb::Type* type);
 
 std::string getTypeNameBegin_GLSL(irb::Type* type);
 
-inline std::string getTypeNameBegin(irb::Type* type) {
-    switch (irb::target) {
-    case irb::Target::Metal:
+inline std::string getTypeNameBegin(Target target, irb::Type* type) {
+    switch (target) {
+    case Target::Metal:
         return getTypeNameBegin_Metal(type);
-    case irb::Target::HLSL:
+    case Target::HLSL:
         return getTypeNameBegin_HLSL(type);
-    case irb::Target::GLSL:
+    case Target::GLSL:
         return getTypeNameBegin_GLSL(type);
     default:
         return "";
@@ -28,8 +28,8 @@ inline std::string getTypeNameBegin(irb::Type* type) {
 
 std::string getTypeNameEnd(irb::Type* type);
 
-inline std::string getTypeName(irb::Type* type) {
-    return getTypeNameBegin(type) + getTypeNameEnd(type);
+inline std::string getTypeName(Target target, irb::Type* type) {
+    return getTypeNameBegin(target, type) + getTypeNameEnd(type);
 }
 
 } //namespace lvslang

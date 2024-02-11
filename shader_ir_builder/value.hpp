@@ -10,8 +10,6 @@ namespace irb {
 //Forward declarations
 class IRBuilder;
 
-inline Target target = Target::None;
-
 enum class TypeID {
     None = 0x0,
 
@@ -165,13 +163,12 @@ public:
     Value(Context& aContext, Type* aType, std::string aName = "", const std::string aPrefix = "%", bool checkIfNameIsAlreadyUsed = true) : context(aContext), type(aType), prefix(aPrefix) {
         name = aName;
         if (name == "") {
-            if (target == Target::SPIRV)
-                name = std::to_string(context.crntRegisterNumber++);
+            name = std::to_string(context.crntRegisterNumber++);
         } else {
             std::string baseName = name;
 
             //Check if the name isn't already used
-            if (TARGET_IS_IR(target) && checkIfNameIsAlreadyUsed) {
+            if (checkIfNameIsAlreadyUsed) {
                 uint32_t nb = 0;
                 while (std::find(context.registerNames.begin(), context.registerNames.end(), getName()) != context.registerNames.end())
                     name = baseName + std::to_string(nb++);
@@ -202,11 +199,6 @@ public:
 
     inline bool isConstant() const {
         return _isConstant;
-    }
-
-    //HACK: just for the "non-ir" backends
-    virtual std::string getRawName() {
-        return name;
     }
 
     //Setters
@@ -326,10 +318,6 @@ public:
     std::string getName() override {
         return valueStr;
     }
-
-    std::string getRawName() override {
-        return valueStr;
-    }
 };
 
 class ConstantBool : public ConstantValue {
@@ -337,7 +325,7 @@ private:
     bool value;
 
 public:
-    ConstantBool(Context& aContext, bool aValue) : ConstantValue(aContext, new ScalarType(aContext, TypeID::Bool, 8, false), TARGET_IS_IR(target) ? std::to_string(aValue) : (aValue ? "true" : "false")), value(aValue) {}
+    ConstantBool(Context& aContext, bool aValue) : ConstantValue(aContext, new ScalarType(aContext, TypeID::Bool, 8, false), std::to_string(aValue)), value(aValue) {}
 
     //Getters
     inline bool getValue() const {
@@ -559,7 +547,7 @@ public:
     std::string getTemplateName() const override {
         std::string templateName;
         for (const auto* arg : arguments)
-            templateName += (target == Target::AIR ? "." : "_") + arg->getTemplateName();
+            templateName += "." + arg->getTemplateName();
         
         return templateName;
     }

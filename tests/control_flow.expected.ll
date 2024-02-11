@@ -7,10 +7,10 @@ target triple = "air64-apple-macosx14.0.0"
 define %FragmentOut @testControlFlow.psMyBuffer(ptr addrspace(2) nocapture noundef readonly "air-buffer-no-alias" %myBuffer) local_unnamed_addr #0 {
 entry:
   %0 = load float, ptr addrspace(2) %myBuffer, align 4
-  %op3 = fcmp ogt float %0, 0.000000e+00
-  %op4 = fcmp olt float %0, 0.000000e+00
-  %. = select i1 %op4, <4 x float> <float 0.000000e+00, float 1.000000e+00, float 0.000000e+00, float 1.000000e+00>, <4 x float> <float 0.000000e+00, float 0.000000e+00, float 1.000000e+00, float 1.000000e+00>
-  %outColor.0 = select i1 %op3, <4 x float> <float 1.000000e+00, float 0.000000e+00, float 0.000000e+00, float 1.000000e+00>, <4 x float> %.
+  %op4 = fcmp ogt float %0, 0.000000e+00
+  %op5 = fcmp olt float %0, 0.000000e+00
+  %. = select i1 %op5, <4 x float> <float 0.000000e+00, float 1.000000e+00, float 0.000000e+00, float 1.000000e+00>, <4 x float> <float 0.000000e+00, float 0.000000e+00, float 1.000000e+00, float 1.000000e+00>
+  %outColor.0 = select i1 %op4, <4 x float> <float 1.000000e+00, float 0.000000e+00, float 0.000000e+00, float 1.000000e+00>, <4 x float> %.
   %1 = insertvalue %FragmentOut poison, <4 x float> %outColor.0, 0
   ret %FragmentOut %1
 }

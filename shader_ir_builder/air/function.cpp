@@ -23,9 +23,9 @@ void AIRFunction::end(IRBuilder* builder) {
     llvm::verifyFunction(*static_cast<llvm::Function*>(handle));
 }
 
-void AIRFunction::addArgument(Value* argument) {
+void AIRFunction::addArgument(Value* argument, const std::string& name) {
     llvm::Argument* llvmArgument = static_cast<llvm::Function*>(handle)->getArg(argumentIndex++);
-    llvmArgument->setName(argument->getRawName());
+    llvmArgument->setName(name);
     argument->setHandle(llvmArgument);
 }
 

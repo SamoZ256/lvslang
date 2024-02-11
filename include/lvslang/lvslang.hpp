@@ -16,7 +16,7 @@ enum class OptimizationLevel {
 struct CompileOptions {
     std::string source;
     std::string inputName;
-    irb::Target target = irb::Target::None;
+    Target target = Target::None;
     irb::SPIRVVersion spirvVersion = irb::SPIRVVersion::_1_4;
     GLSLVersion glslVersion = GLSLVersion::_3_30;
     bool outputAssembly = false;

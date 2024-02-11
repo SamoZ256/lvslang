@@ -51,31 +51,31 @@ int main(int argc, char* argv[]) {
     params.add_parameter(options.target, "--msl")
         .nargs(0)
         .action([&](auto& target, const std::string& value) {
-            target = irb::Target::Metal;
+            target = lvslang::Target::Metal;
         })
         .help("Output Metal Shading Language.");
     params.add_parameter(options.target, "--hlsl")
         .nargs(0)
         .action([&](auto& target, const std::string& value) {
-            target = irb::Target::HLSL;
+            target = lvslang::Target::HLSL;
         })
         .help("Output HLSL.");
     params.add_parameter(options.target, "--glsl")
         .nargs(0)
         .action([&](auto& target, const std::string& value) {
-            target = irb::Target::GLSL;
+            target = lvslang::Target::GLSL;
         })
         .help("Output GLSL.");
     params.add_parameter(options.target, "--spirv")
         .nargs(0)
         .action([&](auto& target, const std::string& value) {
-            target = irb::Target::SPIRV;
+            target = lvslang::Target::SPIRV;
         })
         .help("Output Vulkan SPIRV.");
     params.add_parameter(options.target, "--air")
         .nargs(0)
         .action([&](auto& target, const std::string& value) {
-            target = irb::Target::AIR;
+            target = lvslang::Target::AIR;
         })
         .help("Output Metal's AIR.");
     params.add_parameter(options.includeDebugInformation, "--no-debug-info")

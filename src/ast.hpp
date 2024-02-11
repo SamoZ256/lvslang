@@ -182,24 +182,6 @@ public:
         return (requiredType ? requiredType : type);
     }
 
-    irb::Value* codegen() {
-        uint32_t oldDebugLine = source.crntDebugLine;
-        uint32_t oldDebugChar = source.crntDebugChar;
-        setDebugInfo();
-
-        irb::Value* value = _codegen();
-        if (!value)
-            return nullptr;
-        
-        source.crntDebugLine = oldDebugLine;
-        source.crntDebugChar = oldDebugChar;
-        
-        if (requiredType)
-            return builder->opCast(value, requiredType);
-        
-        return value;
-    }
-
     virtual bool isConstant() {
         return false;
     }
@@ -244,25 +226,9 @@ protected:
 
     virtual irb::Type* _initialize() = 0;
 
-    virtual irb::Value* _codegen() = 0;
-
 private:
     irb::Type* type = nullptr;
 };
-
-/*
-class TopLevelAST : public ExpressionAST {
-public:
-    TopLevelAST(const std::vector<ExpressionAST*>& aExpressions) : expressions(aExpressions) {}
-
-private:
-    std::vector<ExpressionAST*> expressions;
-    
-    irb::Type* _initialize() override;
-
-    irb::Value* _codegen() override;
-};
-*/
 
 //Number
 class NumberExpressionAST : public ExpressionAST {
@@ -294,8 +260,6 @@ private:
     irb::Type* scalarType;
 
     irb::Type* _initialize() override;
-
-    irb::Value* _codegen() override;
 };
 
 //Variable
@@ -308,7 +272,7 @@ public:
     }
 
     //Getters
-    inline const std::string& name() const {
+    inline const std::string& getName() const {
         return _name;
     }
 
@@ -322,8 +286,6 @@ private:
     Variable* variable;
 
     irb::Type* _initialize() override;
-
-    irb::Value* _codegen() override;
 };
 
 //TODO: rename to OperationAST?
@@ -345,6 +307,10 @@ public:
         return op;
     }
 
+    inline irb::Operation getOperation() const {
+        return operation;
+    }
+
 private:
     std::string op;
     ExpressionAST* lhs;
@@ -353,8 +319,6 @@ private:
     irb::Operation operation;
 
     irb::Type* _initialize() override;
-
-    irb::Value* _codegen() override;
 };
 
 //Block
@@ -371,8 +335,6 @@ private:
     std::vector<ExpressionAST*> expressions;
 
     irb::Type* _initialize() override;
-
-    irb::Value* _codegen() override;
 };
 
 //Function declaration
@@ -416,10 +378,18 @@ public:
     inline const std::string& getIdentifier() const {
         return identifier;
     }
+
+    inline const FunctionPrototypeAST* getPreviousDeclaration() const {
+        return previousDeclaration;
+    }
     
     //Setters
     inline void setIsDefined(bool aIsDefined) {
         isDefined = aIsDefined;
+    }
+
+    inline void setValue(irb::Function* aValue) {
+        value = aValue;
     }
 
 private:
@@ -440,8 +410,6 @@ private:
     std::string identifier;
 
     irb::Type* _initialize() override;
-
-    irb::Value* _codegen() override;
 };
 
 //Function definition
@@ -464,8 +432,6 @@ private:
     BlockExpressionAST* body;
 
     irb::Type* _initialize() override;
-
-    irb::Value* _codegen() override;
 };
 
 //Function call
@@ -483,15 +449,18 @@ public:
         return arguments;
     }
 
+    inline const FunctionPrototypeAST* getPrototype() const {
+        return declaration;
+    }
+
 private:
     std::string callee;
     std::vector<ExpressionAST*> arguments;
 
+    //TODO: rename to prototype
     FunctionPrototypeAST* declaration = nullptr;
 
     irb::Type* _initialize() override;
-
-    irb::Value* _codegen() override;
 };
 
 //Return
@@ -508,8 +477,6 @@ private:
     ExpressionAST* expression;
 
     irb::Type* _initialize() override;
-
-    irb::Value* _codegen() override;
 };
 
 //If
@@ -537,8 +504,6 @@ private:
     ExpressionAST* elseBlock;
 
     irb::Type* _initialize() override;
-
-    irb::Value* _codegen() override;
 };
 
 //Inline if else
@@ -553,11 +518,6 @@ private:
 
     //TODO: implement this
     irb::Type* _initialize() override {
-        return nullptr;
-    }
-
-    //TODO: implement this
-    irb::Value* _codegen() override {
         return nullptr;
     }
 };
@@ -588,8 +548,6 @@ private:
     bool isDoWhile;
 
     irb::Type* _initialize() override;
-
-    irb::Value* _codegen() override;
 };
 
 //Variable declaration
@@ -624,8 +582,6 @@ private:
     bool isConstant;
 
     irb::Type* _initialize() override;
-
-    irb::Value* _codegen() override;
 };
 
 //Subscript
@@ -647,8 +603,6 @@ private:
     ExpressionAST* index;
 
     irb::Type* _initialize() override;
-
-    irb::Value* _codegen() override;
 };
 
 //TODO: rename to MemberAccessAST?
@@ -682,8 +636,6 @@ private:
     uint32_t memberIndex = 0;
 
     irb::Type* _initialize() override;
-
-    irb::Value* _codegen() override;
 };
 
 //Structure definition
@@ -705,8 +657,6 @@ private:
     std::vector<irb::StructureMember> members;
 
     irb::Type* _initialize() override;
-
-    irb::Value* _codegen() override;
 };
 
 //Enumeration definition
@@ -728,8 +678,6 @@ private:
     std::vector<EnumValue> values;
 
     irb::Type* _initialize() override;
-
-    irb::Value* _codegen() override;
 };
 
 //TODO: rename?
@@ -752,8 +700,6 @@ private:
     EnumValue& value;
 
     irb::Type* _initialize() override;
-
-    irb::Value* _codegen() override;
 };
 
 //TODO: support other initializer lists as well (for instance sampler)
@@ -787,8 +733,6 @@ private:
     std::vector<ExpressionAST*> expressions;
 
     irb::Type* _initialize() override;
-
-    irb::Value* _codegen() override;
 };
 
 class AST {

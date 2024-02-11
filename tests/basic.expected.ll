@@ -18,8 +18,8 @@ entry:
   %1 = getelementptr inbounds %Model, ptr addrspace(2) %model, i64 0, i32 1
   %2 = load <2 x float>, ptr addrspace(2) %1, align 8
   %op = fmul <2 x float> %vertexIn.fca.0.extract, %2
-  %op0 = fadd <2 x float> %0, %op
-  %3 = shufflevector <2 x float> %op0, <2 x float> poison, <4 x i32> <i32 0, i32 1, i32 poison, i32 poison>
+  %op1 = fadd <2 x float> %0, %op
+  %3 = shufflevector <2 x float> %op1, <2 x float> poison, <4 x i32> <i32 0, i32 1, i32 poison, i32 poison>
   %4 = shufflevector <4 x float> %3, <4 x float> <float poison, float poison, float 0.000000e+00, float 1.000000e+00>, <4 x i32> <i32 0, i32 1, i32 6, i32 7>
   %.fca.0.insert = insertvalue %VertexOut poison, <4 x float> %4, 0
   %.fca.1.insert = insertvalue %VertexOut %.fca.0.insert, <2 x float> %vertexIn.fca.1.extract, 1

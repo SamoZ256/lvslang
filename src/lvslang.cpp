@@ -17,7 +17,6 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
     for (auto& ext : irb::extensions)
         std::get<0>(ext) = false;
 
-    irb::target = options.target;
     irb::spirvVersion = options.spirvVersion;
     lvslang::glslVersion = options.glslVersion;
 
@@ -56,7 +55,7 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
     if (!success)
         return false;
     
-    if (TARGET_IS_IR(options.target)) {
+    if (options.target == Target::AIR || options.target == Target::SPIRV) {
         IRWriter writer(options.target, ast, (irb::OptimizationLevel)options.optimizationLevel, options.outputAssembly, options.includeDebugInformation, options.inputName, options.spirvVersion, languageName, languageVersionMajor, languageVersionMinor, languageVersionPatch);
 
         return writer.write(outputCode);

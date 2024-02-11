@@ -104,8 +104,13 @@ Value* getTypeValue(SPIRVBuilder* builder, Type* type, bool decorate) {
         FunctionType* functionType = static_cast<FunctionType*>(type);
         Value* returnV = getTypeValue(builder, functionType->getReturnType(), decorate);
         std::vector<Value*> argumentVs(functionType->getArguments().size());
-        for (uint16_t i = 0; i < argumentVs.size(); i++)
-            argumentVs[i] = getTypeValue(builder, new PointerType(type->getContext(), functionType->getArguments()[i], StorageClass::Function), decorate);
+        for (uint16_t i = 0; i < argumentVs.size(); i++) {
+            irb::Type* type = functionType->getArguments()[i];
+            //HACK: only get pointer if its not a pointer already (buffers need this)
+            if (!type->isPointer())
+                type = new PointerType(type->getContext(), type, StorageClass::Function);
+            argumentVs[i] = getTypeValue(builder, type, decorate);
+        }
         code = "OpTypeFunction " + returnV->getName();
         for (auto* argV : argumentVs)
             code += " " + argV->getName();

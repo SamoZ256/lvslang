@@ -91,7 +91,7 @@ bool _addTest(lvslang::CompileOptions& options, const std::string& testName, con
     return true;
 }
 
-static const irb::Target targets[] = {irb::Target::AIR, irb::Target::SPIRV, irb::Target::Metal, irb::Target::HLSL, irb::Target::GLSL};
+static const lvslang::Target targets[] = {lvslang::Target::AIR, lvslang::Target::SPIRV, lvslang::Target::Metal, lvslang::Target::HLSL, lvslang::Target::GLSL};
 static const std::string targetNames[] = {"AIR", "SPIRV", "Metal", "HLSL", "GLSL"};
 static const std::string targetExtensions[] = {"ll", "spvasm", "metal", "hlsl", "glsl"};
 
@@ -106,7 +106,7 @@ void addTest(const std::string& testName) {
     options.includeDebugInformation = false;
     for (uint32_t i = 0; i < sizeof(frontendNames) / sizeof(std::string); i++) {
         if (!outputExpected || i == 0) {
-            for (uint32_t j = 0; j < sizeof(targets) / sizeof(irb::Target); j++) {
+            for (uint32_t j = 0; j < sizeof(targets) / sizeof(lvslang::Target); j++) {
                 options.target = targets[j];
                 _addTest(options, "'" + testName + "' [" + frontendNames[i] + " frontend, " + targetNames[j] + " backend]", baseDir + "/" + testName + "." + frontendExtensions[i], baseDir + "/" + testName + ".expected." + targetExtensions[j]);
             }

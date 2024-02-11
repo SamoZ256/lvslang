@@ -34,6 +34,17 @@ if (arg < (type)0 || arg >= type::MaxEnum) \
         LVSLANG_INVALID_ARGUMENT(#arg); \
 }
 
+enum class Target {
+    None,
+    Metal,
+    HLSL,
+    GLSL,
+    SPIRV,
+    AIR,
+
+    MaxEnum
+};
+
 enum class GLSLVersion {
     //1.x
     _1_10,
