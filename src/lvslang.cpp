@@ -17,8 +17,6 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
     for (auto& ext : irb::extensions)
         std::get<0>(ext) = false;
 
-    irb::spirvVersion = options.spirvVersion;
-
     std::string extension = options.inputName.substr(options.inputName.find_last_of('.'));
     AST ast;
     bool success;

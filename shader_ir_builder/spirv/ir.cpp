@@ -155,7 +155,7 @@ public:
     using SPIRVFunction::SPIRVFunction;
 };
 
-SPIRVBuilder::SPIRVBuilder(Context& aContext, const std::string& aCompilerName, bool aIncludeDebugInformation) : IRBuilder(aContext, aCompilerName, aIncludeDebugInformation) {
+SPIRVBuilder::SPIRVBuilder(Context& aContext, SPIRVVersion aSPIRVVersion, bool aIncludeDebugInformation) : IRBuilder(aContext, aIncludeDebugInformation), spirvVersion(aSPIRVVersion) {
     blockHeader = new SPIRVBlock(context);
     blockDebug = new SPIRVBlock(context);
     blockAnnotations = new SPIRVBlock(context);
@@ -166,7 +166,7 @@ SPIRVBuilder::SPIRVBuilder(Context& aContext, const std::string& aCompilerName, 
     blockHeader->addCodeRawToBeginning(
 "; SPIR-V\n" \
 "; Version:   " + spirvVersionMap[spirvVersion] + "\n" \
-"; Generator: " + compilerName + "; 11\n" \
+"; Generator: shader-ir-builder; 11\n" \
 "; Bound:     385\n" \
 "; Schema:    0\n" \
 "\n");
@@ -274,7 +274,7 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
             opDecorate(getTypeValue(this, type, true), Decoration::Block);
         
         // Add to interface
-        if (spirvVersionIsGreaterThanOrEqual(SPIRVVersion::_1_4) || (storageClass == StorageClass::Input || storageClass == StorageClass::Output))
+        if (spirvVersionIsGreaterThanOrEqual(spirvVersion, SPIRVVersion::_1_4) || (storageClass == StorageClass::Input || storageClass == StorageClass::Output))
             code += " " + argValue->getName();
         
         // HACK: create a new variable, since we need to have the 'Function' storage class

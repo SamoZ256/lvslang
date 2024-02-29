@@ -546,7 +546,7 @@ private:
 const std::string functionNames[3] = {"vertex", "fragment", "kernel"};
 
 // TODO: support other values whenever there is a 'TODO: here' comment
-std::string AIRBuilder::createMetadata(const std::string& languageName, uint32_t languageVersionMajor, uint32_t languageVersionMinor, uint32_t languageVersionPatch, const std::string& sourceFilenameStr) {
+std::string AIRBuilder::createMetadata(const std::string& languageName, uint32_t languageVersionMajor, uint32_t languageVersionMinor, uint32_t languageVersionPatch) {
     metadataCounter = 0;
 
     MetadataBlock* block = new MetadataBlock();

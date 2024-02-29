@@ -2,8 +2,6 @@
 
 namespace irb {
 
-SPIRVVersion spirvVersion;
-
 std::map<SPIRVVersion, std::string> spirvVersionMap = {
     {SPIRVVersion::_1_0, "1.0"},
     {SPIRVVersion::_1_1, "1.1"},

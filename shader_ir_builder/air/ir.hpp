@@ -17,9 +17,16 @@ struct AIREntryPoint {
 
 class AIRBuilder : public IRBuilder {
 public:
-    AIRBuilder(Context& aContext, const std::string& aCompilerName, bool aIncludeDebugInformation = false) : IRBuilder(aContext, aCompilerName, aIncludeDebugInformation) {
+    AIRBuilder(Context& aContext, const std::string& aCompilerName, const std::string& aSourceFilenameStr, bool aIncludeDebugInformation = false) : IRBuilder(aContext, aIncludeDebugInformation), compilerName(aCompilerName), sourceFilenameStr(aSourceFilenameStr) {
         // TODO: set this to filename
-        llvmModule = std::make_unique<llvm::Module>(/*compilerName.c_str()*/"", *context.handle);
+        llvmModule = std::make_unique<llvm::Module>((includeDebugInformation ? sourceFilenameStr : ""), *context.handle);
+
+        // Set the 'target triple' and 'target datalayout'
+        llvmModule->setTargetTriple("air64-apple-macosx14.0.0");
+        // TODO: support other datalayouts as well?
+        llvm::DataLayout dataLayout("e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v24:32:32-v32:32:32-v48:64:64-v64:64:64-v96:128:128-v128:128:128-v192:256:256-v256:256:256-v512:512:512-v1024:1024:1024-n8:16:32");
+        llvmModule->setDataLayout(dataLayout);
+
         handle = new llvm::IRBuilder<>(*context.handle);
     }
 
@@ -83,7 +90,7 @@ public:
 
     Value* opVariable(PointerType* type, Value* initializer = nullptr) override;
 
-    std::string createMetadata(const std::string& languageName, uint32_t languageVersionMajor, uint32_t languageVersionMinor, uint32_t languageVersionPatch, const std::string& sourceFilenameStr);
+    std::string createMetadata(const std::string& languageName, uint32_t languageVersionMajor, uint32_t languageVersionMinor, uint32_t languageVersionPatch);
 
     // Getters
     bool getCode(std::string& outputCode, OptimizationLevel optimizationLevel, bool outputAssembly, SPIRVVersion spirvVersion) override;
@@ -111,6 +118,10 @@ private:
 
     std::vector<AIREntryPoint> entryPoints;
     std::map<std::string, Function*> functionDeclarations;
+
+    // Debug
+    std::string compilerName;
+    std::string sourceFilenameStr;
 
     Function* opFunctionDeclaration(FunctionType* functionType, const std::string& name, const std::vector<std::pair<llvm::Attribute::AttrKind, uint64_t> >& attributes = {});
 

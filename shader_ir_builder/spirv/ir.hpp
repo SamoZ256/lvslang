@@ -11,7 +11,7 @@ namespace irb {
 
 class SPIRVBuilder : public IRBuilder {
 public:
-    SPIRVBuilder(Context& aContext, const std::string& aCompilerName, bool aIncludeDebugInformation = false);
+    SPIRVBuilder(Context& aContext, SPIRVVersion aSPIRVVersion, bool aIncludeDebugInformation = false);
 
     void opExtension(const std::string& extensionName) override;
 
@@ -81,6 +81,9 @@ public:
     bool getCode(std::string& outputCode, OptimizationLevel optimizationLevel, bool outputAssembly, SPIRVVersion spirvVersion) override;
 
 private:
+    // Version
+    SPIRVVersion spirvVersion;
+
     std::map<std::string, Value*> typesVariablesConstantsDefinitions;
 
     // Blocks

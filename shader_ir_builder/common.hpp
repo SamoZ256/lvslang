@@ -61,16 +61,14 @@ enum class SPIRVVersion {
     MaxEnum
 };
 
-extern SPIRVVersion spirvVersion;
-
 // TODO: make this static?
 extern std::map<SPIRVVersion, std::string> spirvVersionMap;
 
-inline bool spirvVersionIsLessThanOrEqual(SPIRVVersion lessThanOrEqual) {
+inline bool spirvVersionIsLessThanOrEqual(SPIRVVersion spirvVersion, SPIRVVersion lessThanOrEqual) {
     return ((int)spirvVersion <= (int)lessThanOrEqual);
 }
 
-inline bool spirvVersionIsGreaterThanOrEqual(SPIRVVersion greaterThanOrEqual) {
+inline bool spirvVersionIsGreaterThanOrEqual(SPIRVVersion spirvVersion, SPIRVVersion greaterThanOrEqual) {
     return ((int)spirvVersion >= (int)greaterThanOrEqual);
 }
 
