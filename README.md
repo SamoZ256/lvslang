@@ -14,7 +14,7 @@ This is a compiler for various shading languages. It compiles into other shading
 
 1. Clone the repo
    ```console
-   git clone https://github.com/SamoZ256/lvslang.git
+   git clone https:// github.com/SamoZ256/lvslang.git
    ```
 2. Build the project
    ```console
@@ -353,10 +353,10 @@ struct VertexOut_Output {
 };
 
 VertexOut_Output _vertexMain(VertexIn vertexIn) {
-	//Entry point call
+	// Entry point call
 	VertexOut _entryPointOutput = vertexMain(vertexIn, model);
 
-	//Output
+	// Output
 	VertexOut_Output __output;
 	__output.output = _entryPointOutput;
 	__output.position = _entryPointOutput.pos;
@@ -386,10 +386,10 @@ struct FragmentOut_Output {
 };
 
 FragmentOut_Output _fragmentMain(VertexOut fragmentIn) {
-	//Entry point call
+	// Entry point call
 	FragmentOut _entryPointOutput = fragmentMain(fragmentIn, colorTexture, colorSampler);
 
-	//Output
+	// Output
 	FragmentOut_Output __output;
 	__output.output = _entryPointOutput;
 
@@ -443,15 +443,15 @@ layout (location = 0) out VertexOut_Output {
 } _output;
 
 void main() {
-	//Input
+	// Input
 	VertexIn vertexIn;
 	vertexIn.pos = pos;
 	vertexIn.texCoord = texCoord;
 
-	//Entry point call
+	// Entry point call
 	VertexOut _entryPointOutput = vertexMain(vertexIn, model);
 
-	//Output
+	// Output
 	gl_Position = _entryPointOutput.pos;
 	_output._output.pos = _entryPointOutput.pos;
 	_output._output.texCoord = _entryPointOutput.texCoord;
@@ -481,12 +481,12 @@ layout (set = 1, binding = 0) uniform sampler colorSampler;
 layout (location = 0) out vec4 outColor;
 
 void main() {
-	//Input
+	// Input
 
-	//Entry point call
+	// Entry point call
 	FragmentOut _entryPointOutput = fragmentMain(fragmentIn, colorTexture, colorSampler);
 
-	//Output
+	// Output
 	outColor = _entryPointOutput.outColor;
 }
 
@@ -509,7 +509,7 @@ Note that the GLSL output won't compile, since it contains more than one entry p
 * Samplers (without template arguments)
 * Shader inputs and outputs
 
-See the [open issues](https://github.com/SamoZ256/lvslang/issues) for a full list of proposed features (and known issues).
+See the [open issues](https:// github.com/SamoZ256/lvslang/issues) for a full list of proposed features (and known issues).
 
 ## License
 
@@ -519,4 +519,4 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 Samuel Žúbor - samuliak77@gmail.com
 
-Project Link: [https://github.com/SamoZ256/lvslang](https://github.com/SamoZ256/lvslang)
+Project Link: [https:// github.com/SamoZ256/lvslang](https:// github.com/SamoZ256/lvslang)

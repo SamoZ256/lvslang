@@ -17,12 +17,12 @@ FragmentOut testAdvancedFeatures();
 layout (location = 0) out vec4 outColor;
 
 void main() {
-	//Input
+	// Input
 
-	//Entry point call
+	// Entry point call
 	FragmentOut _entryPointOutput = testAdvancedFeatures();
 
-	//Output
+	// Output
 	outColor = _entryPointOutput.outColor;
 }
 

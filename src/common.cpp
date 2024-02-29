@@ -18,4 +18,4 @@ long numValueL;
 unsigned long numValueU;
 char numTypeStr;
 
-} //namespace lvslang
+} // namespace lvslang

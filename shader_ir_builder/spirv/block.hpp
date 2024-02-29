@@ -10,7 +10,7 @@ private:
     std::string codeBegin;
     std::string code;
 
-    //TODO: support comments
+    // TODO: support comments
     std::string _addCode(const std::string& instruction, Value* registerToAssign, const std::string& comment) {
         std::string inst;
         uint8_t beginSpaceCount = 22;
@@ -37,7 +37,7 @@ private:
 public:
     using Block::Block;
 
-    //HACK: this is a temporary solution to avoid having to pass a function to the constructor
+    // HACK: this is a temporary solution to avoid having to pass a function to the constructor
     SPIRVBlock(Context& aContext) : Block(aContext, nullptr) {}
 
     void addCodeToBeginning(const std::string& instruction, Value* registerToAssign = nullptr, const std::string& comment = "") {
@@ -56,7 +56,7 @@ public:
         codeBegin += newCode;
     }
 
-    //Getters
+    // Getters
     std::string getCode() {
         return codeBegin + code + "\n";
     }
@@ -66,6 +66,6 @@ public:
     }
 };
 
-} //namespace irb
+} // namespace irb
 
 #endif

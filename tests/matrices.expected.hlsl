@@ -9,10 +9,10 @@ struct FragmentOut_Output {
 };
 
 FragmentOut_Output _testMatrices() {
-	//Entry point call
+	// Entry point call
 	FragmentOut _entryPointOutput = testMatrices();
 
-	//Output
+	// Output
 	FragmentOut_Output __output;
 	__output.output = _entryPointOutput;
 

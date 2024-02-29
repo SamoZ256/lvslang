@@ -25,10 +25,10 @@ struct VertexOut_Output {
 };
 
 VertexOut_Output _vertexMain(VertexIn vertexIn) {
-	//Entry point call
+	// Entry point call
 	VertexOut _entryPointOutput = vertexMain(vertexIn, model);
 
-	//Output
+	// Output
 	VertexOut_Output __output;
 	__output.output = _entryPointOutput;
 	__output.position = _entryPointOutput.pos;
@@ -58,10 +58,10 @@ struct FragmentOut_Output {
 };
 
 FragmentOut_Output _fragmentMain(VertexOut fragmentIn) {
-	//Entry point call
+	// Entry point call
 	FragmentOut _entryPointOutput = fragmentMain(fragmentIn, colorTexture, colorSampler);
 
-	//Output
+	// Output
 	FragmentOut_Output __output;
 	__output.output = _entryPointOutput;
 

@@ -31,7 +31,7 @@ class Block : public Value {
 public:
     Block(Context& aContext, Function* aFunction, std::string aName = "");
 
-    //Getters
+    // Getters
     bool hasReturned() {
         return returned;
     }
@@ -41,6 +41,6 @@ protected:
     bool returned = false;
 };
 
-} //namespace irb
+} // namespace irb
 
 #endif

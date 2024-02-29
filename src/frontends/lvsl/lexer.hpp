@@ -17,8 +17,8 @@ void resetLastChar();
 
 int getNextToken();
 
-} //namespace lvsl
+} // namespace lvsl
 
-} //namespace lvslang
+} // namespace lvslang
 
 #endif

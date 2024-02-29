@@ -10,13 +10,11 @@
 
 namespace lvslang {
 
-//Forward declarations
+// Forward declarations
 class FunctionPrototypeAST;
 
 extern irb::Context context;
 extern irb::IRBuilder* builder;
-
-extern GLSLVersion glslVersion;
 
 extern FunctionPrototypeAST* crntFunction;
 
@@ -37,7 +35,7 @@ private:
                 return i;
         }
 
-        //Just in case
+        // Just in case
         throw std::runtime_error("getFirstGreaterOrEqualPow2");
 
         return 0;
@@ -72,8 +70,8 @@ public:
     }
 };
 
-//For swizzled vectors that weren't loaded on codegen
-//TODO: enable the @ref checkIfNameAlreadyUsed argument?
+// For swizzled vectors that weren't loaded on codegen
+// TODO: enable the @ref checkIfNameAlreadyUsed argument?
 class UnloadedSwizzledVectorValue : public irb::Value {
 private:
     irb::Value* unloadedVector;
@@ -82,7 +80,7 @@ private:
 public:
     UnloadedSwizzledVectorValue(irb::Context& aContext, irb::Value* aUnloadedVector, const std::vector<uint8_t>& aIndices, const std::string& aName = "") : irb::Value(aContext, aUnloadedVector->getType(), aName), unloadedVector(aUnloadedVector), indices(aIndices) {}
 
-    //Getters
+    // Getters
     inline irb::Value* getUnloadedVector() const {
         return unloadedVector;
     }
@@ -101,21 +99,6 @@ struct Variable {
 extern std::map<std::string, Variable> variables;
 extern std::map<std::string, std::vector<FunctionPrototypeAST*> > functionDeclarations;
 extern std::map<std::string, Enumeration*> enumerations;
-
-inline std::string getGLSLVersionString() {
-    LVSLANG_CHECK_ARGUMENT(GLSLVersion, glslVersion);
-    std::string versionStr = glslVersionMap.at(glslVersion);
-
-    switch (glslVersion) {
-    case GLSLVersion::_1_10 ... GLSLVersion::_1_50:
-        LVSLANG_ERROR_UNSUPPORTED_TARGET_VERSIONS("1.10 to 1.50", "GLSL");
-        break;
-    default:
-        break;
-    }
-
-    return versionStr;
-}
 
 inline void enableSPIRVExtension(irb::Extension extension) {
     auto& ext = irb::extensions[(int)extension];
@@ -158,7 +141,7 @@ inline irb::Type* getPromotedType(irb::Type* a, irb::Type* b) {
     return (typeIsPromoted(a->getTypeID(), b->getTypeID()) ? a : b);
 }
 
-//Base class
+// Base class
 class ExpressionAST {
 public:
     ExpressionAST() {
@@ -194,7 +177,7 @@ public:
         loadOnCodegen = aLoadOnCodegen;
     }
 
-    //Getters
+    // Getters
     inline irb::Type* getType() const {
         if (!type)
             logError("expression does not have type");
@@ -210,7 +193,7 @@ public:
         return loadOnCodegen;
     }
 
-    //Debugging
+    // Debugging
     inline void setDebugInfo() const {
         source.crntDebugLine = debugLine;
         source.crntDebugChar = debugChar;
@@ -230,7 +213,7 @@ private:
     irb::Type* type = nullptr;
 };
 
-//Number
+// Number
 class NumberExpressionAST : public ExpressionAST {
 public:
     NumberExpressionAST(double aValueD, long aValueL, unsigned long aValueU, irb::ScalarType* aScalarType) : _valueD(aValueD), _valueL(aValueL), _valueU(aValueU), scalarType(aScalarType) {}
@@ -239,7 +222,7 @@ public:
         return true;
     }
 
-    //Getters
+    // Getters
     inline double valueD() const {
         return _valueD;
     }
@@ -262,7 +245,7 @@ private:
     irb::Type* _initialize() override;
 };
 
-//Variable
+// Variable
 class VariableExpressionAST : public ExpressionAST {
 public:
     VariableExpressionAST(const std::string& aName) : _name(aName) {}
@@ -271,7 +254,7 @@ public:
         return true;
     }
 
-    //Getters
+    // Getters
     inline const std::string& getName() const {
         return _name;
     }
@@ -288,13 +271,13 @@ private:
     irb::Type* _initialize() override;
 };
 
-//TODO: rename to OperationAST?
-//Operation
+// TODO: rename to OperationAST?
+// Operation
 class BinaryExpressionAST : public ExpressionAST {
 public:
     BinaryExpressionAST(const std::string& aOperator, ExpressionAST* aLHS, ExpressionAST* aRHS) : op(aOperator), lhs(aLHS), rhs(aRHS) {}
 
-    //Getters
+    // Getters
     inline const ExpressionAST* getLHS() const {
         return lhs;
     }
@@ -321,12 +304,12 @@ private:
     irb::Type* _initialize() override;
 };
 
-//Block
+// Block
 class BlockExpressionAST : public ExpressionAST {
 public:
     BlockExpressionAST(std::vector<ExpressionAST*> aExpressions) : expressions(aExpressions) {}
 
-    //Getters
+    // Getters
     inline const std::vector<ExpressionAST*>& getExpressions() const {
         return expressions;
     }
@@ -337,12 +320,12 @@ private:
     irb::Type* _initialize() override;
 };
 
-//Function declaration
+// Function declaration
 class FunctionPrototypeAST : public ExpressionAST {
 public:
     FunctionPrototypeAST(const std::string& aName, irb::Type* aReturnType, std::vector<irb::Argument> aArguments/*, const std::vector<int>& aAttributes*/, bool aIsDefined, bool aIsSTDFunction, irb::FunctionRole aFunctionRole) : _name(aName), returnType(aReturnType), _arguments(aArguments)/*, attributes(aAttributes)*/, isDefined(aIsDefined), isSTDFunction(aIsSTDFunction), functionRole(aFunctionRole) {}
 
-    //Getters
+    // Getters
     inline const std::string& name() const {
         return _name;
     }
@@ -383,7 +366,7 @@ public:
         return previousDeclaration;
     }
     
-    //Setters
+    // Setters
     inline void setIsDefined(bool aIsDefined) {
         isDefined = aIsDefined;
     }
@@ -396,28 +379,28 @@ private:
     std::string _name;
     irb::Type* returnType;
     std::vector<irb::Argument> _arguments;
-    //std::vector<int> attributes;
+    // std::vector<int> attributes;
     bool isDefined;
     bool isSTDFunction;
     irb::FunctionRole functionRole;
 
     irb::Function* value = nullptr;
 
-    //Redeclared function
+    // Redeclared function
     FunctionPrototypeAST* previousDeclaration = nullptr;
 
-    //For finding the correct overload
+    // For finding the correct overload
     std::string identifier;
 
     irb::Type* _initialize() override;
 };
 
-//Function definition
+// Function definition
 class FunctionDefinitionAST : public ExpressionAST {
 public:
     FunctionDefinitionAST(FunctionPrototypeAST* aDeclaration, BlockExpressionAST* aBody) : declaration(aDeclaration), body(aBody) {}
 
-    //Getters
+    // Getters
     inline const FunctionPrototypeAST* getPrototype() const {
         return declaration;
     }
@@ -427,20 +410,20 @@ public:
     }
 
 private:
-    //TODO: rename to prototype
+    // TODO: rename to prototype
     FunctionPrototypeAST* declaration;
     BlockExpressionAST* body;
 
     irb::Type* _initialize() override;
 };
 
-//Function call
-//TODO: rename to FunctionCallAST
+// Function call
+// TODO: rename to FunctionCallAST
 class CallExpressionAST : public ExpressionAST {
 public:
     CallExpressionAST(const std::string& aCallee, std::vector<ExpressionAST*> aArguments) : callee(aCallee), arguments(aArguments) {}
 
-    //Getters
+    // Getters
     inline const std::string& getCallee() const {
         return callee;
     }
@@ -457,18 +440,18 @@ private:
     std::string callee;
     std::vector<ExpressionAST*> arguments;
 
-    //TODO: rename to prototype
+    // TODO: rename to prototype
     FunctionPrototypeAST* declaration = nullptr;
 
     irb::Type* _initialize() override;
 };
 
-//Return
+// Return
 class ReturnExpressionAST : public ExpressionAST {
 public:
     ReturnExpressionAST(ExpressionAST* aExpression) : expression(aExpression) {}
 
-    //Getters
+    // Getters
     inline const ExpressionAST* getExpression() const {
         return expression;
     }
@@ -479,18 +462,18 @@ private:
     irb::Type* _initialize() override;
 };
 
-//If
+// If
 struct IfThenBlock {
     ExpressionAST* condition;
     ExpressionAST* block;
 };
 
-//TODO: rename?
+// TODO: rename?
 class IfExpressionAST : public ExpressionAST {
 public:
     IfExpressionAST(const std::vector<IfThenBlock*>& aIfThenBlocks, ExpressionAST* aElseBlock) : ifThenBlocks(aIfThenBlocks), elseBlock(aElseBlock) {}
 
-    //Getters
+    // Getters
     inline const std::vector<IfThenBlock*>& getIfThenBlocks() const {
         return ifThenBlocks;
     }
@@ -506,7 +489,7 @@ private:
     irb::Type* _initialize() override;
 };
 
-//Inline if else
+// Inline if else
 class InlineIfElseExpressionAST : public ExpressionAST {
 public:
     InlineIfElseExpressionAST(ExpressionAST* aCondition, BlockExpressionAST* aThenBlock, BlockExpressionAST* aElseBlock) : condition(aCondition), thenBlock(aThenBlock), elseBlock(aElseBlock) {}
@@ -516,19 +499,19 @@ private:
     BlockExpressionAST* thenBlock;
     BlockExpressionAST* elseBlock;
 
-    //TODO: implement this
+    // TODO: implement this
     irb::Type* _initialize() override {
         return nullptr;
     }
 };
 
-//TODO: rename to WhileLoopAST?
-//While
+// TODO: rename to WhileLoopAST?
+// While
 class WhileExpressionAST : public ExpressionAST {
 public:
     WhileExpressionAST(ExpressionAST* aCondition, ExpressionAST* aBlock, bool aIsDoWhile) : condition(aCondition), block(aBlock), isDoWhile(aIsDoWhile) {}
 
-    //Getters
+    // Getters
     inline const ExpressionAST* getCondition() const {
         return condition;
     }
@@ -550,19 +533,19 @@ private:
     irb::Type* _initialize() override;
 };
 
-//Variable declaration
+// Variable declaration
 struct VariableDeclaration {
     std::string name;
     irb::Type* type;
     ExpressionAST* expression;
 };
 
-//TODO: rename to VariableDeclarationAST?
+// TODO: rename to VariableDeclarationAST?
 class VariableDeclarationExpressionAST : public ExpressionAST {
 public:
     VariableDeclarationExpressionAST(const std::vector<VariableDeclaration>& aVariableNames, bool aIsGlobal, bool aIsConstant) : variableNames(aVariableNames), isGlobal(aIsGlobal), isConstant(aIsConstant) {}
 
-    //Getters
+    // Getters
     inline const std::vector<VariableDeclaration>& getVariableDeclarations() const {
         return variableNames;
     }
@@ -576,7 +559,7 @@ public:
     }
 
 private:
-    //TODO: rename to variableDeclarations
+    // TODO: rename to variableDeclarations
     std::vector<VariableDeclaration> variableNames;
     bool isGlobal;
     bool isConstant;
@@ -584,12 +567,12 @@ private:
     irb::Type* _initialize() override;
 };
 
-//Subscript
+// Subscript
 class SubscriptExpressionAST : public ExpressionAST {
 public:
     SubscriptExpressionAST(ExpressionAST* aPtr, ExpressionAST* aIndex) : ptr(aPtr), index(aIndex) {}
 
-    //Getters
+    // Getters
     inline const ExpressionAST* getPtr() const {
         return ptr;
     }
@@ -605,13 +588,13 @@ private:
     irb::Type* _initialize() override;
 };
 
-//TODO: rename to MemberAccessAST?
-//Member access
+// TODO: rename to MemberAccessAST?
+// Member access
 class MemberAccessExpressionAST : public ExpressionAST {
 public:
     MemberAccessExpressionAST(ExpressionAST* aExpression, const std::string& aMemberName, bool aExprShouldBeLoadedBeforeAccessingMember) : expression(aExpression), memberName(aMemberName), exprShouldBeLoadedBeforeAccessingMember(aExprShouldBeLoadedBeforeAccessingMember) {}
 
-    //Getters
+    // Getters
     inline const ExpressionAST* getExpression() const {
         return expression;
     }
@@ -638,12 +621,12 @@ private:
     irb::Type* _initialize() override;
 };
 
-//Structure definition
+// Structure definition
 class StructureDefinitionAST : public ExpressionAST {
 public:
     StructureDefinitionAST(const std::string& aName, const std::vector<irb::StructureMember>& aMembers) : name(aName), members(aMembers) {}
 
-    //Getters
+    // Getters
     inline const std::string& getName() const {
         return name;
     }
@@ -659,12 +642,12 @@ private:
     irb::Type* _initialize() override;
 };
 
-//Enumeration definition
+// Enumeration definition
 class EnumDefinitionAST : public ExpressionAST {
 public:
     EnumDefinitionAST(const std::string& aName, const std::vector<EnumValue>& aValues) : name(aName), values(aValues) {}
 
-    //Getters
+    // Getters
     inline const std::string& getName() const {
         return name;
     }
@@ -680,13 +663,13 @@ private:
     irb::Type* _initialize() override;
 };
 
-//TODO: rename?
-//Enumeration value
+// TODO: rename?
+// Enumeration value
 class EnumValueExpressionAST : public ExpressionAST {
 public:
     EnumValueExpressionAST(Enumeration* aEnumeration, EnumValue& aValue) : enumeration(aEnumeration), value(aValue) {}
 
-    //Getters
+    // Getters
     inline Enumeration* getEnumeration() const {
         return enumeration;
     }
@@ -702,10 +685,10 @@ private:
     irb::Type* _initialize() override;
 };
 
-//TODO: support other initializer lists as well (for instance sampler)
-//TODO: support vector to vector conversion in HLSL
-//TODO: rename to InitializerListAST?
-//Initializer list
+// TODO: support other initializer lists as well (for instance sampler)
+// TODO: support vector to vector conversion in HLSL
+// TODO: rename to InitializerListAST?
+// Initializer list
 class InitializerListExpressionAST : public ExpressionAST {
 public:
     InitializerListExpressionAST(irb::Type* aListType, std::vector<ExpressionAST*> aExpressions) : listType(aListType), expressions(aExpressions) {}
@@ -719,7 +702,7 @@ public:
         return true;
     }
 
-    //Getters
+    // Getters
     inline irb::Type* getListType() const {
         return listType;
     }
@@ -746,12 +729,12 @@ public:
         expressions.push_back(expression);
     }
 
-    //Getters
+    // Getters
     inline const std::vector<ExpressionAST*>& getExpressions() const {
         return expressions;
     }
 };
 
-} //namespace lvslang
+} // namespace lvslang
 
 #endif

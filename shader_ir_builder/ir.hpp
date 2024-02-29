@@ -17,13 +17,13 @@ class IRBuilder {
 public:
     IRBuilder(Context& aContext, const std::string& aCompilerName, bool aIncludeDebugInformation) : context(aContext), compilerName(aCompilerName), includeDebugInformation(aIncludeDebugInformation) {}
 
-    //Header
+    // Header
     /**
      * Enables extension.
      * 
      * USELESS FOR AIR
      * 
-     * @param[in] extensionName the name of the extension, the list of all available extensions can be found at https://github.com/KhronosGroup/SPIRV-Registry
+     * @param[in] extensionName the name of the extension, the list of all available extensions can be found at https:// github.com/KhronosGroup/SPIRV-Registry
      */
     virtual void opExtension(const std::string& extensionName) = 0;
     
@@ -54,7 +54,7 @@ public:
      */
     virtual void opEntryPoint(Value* entryPoint, FunctionRole functionRole, const std::string& name, Type* returnType, const std::vector<Argument>& arguments) = 0;
 
-    //Debug
+    // Debug
     /**
      * Name an id.
      * 
@@ -65,7 +65,7 @@ public:
      */
     virtual void opName(Value* value, const std::string& name) = 0;
 
-    //Types, variables and constants
+    // Types, variables and constants
     /**
      * Create a constant value.
      * 
@@ -75,8 +75,8 @@ public:
      */
     virtual Value* opConstant(ConstantValue* val) = 0;
 
-    //Main
-    //TODO: create operation for structure declaration
+    // Main
+    // TODO: create operation for structure declaration
 
     virtual Value* opStructureDefinition(StructureType* structureType) = 0;
     
@@ -120,16 +120,16 @@ public:
 
     virtual Value* opCast(Value* val, Type* type) = 0;
 
-    //TODO: merge into @ref opSTDFunctionCall_EXT
+    // TODO: merge into @ref opSTDFunctionCall_EXT
     virtual Value* opSample(Value* funcV, Value* texture, Value* sampler, Value* coords, Value* lod = nullptr) = 0;
 
-    //Miscelanous
+    // Miscelanous
     virtual Value* opVariable(PointerType* type, Value* initializer = nullptr) = 0;
 
-    //Getters
+    // Getters
     virtual bool getCode(std::string& outputCode, OptimizationLevel optimizationLevel, bool outputAssembly, SPIRVVersion spirvVersion) = 0;
 
-    //Blocks
+    // Blocks
     Function* getActiveFunction() {
         return activeFunction;
     }
@@ -161,7 +161,7 @@ public:
         return activeFunction->getFirstBlock();
     }
 
-    //Setters
+    // Setters
     void setActiveFunction(Function* function) {
         activeFunction = function;
     }
@@ -181,6 +181,6 @@ protected:
     Block* insertBlock = nullptr;
 };
 
-} //namespace irb
+} // namespace irb
 
 #endif

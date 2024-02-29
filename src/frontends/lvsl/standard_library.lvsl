@@ -68,7 +68,7 @@ STD_FUNCTION func cosh(x: float) -> float
 STD_FUNCTION func cross(x: half3, y: half3) -> half3
 STD_FUNCTION func cross(x: float3, y: float3) -> float3
 
-//TODO: add determinant function
+// TODO: add determinant function
 
 STD_FUNCTION func distance(x: half2, y: half2) -> half
 STD_FUNCTION func distance(x: half3, y: half3) -> half
@@ -120,7 +120,7 @@ STD_FUNCTION func fract(x: float2) -> float2
 STD_FUNCTION func fract(x: float3) -> float3
 STD_FUNCTION func fract(x: float4) -> float4
 
-//TODO: add image functions
+// TODO: add image functions
 
 STD_FUNCTION func isinf(x: half) -> bool
 STD_FUNCTION func isinf(x: half2) -> bool2
@@ -255,14 +255,14 @@ STD_FUNCTION func round(x: float2) -> float2
 STD_FUNCTION func round(x: float3) -> float3
 STD_FUNCTION func round(x: float4) -> float4
 
-//TODO: add more overloads
+// TODO: add more overloads
 STD_FUNCTION func sample(texture: texture2D<char>, samplr: sampler, coord: float2) -> char4
 STD_FUNCTION func sample(texture: texture2D<short>, samplr: sampler, coord: float2) -> short4
 STD_FUNCTION func sample(texture: texture2D<int>, samplr: sampler, coord: float2) -> int4
 STD_FUNCTION func sample(texture: texture2D<half>, samplr: sampler, coord: float2) -> half4
 STD_FUNCTION func sample(texture: texture2D<float>, samplr: sampler, coord: float2) -> float4
 
-//TODO: check if integers are supported
+// TODO: check if integers are supported
 STD_FUNCTION func sign(x: char) -> char
 STD_FUNCTION func sign(x: char2) -> char2
 STD_FUNCTION func sign(x: char3) -> char3
@@ -319,4 +319,4 @@ STD_FUNCTION func tan(x: float) -> float
 
 STD_FUNCTION func tanh(x: float) -> float
 
-//TODO: add transpose function
+// TODO: add transpose function

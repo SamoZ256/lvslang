@@ -15,12 +15,12 @@ FragmentOut testMatrices();
 layout (location = 0) out vec4 outColor;
 
 void main() {
-	//Input
+	// Input
 
-	//Entry point call
+	// Entry point call
 	FragmentOut _entryPointOutput = testMatrices();
 
-	//Output
+	// Output
 	outColor = _entryPointOutput.outColor;
 }
 

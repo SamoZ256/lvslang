@@ -8,4 +8,4 @@ AIRBlock::AIRBlock(Context& aContext, Function* aFunction, const std::string& aN
     handle = llvm::BasicBlock::Create(*context.handle, name, static_cast<llvm::Function*>(function->getHandle()));
 }
 
-} //namespace irb
+} // namespace irb

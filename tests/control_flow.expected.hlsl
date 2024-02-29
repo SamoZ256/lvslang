@@ -17,10 +17,10 @@ struct FragmentOut_Output {
 };
 
 FragmentOut_Output _testControlFlow() {
-	//Entry point call
+	// Entry point call
 	FragmentOut _entryPointOutput = testControlFlow(myBuffer);
 
-	//Output
+	// Output
 	FragmentOut_Output __output;
 	__output.output = _entryPointOutput;
 

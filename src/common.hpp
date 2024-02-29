@@ -5,7 +5,7 @@
 
 namespace lvslang {
 
-//Errors and warnings
+// Errors and warnings
 #define _LVSLANG_MSG(type, msg) fprintf(stderr, "[LVSLANG:" type "]::%s: %s\n", __FUNCTION__, msg)
 
 #define LVSLANG_ERROR(msg) _LVSLANG_MSG("error", msg);
@@ -46,17 +46,17 @@ enum class Target {
 };
 
 enum class GLSLVersion {
-    //1.x
+    // 1.x
     _1_10,
     _1_20,
     _1_30,
     _1_40,
     _1_50,
 
-    //3.x
+    // 3.x
     _3_30,
 
-    //4.x
+    // 4.x
     _4_00,
     _4_10,
     _4_20,
@@ -122,7 +122,7 @@ extern long numValueL;
 extern unsigned long numValueU;
 extern char numTypeStr;
 
-//TODO: support custom error callbacks
+// TODO: support custom error callbacks
 inline void logError(const char* msg) {
     std::cerr << source.crntDebugLine + 1 << ":" << source.crntDebugChar + 1 << ": " << SET_TEXT_COLOR("31") << "error:" << RESET_TEXT_COLOR() " " << msg << std::endl;
     std::cout << source.source[source.crntDebugLine] << std::endl;
@@ -164,7 +164,7 @@ inline bool charIsOperator(char c) {
 
 inline char getNextChar() {
     if (source.crntLine >= source.source.size())
-        return 0; //EOF
+        return 0; // EOF
     if (source.stringPos == source.source[source.crntLine].size()) {
         source.stringPos = 0;
         source.crntChar = 0;
@@ -180,6 +180,6 @@ inline char getNextChar() {
     return source.source[source.crntLine][source.stringPos++];
 }
 
-} //namespace lvslang
+} // namespace lvslang
 
 #endif

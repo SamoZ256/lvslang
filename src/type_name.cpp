@@ -2,7 +2,7 @@
 
 namespace lvslang {
 
-//TODO: support texture buffer?
+// TODO: support texture buffer?
 const std::string textureViewTypeLUT_Metal[] = {
     "1d",
     "2d",
@@ -57,7 +57,7 @@ std::string getTypeNameBegin_Metal(irb::Type* type) {
     case irb::TypeID::Structure:
         return static_cast<irb::StructureType*>(type)->getName();
     case irb::TypeID::Function:
-        return "FUNCTION"; //TODO: implement this
+        return "FUNCTION"; // TODO: implement this
     case irb::TypeID::Vector:
         return getTypeNameBegin_Metal(type->getBaseType()) + std::to_string(static_cast<irb::VectorType*>(type)->getComponentCount());
     case irb::TypeID::Matrix:
@@ -123,7 +123,7 @@ std::string getTypeNameBegin_HLSL(irb::Type* type) {
     case irb::TypeID::Structure:
         return static_cast<irb::StructureType*>(type)->getName();
     case irb::TypeID::Function:
-        return "FUNCTION"; //TODO: implement this
+        return "FUNCTION"; // TODO: implement this
     case irb::TypeID::Vector:
         return getTypeNameBegin_HLSL(type->getBaseType()) + std::to_string(static_cast<irb::VectorType*>(type)->getComponentCount());
     case irb::TypeID::Matrix:
@@ -160,7 +160,7 @@ std::string getTypeNameBegin_GLSL(irb::Type* type) {
     case irb::TypeID::Bool:
         return "bool";
     case irb::TypeID::Integer:
-        //TODO: uncomment
+        // TODO: uncomment
         strTmp = "int"/* + std::to_string(type->getBitCount())*/;
         if (!type->getIsSigned())
             strTmp = "u" + strTmp;
@@ -183,7 +183,7 @@ std::string getTypeNameBegin_GLSL(irb::Type* type) {
     case irb::TypeID::Structure:
         return static_cast<irb::StructureType*>(type)->getName();
     case irb::TypeID::Function:
-        return "FUNCTION"; //TODO: implement this
+        return "FUNCTION"; // TODO: implement this
     case irb::TypeID::Vector:
         switch (type->getBaseType()->getTypeID()) {
         case irb::TypeID::Integer:
@@ -208,7 +208,7 @@ std::string getTypeNameBegin_GLSL(irb::Type* type) {
 
         return strTmp;
     case irb::TypeID::Texture:
-        return "texture" + textureViewTypeLUT_GLSL[(int)static_cast<irb::TextureType*>(type)->getViewType()]; //TODO: add type to the name
+        return "texture" + textureViewTypeLUT_GLSL[(int)static_cast<irb::TextureType*>(type)->getViewType()]; // TODO: add type to the name
     case irb::TypeID::Sampler:
         return "sampler";
     default:
@@ -225,4 +225,4 @@ std::string getTypeNameEnd(irb::Type* type) {
     }
 }
 
-} //namespace lvslang
+} // namespace lvslang

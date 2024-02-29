@@ -56,7 +56,7 @@
 "STD_FUNCTION float cosh(float x);\n" \
 "STD_FUNCTION half3 cross(half3 x, half3 y);\n" \
 "STD_FUNCTION float3 cross(float3 x, float3 y);\n" \
-"//TODO: add determinant function\n" \
+"// TODO: add determinant function\n" \
 "STD_FUNCTION half distance(half2 x, half2 y);\n" \
 "STD_FUNCTION half distance(half3 x, half3 y);\n" \
 "STD_FUNCTION half distance(half4 x, half4 y);\n" \
@@ -101,7 +101,7 @@
 "STD_FUNCTION float2 fract(float2 x);\n" \
 "STD_FUNCTION float3 fract(float3 x);\n" \
 "STD_FUNCTION float4 fract(float4 x);\n" \
-"//TODO: add image functions\n" \
+"// TODO: add image functions\n" \
 "STD_FUNCTION bool isinf(half x);\n" \
 "STD_FUNCTION bool2 isinf(half2 x);\n" \
 "STD_FUNCTION bool3 isinf(half3 x);\n" \
@@ -222,13 +222,13 @@
 "STD_FUNCTION float2 round(float2 x);\n" \
 "STD_FUNCTION float3 round(float3 x);\n" \
 "STD_FUNCTION float4 round(float4 x);\n" \
-"//TODO: add more overloads\n" \
+"// TODO: add more overloads\n" \
 "STD_FUNCTION char4 sample(texture2d<char> texture, sampler samplr, float2 coord);\n" \
 "STD_FUNCTION short4 sample(texture2d<short> texture, sampler samplr, float2 coord);\n" \
 "STD_FUNCTION int4 sample(texture2d<int> texture, sampler samplr, float2 coord);\n" \
 "STD_FUNCTION half4 sample(texture2d<half> texture, sampler samplr, float2 coord);\n" \
 "STD_FUNCTION float4 sample(texture2d<float> texture, sampler samplr, float2 coord);\n" \
-"//TODO: check if integers are supported\n" \
+"// TODO: check if integers are supported\n" \
 "STD_FUNCTION char sign(char x);\n" \
 "STD_FUNCTION char2 sign(char2 x);\n" \
 "STD_FUNCTION char3 sign(char3 x);\n" \
@@ -277,5 +277,5 @@
 "STD_FUNCTION float4 step(float4 edge, float4 x);\n" \
 "STD_FUNCTION float tan(float x);\n" \
 "STD_FUNCTION float tanh(float x);\n" \
-"//TODO: add transpose function\n" \
+"// TODO: add transpose function\n" \
 ""

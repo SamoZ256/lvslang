@@ -7,39 +7,39 @@
 
 namespace irb {
 
-//Forward declarations
+// Forward declarations
 class IRBuilder;
 
 enum class TypeID {
     None = 0x0,
 
-    //Scalar
+    // Scalar
     Void      = 0x1,
     Bool      = 0x2,
     Integer   = 0x4,
     Float     = 0x8,
 
-    //Container
+    // Container
     Pointer   = 0x10,
     Array     = 0x20,
 
-    //User-defined
+    // User-defined
     Structure = 0x40,
 
-    //Vector
+    // Vector
     Vector    = 0x80,
 
-    //Matrix
+    // Matrix
     Matrix    = 0x100,
 
-    //Function
+    // Function
     Function  = 0x200,
 
-    //Builtin
+    // Builtin
     Texture   = 0x400,
     Sampler   = 0x800,
 
-    //Misc
+    // Misc
     Block     = 0x1000,
 
     Scalar    = Void | Bool | Integer | Float,
@@ -135,8 +135,8 @@ public:
         return false;
     }
 
-    //Getters
-    //TODO: remove this?
+    // Getters
+    // TODO: remove this?
     virtual bool getIsSigned() {
         return false;
     }
@@ -155,7 +155,7 @@ protected:
     Context& context;
 
     Type* type;
-    bool _isConstant = false; //TODO: rename to isConstant?
+    bool _isConstant = false; // TODO: rename to isConstant?
     std::string name;
     std::string prefix;
 
@@ -167,7 +167,7 @@ public:
         } else {
             std::string baseName = name;
 
-            //Check if the name isn't already used
+            // Check if the name isn't already used
             if (checkIfNameIsAlreadyUsed) {
                 uint32_t nb = 0;
                 while (std::find(context.registerNames.begin(), context.registerNames.end(), getName()) != context.registerNames.end())
@@ -177,7 +177,7 @@ public:
         }
     }
 
-    //Getters
+    // Getters
     inline Context& getContext() const {
         return context;
     }
@@ -201,7 +201,7 @@ public:
         return _isConstant;
     }
 
-    //Setters
+    // Setters
     void setHandle(void* aHandle) {
         handle = aHandle;
     }
@@ -327,7 +327,7 @@ private:
 public:
     ConstantBool(Context& aContext, bool aValue) : ConstantValue(aContext, new ScalarType(aContext, TypeID::Bool, 8, false), std::to_string(aValue)), value(aValue) {}
 
-    //Getters
+    // Getters
     inline bool getValue() const {
         return value;
     }
@@ -340,7 +340,7 @@ private:
 public:
     ConstantInt(Context& aContext, long aValue, uint8_t bitCount, bool isSigned) : ConstantValue(aContext, new ScalarType(aContext, TypeID::Integer, bitCount, isSigned), std::to_string(aValue)), value(aValue) {}
 
-    //Getters
+    // Getters
     inline long getValue() const {
         return value;
     }
@@ -353,7 +353,7 @@ private:
 public:
     ConstantFloat(Context& aContext, float aValue, uint8_t bitCount) : ConstantValue(aContext, new ScalarType(aContext, TypeID::Float, bitCount, true), std::to_string(aValue)), value(aValue) {}
 
-    //Getters
+    // Getters
     inline float getValue() const {
         return value;
     }
@@ -363,7 +363,7 @@ class PointerType : public Type {
 private:
     Type* elementType;
     StorageClass storageClass;
-    //TODO: remove this?
+    // TODO: remove this?
     uint64_t addressSpace;
 
 public:
@@ -403,7 +403,7 @@ public:
         return elementType->getDebugName() + "*";
     }
 
-    //Getters
+    // Getters
     inline StorageClass getStorageClass() const {
         return storageClass;
     }
@@ -455,7 +455,7 @@ public:
         return arrayType->getDebugName() + "[" + std::to_string(size) + "]";
     }
     
-    //Getters
+    // Getters
     inline uint32_t getSize() const {
         return size;
     }
@@ -552,12 +552,12 @@ public:
         return templateName;
     }
 
-    //TODO: implement this
+    // TODO: implement this
     std::string getDebugName() const override {
         return "FUNCTION_TYPE";
     }
 
-    //Getters
+    // Getters
     inline Type* getReturnType() const {
         return returnType;
     }
@@ -566,7 +566,7 @@ public:
         return arguments;
     }
 
-    //Setters
+    // Setters
     inline void setReturnType(Type* aReturnType) {
         returnType = aReturnType;
     }
@@ -626,7 +626,7 @@ public:
         return componentType->getDebugName() + std::to_string(componentCount);
     }
 
-    //Getters
+    // Getters
     inline uint32_t getComponentCount() const {
         return componentCount;
     }
@@ -663,7 +663,7 @@ public:
         return componentType->getBitCount(align) * columnCount;
     }
 
-    //TODO: check if this is correct
+    // TODO: check if this is correct
     std::string getTemplateName() const override {
         return "m" + std::to_string(columnCount) + componentType->getTemplateName();
     }
@@ -680,7 +680,7 @@ public:
         return componentType->getBaseType()->getDebugName() + std::to_string(columnCount) + "x" + std::to_string(componentType->getComponentCount());
     }
 
-    //Getters
+    // Getters
     inline uint32_t getColumnCount() const {
         return columnCount;
     }
@@ -713,32 +713,32 @@ public:
     }
 
     uint32_t getBitCount(bool align = false) override {
-        return 64; //TODO: check if this is correct
+        return 64; // TODO: check if this is correct
     }
 
     Type* getBaseType() override {
         return type;
     }
 
-    //TODO: change this?
+    // TODO: change this?
     std::string getTemplateName() const override {
         return "t" + std::to_string((int)viewType) + type->getTemplateName();
     }
 
     std::string getDebugName() const override {
-        //TODO: don't hardcode this
+        // TODO: don't hardcode this
         std::string viewTypeStr = "texture2d";
 
         return viewTypeStr + "<" + type->getDebugName() + ">";
     }
 
-    //Getters
+    // Getters
     inline TextureViewType getViewType() {
         return viewType;
     }
 };
 
-//TODO: support some template arguments
+// TODO: support some template arguments
 class SamplerType : public Type {
 public:
     SamplerType(Context& aContext) : Type(aContext, TypeID::Sampler) {}
@@ -758,7 +758,7 @@ public:
     }
 
     uint32_t getBitCount(bool align = false) override {
-        return 64; //TODO: check if this is correct
+        return 64; // TODO: check if this is correct
     }
 
     std::string getTemplateName() const override {
@@ -770,6 +770,6 @@ public:
     }
 };
 
-} //namespace irb
+} // namespace irb
 
 #endif

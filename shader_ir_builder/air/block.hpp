@@ -20,12 +20,12 @@ public:
         code += _addCode(instruction, registerToAssign, comment);
     }
 
-    //Getters
+    // Getters
     std::string getCode() {
         return codeBegin + (codeBegin.size() == 0 ? "" : "\n") + code + "\n";
     }
 
-    //Setters
+    // Setters
     void setReturned() {
         returned = true;
     }
@@ -48,6 +48,6 @@ protected:
     }
 };
 
-} //namespace irb
+} // namespace irb
 
 #endif

@@ -13,8 +13,8 @@ bool compileStandardLibrary(AST& ast);
 
 bool compile(AST& ast, const std::string& source);
 
-} //namespace lvsl
+} // namespace lvsl
 
-} //namespace lvslang
+} // namespace lvslang
 
 #endif

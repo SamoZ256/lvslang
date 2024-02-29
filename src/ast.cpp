@@ -5,8 +5,6 @@ namespace lvslang {
 irb::Context context;
 irb::IRBuilder* builder;
 
-GLSLVersion glslVersion = GLSLVersion::_1_10;
-
 irb::Type* crntFunctionReturnType = nullptr;
 
 std::map<std::string, Variable> variables;
@@ -120,7 +118,7 @@ irb::Type* BlockExpressionAST::_initialize() {
             return nullptr;
     }
     
-    //TODO: return something else?
+    // TODO: return something else?
     return new irb::ScalarType(context, irb::TypeID::Void, 0);
 }
 
@@ -135,10 +133,10 @@ irb::Type* FunctionPrototypeAST::_initialize() {
                 logError("only pointers can be used with an address space");
                 return nullptr;
             }
-            //pointerType->setAddressSpace(attr.addressSpace);
+            // pointerType->setAddressSpace(attr.addressSpace);
         }
         if (functionRole != irb::FunctionRole::Normal) {
-            //TDOO: save the bindings for reflection
+            // TDOO: save the bindings for reflection
             if (arg.type->isTexture()) {
                 attr.isTexture = true;
                 attr.bindings.texture = textureBinding++;
@@ -153,9 +151,9 @@ irb::Type* FunctionPrototypeAST::_initialize() {
                 }
                 attr.isBuffer = true;
                 attr.bindings.buffer = bufferBinding++;
-                //if ((irb::target == Target::SPIRV || irb::target == Target::GLSL || irb::target == Target::HLSL) && functionRole != irb::FunctionRole::Normal)
-                //    arg.type = arg.type->getElementType();
-                //pointerType->addAttribute(" noundef \"air-buffer-no-alias\"");
+                // if ((irb::target == Target::SPIRV || irb::target == Target::GLSL || irb::target == Target::HLSL) && functionRole != irb::FunctionRole::Normal)
+                //     arg.type = arg.type->getElementType();
+                // pointerType->addAttribute(" noundef \"air-buffer-no-alias\"");
             }
         }
     }
@@ -168,7 +166,7 @@ irb::Type* FunctionPrototypeAST::_initialize() {
 
     identifier = functionType->getTemplateName();
 
-    //Check for redefinition
+    // Check for redefinition
     if (isDefined) {
         if (functionDeclarations.count(_name)) {
             const auto& declarations = functionDeclarations[_name];
@@ -202,7 +200,7 @@ irb::Type* FunctionDefinitionAST::_initialize() {
     if (!type)
         return nullptr;
 
-    //HACK: register the arguments as variables
+    // HACK: register the arguments as variables
     for (uint32_t i = 0; i < declaration->arguments().size(); i++) {
         auto& arg = declaration->arguments()[i];
         if (arg.name != "")
@@ -227,11 +225,11 @@ irb::Type* CallExpressionAST::_initialize() {
         }
 
         std::string identifier;
-        //TODO: move this to a separate function?
+        // TODO: move this to a separate function?
         for (auto* argType : argTypes)
             identifier += "." + argType->getTemplateName();
 
-        //Find suitable function overload
+        // Find suitable function overload
         if (declarations.size() == 1) {
             declaration = declarations[0];
 
@@ -291,7 +289,7 @@ irb::Type* IfExpressionAST::_initialize() {
             return nullptr;
     }
 
-    //TODO: return something else?
+    // TODO: return something else?
     return new irb::ScalarType(context, irb::TypeID::Void, 0);
 }
 
@@ -302,7 +300,7 @@ irb::Type* WhileExpressionAST::_initialize() {
     if (!block->initialize())
         return nullptr;
     
-    //TODO: return something else?
+    // TODO: return something else?
     return new irb::ScalarType(context, irb::TypeID::Void, 0);
 }
 
@@ -394,7 +392,7 @@ irb::Type* MemberAccessExpressionAST::_initialize() {
         else
             type = new irb::VectorType(context, elementExprType->getBaseType(), memberName.size());
 
-        //TODO: check if the components are correct
+        // TODO: check if the components are correct
 
         if (loadOnCodegen)
             return type;
@@ -446,7 +444,7 @@ irb::Type* InitializerListExpressionAST::_initialize() {
         components.push_back(component);
     }
     
-    //"Unpack" the vectors
+    // "Unpack" the vectors
     if (listType->isVector()) {
         for (uint32_t i = 0; i < components.size(); i++) {
             irb::Type* component = components[i];
@@ -497,4 +495,4 @@ irb::Type* InitializerListExpressionAST::_initialize() {
     return listType;
 }
 
-} //namespace lvslang
+} // namespace lvslang

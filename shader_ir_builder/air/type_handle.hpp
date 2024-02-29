@@ -7,6 +7,6 @@ namespace irb {
 
 llvm::Type* getTypeLLVMHandle(Type* type);
 
-} //namespace irb
+} // namespace irb
 
 #endif

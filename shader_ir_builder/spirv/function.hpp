@@ -9,7 +9,7 @@ namespace irb {
 
 class SPIRVFunction : public Function {
 private:
-    std::string property = "None"; //TODO: support other as well (for instance "DontInline")
+    std::string property = "None"; // TODO: support other as well (for instance "DontInline")
 
     std::string code;
 
@@ -18,12 +18,12 @@ public:
 
     void end(IRBuilder* builder) override;
 
-    //Getters
+    // Getters
     const std::string& getCode() {
         return code;
     }
 };
 
-} //namespace irb
+} // namespace irb
 
 #endif

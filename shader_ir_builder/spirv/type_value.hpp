@@ -9,6 +9,6 @@ class SPIRVBuilder;
 
 Value* getTypeValue(SPIRVBuilder* builder, Type* type, bool decorate = false);
 
-} //namespace irb
+} // namespace irb
 
 #endif

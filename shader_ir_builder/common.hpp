@@ -15,7 +15,7 @@ namespace irb {
 
 #define RESET_TEXT_COLOR() SET_TEXT_COLOR("0")
 
-//Errors and warnings
+// Errors and warnings
 #define _IRB_MSG(type, msg) fprintf(stderr, "[IRB:" type "]::%s: %s\n", __FUNCTION__, msg)
 
 #define IRB_ERROR(msg) _IRB_MSG("error", msg);
@@ -49,7 +49,7 @@ inline void error(const std::string& msg, const std::string& funcName) {
 }
 
 enum class SPIRVVersion {
-    //1.x
+    // 1.x
     _1_0,
     _1_1,
     _1_2,
@@ -63,7 +63,7 @@ enum class SPIRVVersion {
 
 extern SPIRVVersion spirvVersion;
 
-//TODO: make this static?
+// TODO: make this static?
 extern std::map<SPIRVVersion, std::string> spirvVersionMap;
 
 inline bool spirvVersionIsLessThanOrEqual(SPIRVVersion lessThanOrEqual) {
@@ -82,21 +82,21 @@ enum class Extension {
     MaxEnum
 };
 
-//TODO: move the GLSL part to @ref ast.hpp
-//is enabled, glsl name, spirv name
+// TODO: move the GLSL part to @ref ast.hpp
+// is enabled, glsl name, spirv name
 extern std::tuple<bool, std::string, std::string> extensions[(int)Extension::MaxEnum];
 
-//Enums
+// Enums
 enum class StorageClass {
     UniformConstant,
     Input,
     Uniform,
     Output,
     Workgroup,
-    //CrossWorkgroup,
+    // CrossWorkgroup,
     Private,
     Function,
-    //Generic,
+    // Generic,
     PushConstant,
     AtomicCounter,
     Image,
@@ -111,10 +111,10 @@ const std::string storageClassLUT[] = {
     "Uniform",
     "Output",
     "Workgroup",
-    //"CrossWorkgroup",
+    // "CrossWorkgroup",
     "Private",
     "Function",
-    //"Generic",
+    // "Generic",
     "PushConstant",
     "AtomicCounter",
     "Image",
@@ -185,13 +185,13 @@ enum class TextureViewType {
     _2DArray,
     Cube,
     CubeArray,
-    Buffer, //For future use
+    Buffer, // For future use
 
     MaxEnum
 };
 
 enum class Operation {
-    //Binary
+    // Binary
     Add,
     Subtract,
     Multiply,
@@ -199,11 +199,11 @@ enum class Operation {
     Modulo,
     Remainder,
 
-    //Bitwise
+    // Bitwise
     BitwiseAnd,
     BitwiseOr,
 
-    //Logical
+    // Logical
     Equal,
     NotEqual,
     And,
@@ -239,7 +239,7 @@ const std::string operationLUT_SPIRV[] = {
 IRB_VALIDATE_ENUM_ARGUMENT(Operation, operation); \
 std::string operation##Str = operationLUT_SPIRV[(int)operation];
 
-//TODO: rename?
+// TODO: rename?
 enum class FunctionRole {
     Normal,
     Vertex,
@@ -260,7 +260,7 @@ const std::string functionRoleLUT_SPIRV[] = {
 IRB_VALIDATE_ENUM_ARGUMENT(FunctionRole, functionRole); \
 std::string functionRole##Str = functionRoleLUT_SPIRV[(int)functionRole];
 
-//Utility functions
+// Utility functions
 /*
 union DoubleToUint64 {
     double d;
@@ -278,6 +278,6 @@ inline std::string doubleToHEX(float d) {
 }
 */
 
-} //namespace irb
+} // namespace irb
 
 #endif

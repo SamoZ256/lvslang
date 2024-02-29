@@ -18,10 +18,10 @@ struct FragmentOut_Output {
 };
 
 FragmentOut_Output _testArrays() {
-	//Entry point call
+	// Entry point call
 	FragmentOut _entryPointOutput = testArrays(myBuffer);
 
-	//Output
+	// Output
 	FragmentOut_Output __output;
 	__output.output = _entryPointOutput;
 

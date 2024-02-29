@@ -14,4 +14,4 @@ void SPIRVFunction::end(IRBuilder* builder) {
         code += static_cast<SPIRVBlock*>(blocks[i])->getCode();
 }
 
-} //namespace irb
+} // namespace irb

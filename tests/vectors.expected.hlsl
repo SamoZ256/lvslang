@@ -9,10 +9,10 @@ struct FragmentOut_Output {
 };
 
 FragmentOut_Output _testVectors() {
-	//Entry point call
+	// Entry point call
 	FragmentOut _entryPointOutput = testVectors();
 
-	//Output
+	// Output
 	FragmentOut_Output __output;
 	__output.output = _entryPointOutput;
 

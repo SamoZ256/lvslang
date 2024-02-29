@@ -18,7 +18,7 @@ struct AIREntryPoint {
 class AIRBuilder : public IRBuilder {
 public:
     AIRBuilder(Context& aContext, const std::string& aCompilerName, bool aIncludeDebugInformation = false) : IRBuilder(aContext, aCompilerName, aIncludeDebugInformation) {
-        //TODO: set this to filename
+        // TODO: set this to filename
         llvmModule = std::make_unique<llvm::Module>(/*compilerName.c_str()*/"", *context.handle);
         handle = new llvm::IRBuilder<>(*context.handle);
     }
@@ -32,7 +32,7 @@ public:
     void opEntryPoint(Value* entryPoint, FunctionRole functionRole, const std::string& name, Type* returnType, const std::vector<Argument>& arguments) override;
 
     void opName(Value* value, const std::string& name) override {
-        //TODO: put something here?
+        // TODO: put something here?
     }
 
     Value* opConstant(ConstantValue* val) override;
@@ -85,7 +85,7 @@ public:
 
     std::string createMetadata(const std::string& languageName, uint32_t languageVersionMajor, uint32_t languageVersionMinor, uint32_t languageVersionPatch, const std::string& sourceFilenameStr);
 
-    //Getters
+    // Getters
     bool getCode(std::string& outputCode, OptimizationLevel optimizationLevel, bool outputAssembly, SPIRVVersion spirvVersion) override;
 
     std::unique_ptr<llvm::Module>& getLLVMModule() {
@@ -96,7 +96,7 @@ public:
         return handle;
     }
 
-    //Setters
+    // Setters
     void setInsertBlock(Block* block) override {
         insertBlock = block;
         handle->SetInsertPoint(static_cast<llvm::BasicBlock*>(insertBlock->getHandle()));
@@ -104,7 +104,7 @@ public:
 
 private:
     std::unique_ptr<llvm::Module> llvmModule;
-    //TODO: make this a unique_ptr
+    // TODO: make this a unique_ptr
     llvm::IRBuilder<>* handle;
 
     std::string code;
@@ -119,6 +119,6 @@ private:
     }
 };
 
-} //namespace irb
+} // namespace irb
 
 #endif

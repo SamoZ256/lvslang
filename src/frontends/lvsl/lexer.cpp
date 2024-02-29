@@ -20,8 +20,8 @@ int getTypeFromString(const std::string& strType) {
         return TOKEN_TYPE_SHORT;
     if (strType == "int")
         return TOKEN_TYPE_INT;
-    //if (strType == "int64")
-    //    return TOKEN_TYPE_INT64;
+    // if (strType == "int64")
+    //     return TOKEN_TYPE_INT64;
 
     if (strType == "bool")
         return TOKEN_TYPE_BOOL;
@@ -31,15 +31,15 @@ int getTypeFromString(const std::string& strType) {
         return TOKEN_TYPE_USHORT;
     if (strType == "uint")
         return TOKEN_TYPE_UINT;
-    //if (strType == "uint64")
-    //    return TOKEN_TYPE_UINT64;
+    // if (strType == "uint64")
+    //     return TOKEN_TYPE_UINT64;
 
     if (strType == "half")
         return TOKEN_TYPE_HALF;
     if (strType == "float")
         return TOKEN_TYPE_FLOAT;
-    //if (strType == "float64")
-    //    return TOKEN_TYPE_FLOAT64;
+    // if (strType == "float64")
+    //     return TOKEN_TYPE_FLOAT64;
     
     if (strType == "char2") {
         componentCount = 2;
@@ -314,7 +314,7 @@ int getOperatorFromString(const std::string& operatorStr) {
     if (operatorStr == "^=")
         return TOKEN_OPERATOR_ASSIGNMENT_POW_AND_ASSIGN;
     
-    //TODO: ternary operator
+    // TODO: ternary operator
 
     if (operatorStr == ".")
         return TOKEN_OPERATOR_DOT;
@@ -331,7 +331,7 @@ void resetLastChar() {
 }
 
 int _getNextToken() {
-    //Whitespace
+    // Whitespace
     while (isspace(lastChar) && lastChar != '\n')
         lastChar = getNextChar();
         
@@ -341,7 +341,7 @@ int _getNextToken() {
         return TOKEN_SKIP;
     }
 
-    //Comment
+    // Comment
     if (lastChar == '/') {
         lastChar = getNextChar();
         if (lastChar == '/') {
@@ -357,7 +357,7 @@ int _getNextToken() {
         }
     }
     
-    //Text
+    // Text
     if (isalpha(lastChar) || lastChar == '_') {
         identifierStr = lastChar;
         while (isalnum((lastChar = getNextChar())) || lastChar == '_')
@@ -432,7 +432,7 @@ int _getNextToken() {
         return TOKEN_IDENTIFIER;
     }
 
-    //Operator
+    // Operator
     if (charIsOperator(lastChar)) {
         operatorStr = "";
         do {
@@ -450,7 +450,7 @@ int _getNextToken() {
         return op;
     }
 
-    //Number
+    // Number
     if (isdigit(lastChar) || lastChar == '.') {
         std::string numStr;
         bool dotUsed = false;
@@ -461,7 +461,7 @@ int _getNextToken() {
             lastChar = getNextChar();
         } while (isdigit(lastChar) || (lastChar == '.' && !dotUsed));
         switch (lastChar) {
-            //case 'd':
+            // case 'd':
             case 'f':
             case 'h':
             case 'i':
@@ -488,7 +488,7 @@ int _getNextToken() {
         return TOKEN_NUMBER;
     }
 
-    //Single quote string
+    // Single quote string
     if (lastChar == '\'') {
         lastChar = getNextChar();
         if (lastChar == '\\') {
@@ -508,7 +508,7 @@ int _getNextToken() {
         return TOKEN_CHAR;
     }
     
-    //Double quote string
+    // Double quote string
     if (lastChar == '"') {
         identifierStr = "";
         bool escape = false;
@@ -531,11 +531,11 @@ int _getNextToken() {
         return TOKEN_STRING;
     }
 
-    //End of file
-    if (lastChar == 0) //TODO: find out why EOF should be -1 intead of 1
+    // End of file
+    if (lastChar == 0) // TODO: find out why EOF should be -1 intead of 1
         return TOKEN_EOF;
     
-    //Character as ASCII
+    // Character as ASCII
     char thisChar = lastChar;
     lastChar = getNextChar();
 
@@ -546,6 +546,6 @@ int getNextToken() {
     return crntToken = _getNextToken();
 }
 
-} //namespace lvsl
+} // namespace lvsl
 
-} //namespace lvslang
+} // namespace lvslang

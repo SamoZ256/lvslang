@@ -17,7 +17,7 @@
 
 namespace irb {
 
-//Forward declarations
+// Forward declarations
 class Type;
 class Value;
 class SPIRVBlock;
@@ -31,9 +31,9 @@ struct Attribute {
         Location,
         Color,
 
-        //NoAlias,
-        //ReadOnly,
-        //ReadNone,
+        // NoAlias,
+        // ReadOnly,
+        // ReadNone,
 
         MaxEnum
     } attrib;
@@ -73,12 +73,12 @@ struct StructureMember {
 struct Structure {
     llvm::StructType* handle = nullptr;
     std::vector<StructureMember> members;
-    bool decorated = false; //For SPIRV backend
+    bool decorated = false; // For SPIRV backend
 };
 
 class Context {
 public:
-    //TODO: make this a void*?
+    // TODO: make this a void*?
     std::unique_ptr<llvm::LLVMContext> handle;
 
     std::set<std::string> registerNames;
@@ -114,6 +114,6 @@ public:
     }
 };
 
-} //namespace irb
+} // namespace irb
 
 #endif

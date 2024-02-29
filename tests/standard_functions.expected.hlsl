@@ -13,10 +13,10 @@ struct FragmentOut_Output {
 };
 
 FragmentOut_Output _testStandardFunctions() {
-	//Entry point call
+	// Entry point call
 	FragmentOut _entryPointOutput = testStandardFunctions(testTexture, testSampler);
 
-	//Output
+	// Output
 	FragmentOut_Output __output;
 	__output.output = _entryPointOutput;
 

@@ -21,6 +21,6 @@ private:
     uint32_t argumentIndex = 0;
 };
 
-} //namespace irb
+} // namespace irb
 
 #endif

@@ -14,7 +14,7 @@ public:
 
     virtual void end(IRBuilder* builder) = 0;
 
-    //Blocks
+    // Blocks
     Block* getFunctionBlock() {
         if (blocks.size() == 0) {
             IRB_ERROR("there is currently no active block");
@@ -39,6 +39,6 @@ public:
     }
 };
 
-} //namespace irb
+} // namespace irb
 
 #endif

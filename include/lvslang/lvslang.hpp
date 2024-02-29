@@ -26,6 +26,6 @@ struct CompileOptions {
 
 bool compile(const CompileOptions& options, std::string& outputCode);
 
-} //namespace lvslang
+} // namespace lvslang
 
 #endif

@@ -29,4 +29,4 @@ void AIRFunction::addArgument(Value* argument, const std::string& name) {
     argument->setHandle(llvmArgument);
 }
 
-} //namespace irb
+} // namespace irb

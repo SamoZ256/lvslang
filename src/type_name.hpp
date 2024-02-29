@@ -32,6 +32,6 @@ inline std::string getTypeName(Target target, irb::Type* type) {
     return getTypeNameBegin(target, type) + getTypeNameEnd(type);
 }
 
-} //namespace lvslang
+} // namespace lvslang
 
 #endif

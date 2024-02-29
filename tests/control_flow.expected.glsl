@@ -23,12 +23,12 @@ layout (set = 0, binding = 0) uniform myBuffer_Uniform {
 layout (location = 0) out vec4 outColor;
 
 void main() {
-	//Input
+	// Input
 
-	//Entry point call
+	// Entry point call
 	FragmentOut _entryPointOutput = testControlFlow(myBuffer);
 
-	//Output
+	// Output
 	outColor = _entryPointOutput.outColor;
 }
 

@@ -7,7 +7,7 @@
 
 namespace irb {
 
-//TODO: support unordered?
+// TODO: support unordered?
 static std::string getTypeOpPrefix(Type* type, bool signSensitive, bool needsOrd) {
     switch (type->getTypeID()) {
     case TypeID::Void:
@@ -25,7 +25,7 @@ static std::string getTypeOpPrefix(Type* type, bool signSensitive, bool needsOrd
         else
             return "F";
     case TypeID::Pointer:
-        return ""; //TODO: implement this
+        return ""; // TODO: implement this
     case TypeID::Vector:
     case TypeID::Matrix:
         return getTypeOpPrefix(type->getBaseType(), signSensitive, needsOrd);
@@ -34,11 +34,11 @@ static std::string getTypeOpPrefix(Type* type, bool signSensitive, bool needsOrd
     }
 }
 
-//TODO: support matrices?
+// TODO: support matrices?
 static std::string getTypeCastOpName(Type* castFrom, Type* castTo) {
     if (castTo->isScalar()) {
         if (castFrom->isVector())
-            return "NP"; //Not possible
+            return "NP"; // Not possible
         switch (castFrom->getTypeID()) {
         case TypeID::Bool:
         case TypeID::Integer:
@@ -49,7 +49,7 @@ static std::string getTypeCastOpName(Type* castFrom, Type* castTo) {
                     if (castTo->getIsSigned())
                         return "SConvert";
                     else
-                        return "NR"; //SatConvertSToU
+                        return "NR"; // SatConvertSToU
                 case TypeID::Float:
                     return "ConvertSToF";
                 default:
@@ -60,7 +60,7 @@ static std::string getTypeCastOpName(Type* castFrom, Type* castTo) {
                 case TypeID::Bool:
                 case TypeID::Integer:
                     if (castTo->getIsSigned())
-                        return "NR"; //SatConvertUToS
+                        return "NR"; // SatConvertUToS
                     else
                         return "UConvert";
                 case TypeID::Float:
@@ -91,7 +91,7 @@ static std::string getTypeCastOpName(Type* castFrom, Type* castTo) {
         if (castFrom->isScalar()) {
             if (castFrom->equals(castTo->getBaseType()))
                 return "VCS";
-            //TODO: cast twice in other cases
+            // TODO: cast twice in other cases
         }
     }
 
@@ -123,8 +123,8 @@ static std::map<std::string, StandardFunctionInfo> standardFunctionLUT = {
     {"exp2", {"Exp2"}},
     {"floor", {"Floor"}},
     {"fract", {"Fract"}},
-    //TODO: add image functions
-    //TODO: add transpose
+    // TODO: add image functions
+    // TODO: add transpose
     {"isinf", {"IsInf", false}},
     {"isnan", {"IsNan", false}},
     {"length", {"Length"}},
@@ -147,7 +147,7 @@ static std::map<std::string, StandardFunctionInfo> standardFunctionLUT = {
     {"step", {"Step"}},
     {"tan", {"Tan"}},
     {"tanh", {"Tanh"}}
-    //TODO: add transpose function
+    // TODO: add transpose function
 };
 
 class StandardFunctionValue : public SPIRVFunction {
@@ -162,7 +162,7 @@ SPIRVBuilder::SPIRVBuilder(Context& aContext, const std::string& aCompilerName, 
     blockTypesVariablesConstants = new SPIRVBlock(context);
     blockMain = new SPIRVBlock(context);
 
-    //TODO: do not hardcode these values
+    // TODO: do not hardcode these values
     blockHeader->addCodeRawToBeginning(
 "; SPIR-V\n" \
 "; Version:   " + spirvVersionMap[spirvVersion] + "\n" \
@@ -172,7 +172,7 @@ SPIRVBuilder::SPIRVBuilder(Context& aContext, const std::string& aCompilerName, 
 "\n");
 
     blockHeader->addCodeToBeginning("OpCapability Shader");
-    //TODO: make these optional
+    // TODO: make these optional
     blockHeader->addCodeToBeginning("OpCapability Float16");
     blockHeader->addCodeToBeginning("OpCapability Int8");
     blockHeader->addCodeToBeginning("OpCapability Int16");
@@ -204,29 +204,29 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
 
     GET_FUNCTION_ROLE_NAME(functionRole);
     std::string code = "OpEntryPoint " + functionRoleStr + " " + entryPointFunction->getName() + " \"" + name + "\"";
-    //TODO: support other origins as well
+    // TODO: support other origins as well
     if (functionRole == FunctionRole::Fragment)
         blockHeader->addCode("OpExecutionMode " + entryPointFunction->getName() + " OriginUpperLeft");
-    //blockHeader->addCode("OpSource GLSL 450");
-    //blockHeader->addCode("OpSourceExtension \"GL_GOOGLE_cpp_style_line_directive\"");
-    //blockHeader->addCode("OpSourceExtension \"GL_GOOGLE_include_directive\"");
+    // blockHeader->addCode("OpSource GLSL 450");
+    // blockHeader->addCode("OpSourceExtension \"GL_GOOGLE_cpp_style_line_directive\"");
+    // blockHeader->addCode("OpSourceExtension \"GL_GOOGLE_include_directive\"");
 
-    //Body
+    // Body
     Block* block = opBlock(entryPointFunction);
     setInsertBlock(block);
 
-    // -------- Input --------
+    //  -------- Input --------
     std::vector<Value*> argValues;
     argValues.reserve(arguments.size());
     for (const auto& argument : arguments) {
         Type* type = argument.type;
         const auto& attr = argument.attributes;
-        //Get element type in case of buffer
+        // Get element type in case of buffer
         if (attr.isBuffer)
             type = type->getElementType();
 
         StorageClass storageClass = StorageClass::MaxEnum;
-        //TODO: do not hardcode the storage classes
+        // TODO: do not hardcode the storage classes
         if (attr.isBuffer)
             storageClass = StorageClass::Uniform;
         else if (attr.isTexture)
@@ -238,8 +238,8 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
             
         Value* argValue = opVariable(new PointerType(context, type, storageClass));
     
-        //TODO: check if these decorations are correct
-        //TODO: support other storage classes as well
+        // TODO: check if these decorations are correct
+        // TODO: support other storage classes as well
         Structure* structure;
         switch (storageClass) {
         case StorageClass::Uniform:
@@ -250,8 +250,8 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
         case StorageClass::Input:
             switch (functionRole) {
             case FunctionRole::Vertex:
-                //TODO: do this somewhere else
-                //TODO: don't throw this error
+                // TODO: do this somewhere else
+                // TODO: don't throw this error
                 if (!type->isStructure()) {
                     IRB_ERROR("Entry point argument declared with the 'input' attribute must have a structure type");
                     return;
@@ -273,20 +273,20 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
         if (attr.isBuffer || (functionRole == FunctionRole::Vertex && attr.isInput))
             opDecorate(getTypeValue(this, type, true), Decoration::Block);
         
-        //Add to interface
+        // Add to interface
         if (spirvVersionIsGreaterThanOrEqual(SPIRVVersion::_1_4) || (storageClass == StorageClass::Input || storageClass == StorageClass::Output))
             code += " " + argValue->getName();
         
-        //HACK: create a new variable, since we need to have the 'Function' storage class
+        // HACK: create a new variable, since we need to have the 'Function' storage class
         Value* loadedAndStoredArgValue = opVariable(new PointerType(context, type, StorageClass::Function));
         opStore(loadedAndStoredArgValue, opLoad(argValue));
         argValues.push_back(loadedAndStoredArgValue);
     }
 
-    // -------- Call to entry point --------
+    //  -------- Call to entry point --------
     Value* returnValue = opFunctionCall(entryPoint, argValues);
 
-    // -------- Output --------
+    //  -------- Output --------
     opDecorate(getTypeValue(this, returnType), Decoration::Block);
     context.pushRegisterName(name + "_output");
     Value* returnVariable = opVariable(new PointerType(context, returnType, StorageClass::Output));
@@ -300,7 +300,7 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
         opDecorate(positionVariable, Decoration::Position);
     }
     
-    //TODO: don't throw this error
+    // TODO: don't throw this error
     if (!returnType->isStructure()) {
         IRB_ERROR(("Entry point argument declared with the 'output' attribute must have a structure type, found '" + returnType->getDebugName() + "' instead").c_str());
         return;
@@ -320,13 +320,13 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
         if (positionV)
             opStore(positionVariable, positionV);
     } else if (functionRole == FunctionRole::Fragment) {
-        //TODO: do this decoration somewhere else
+        // TODO: do this decoration somewhere else
         irb::Structure* structure = static_cast<StructureType*>(returnType)->getStructure();
         for (uint32_t i = 0; i < structure->members.size(); i++)
             opMemberDecorate(getTypeValue(this, returnType), i, Decoration::Location, {std::to_string(structure->members[i].attributes.colorIndex)});
     }
 
-    //Add to interface
+    // Add to interface
     code += " " + returnVariable->getName();
     if (positionVariable)
         code += " " + positionVariable->getName();
@@ -337,7 +337,7 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
 
     blockHeader->addCodeToBeginning(code);
 
-    //Set the active function to be the old active funciton
+    // Set the active function to be the old active funciton
     activeFunction = oldFunction;
 }
 
@@ -390,7 +390,7 @@ Function* SPIRVBuilder::opFunction(FunctionType* functionType, const std::string
 }
 
 Value* SPIRVBuilder::opFunctionParameter(Function* function, Type* type) {
-    //HACK: only get pointer if its not a pointer already (buffers need this)
+    // HACK: only get pointer if its not a pointer already (buffers need this)
     if (!type->isPointer())
         type = new PointerType(context, type, StorageClass::Function);
     Value* value = new Value(context, type, context.popRegisterName());
@@ -427,7 +427,7 @@ Value* SPIRVBuilder::opOperation(Value* l, Value* r, Type* type, Operation opera
             return value;
         } else {
             VectorType* vectorType = static_cast<VectorType*>(l->getType());
-            r = opConstruct(vectorType, std::vector<Value*>(vectorType->getComponentCount(), opCast(r, vectorType->getBaseType()))); //TODO: check if the type is vector
+            r = opConstruct(vectorType, std::vector<Value*>(vectorType->getComponentCount(), opCast(r, vectorType->getBaseType()))); // TODO: check if the type is vector
         }
     }
     
@@ -437,10 +437,10 @@ Value* SPIRVBuilder::opOperation(Value* l, Value* r, Type* type, Operation opera
 
     GET_OPERATION_NAME(operation);
 
-    //TODO: do not use l for getting op prefix?
+    // TODO: do not use l for getting op prefix?
     getSPIRVInsertBlock()->addCode("Op" + (needsPrefix ? getTypeOpPrefix(l->getType(), signSensitive, needsOrd) : "") + operationStr + " " + typeV->getName() + " " + l->getName() + " " + r->getName(), value);
 
-    //"Unpack" the vector
+    // "Unpack" the vector
     if (type->getTypeID() == TypeID::Bool && value->getType()->isVector()) {
         std::vector<Value*> resultComponents(static_cast<VectorType*>(value->getType())->getComponentCount());
         for (uint8_t i = 0; i < resultComponents.size(); i++) {
@@ -488,7 +488,7 @@ void SPIRVBuilder::opReturn(Value* v)  {
     block->setReturned();
 }
 
-//TODO: what should be returned when type is void?
+// TODO: what should be returned when type is void?
 Value* SPIRVBuilder::opFunctionCall(Value* funcV, const std::vector<Value*>& arguments)  {
     FunctionType* type = dynamic_cast<FunctionType*>(funcV->getType());
     if (!type) {
@@ -519,12 +519,12 @@ void SPIRVBuilder::opBranchCond(Value* cond, Block* blockTrue, Block* blockFalse
 }
 
 void SPIRVBuilder::opBlockMerge(Block* block)  {
-    //TODO: support other stuff besides 'None'
+    // TODO: support other stuff besides 'None'
     getSPIRVInsertBlock()->addCode("OpSelectionMerge " + block->getName() + " None");
 }
 
 void SPIRVBuilder::opLoopMerge(Block* block1, Block* block2)  {
-    //TODO: support other stuff besides 'None'
+    // TODO: support other stuff besides 'None'
     getSPIRVInsertBlock()->addCode("OpLoopMerge " + block1->getName() + " " + block2->getName() + " None");
 }
 
@@ -564,7 +564,7 @@ Value* SPIRVBuilder::opVectorExtract(Value* vec, ConstantInt* index)  {
         IRB_ERROR("cannot extract value from a non-vector type");
         return nullptr;
     }
-    //VectorType* vecType = static_cast<VectorType*>(vec->getType());
+    // VectorType* vecType = static_cast<VectorType*>(vec->getType());
     /*
     if (index->getInt() >= vecType->getComponentCount()) {
         error("trying to get element at index " + std::to_string(index->getInt()) + ", but vector has only " +  + " elements", "SPIRVBuilder::opVectorExtract");
@@ -610,12 +610,12 @@ Value* SPIRVBuilder::opCast(Value* val, Type* type)  {
         return val;
 
     std::string opName = getTypeCastOpName(val->getType(), type);
-    if (opName == "NP") { //Not possible
-        //TODO: warn?
+    if (opName == "NP") { // Not possible
+        // TODO: warn?
         return val;
-    } else if (opName == "NR") { //Not required
+    } else if (opName == "NR") { // Not required
         return val;
-    } else if (opName == "VCS") { //Vector construct from scalar
+    } else if (opName == "VCS") { // Vector construct from scalar
         VectorType* dstVec = static_cast<VectorType*>(type);
 
         return opConstruct(dstVec, std::vector<Value*>(dstVec->getComponentCount(), val));
@@ -665,7 +665,7 @@ bool SPIRVBuilder::getCode(std::string& outputCode, OptimizationLevel optimizati
     std::string code = blockHeader->getCode() + blockDebug->getCode() + blockAnnotations->getCode() + blockTypesVariablesConstants->getCode() + blockMain->getCode();
 
     spv_target_env targetEnv;
-    //TODO: use vulkan env?
+    // TODO: use vulkan env?
     switch (spirvVersion) {
     case irb::SPIRVVersion::_1_0:
         targetEnv = SPV_ENV_UNIVERSAL_1_0;
@@ -697,11 +697,11 @@ bool SPIRVBuilder::getCode(std::string& outputCode, OptimizationLevel optimizati
 
     auto printMsgToStderr = [](spv_message_level_t, const char* source, const spv_position_t& pos, const char* message) {
         std::cerr << pos.line << ":" << pos.column << ": " << SET_TEXT_COLOR("31") << "error" << RESET_TEXT_COLOR() << ": " << message << std::endl;
-        //std::cout << source << std::endl;
-        //std::cout << pos.column << std::endl;
-        //for (uint32_t i = 0; i < pos.column - 1; i++)
-        //    std::cout << " ";
-        //std::cout << "^" << std::endl;
+        // std::cout << source << std::endl;
+        // std::cout << pos.column << std::endl;
+        // for (uint32_t i = 0; i < pos.column - 1; i++)
+        //     std::cout << " ";
+        // std::cout << "^" << std::endl;
     };
     core.SetMessageConsumer(printMsgToStderr);
     opt.SetMessageConsumer(printMsgToStderr);
@@ -719,7 +719,7 @@ bool SPIRVBuilder::getCode(std::string& outputCode, OptimizationLevel optimizati
     switch (optimizationLevel) {
     case OptimizationLevel::O0:
         break;
-    //TODO: differentiate between these?
+    // TODO: differentiate between these?
     case OptimizationLevel::O1:
     case OptimizationLevel::O2:
     case OptimizationLevel::O3:
@@ -747,7 +747,7 @@ bool SPIRVBuilder::getCode(std::string& outputCode, OptimizationLevel optimizati
 }
 
 Value* SPIRVBuilder::_addCodeToTypesVariablesConstantsBlock(Type* type, const std::string& code, const std::string& registerName, const std::string& userDefinedName) {
-    //HACK: use @ref userDefinedName to prevent structures with same members to end up as the same value
+    // HACK: use @ref userDefinedName to prevent structures with same members to end up as the same value
     auto& mappedValue = typesVariablesConstantsDefinitions[code + userDefinedName];
     if (!mappedValue) {
         mappedValue = new Value(context, type, registerName);
@@ -774,4 +774,4 @@ void SPIRVBuilder::_opDecorate(std::string begin, Decoration decoration, const s
     blockAnnotations->addCode(code);
 }
 
-} //namespace irb
+} // namespace irb

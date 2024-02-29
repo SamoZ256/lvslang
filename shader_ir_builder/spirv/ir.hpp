@@ -77,13 +77,13 @@ public:
 
     void opMemberDecorate(Value* value, uint32_t memberIndex, Decoration decoration, const std::vector<std::string>& values = {});
 
-    //Getters
+    // Getters
     bool getCode(std::string& outputCode, OptimizationLevel optimizationLevel, bool outputAssembly, SPIRVVersion spirvVersion) override;
 
 private:
     std::map<std::string, Value*> typesVariablesConstantsDefinitions;
 
-    //Blocks
+    // Blocks
     SPIRVBlock* blockHeader;
     SPIRVBlock* blockDebug;
     SPIRVBlock* blockAnnotations;
@@ -101,6 +101,6 @@ private:
     }
 };
 
-} //namespace irb
+} // namespace irb
 
 #endif

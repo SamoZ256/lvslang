@@ -68,7 +68,7 @@ STD_FUNCTION float cosh(float x);
 STD_FUNCTION half3 cross(half3 x, half3 y);
 STD_FUNCTION float3 cross(float3 x, float3 y);
 
-//TODO: add determinant function
+// TODO: add determinant function
 
 STD_FUNCTION half distance(half2 x, half2 y);
 STD_FUNCTION half distance(half3 x, half3 y);
@@ -120,7 +120,7 @@ STD_FUNCTION float2 fract(float2 x);
 STD_FUNCTION float3 fract(float3 x);
 STD_FUNCTION float4 fract(float4 x);
 
-//TODO: add image functions
+// TODO: add image functions
 
 STD_FUNCTION bool isinf(half x);
 STD_FUNCTION bool2 isinf(half2 x);
@@ -255,14 +255,14 @@ STD_FUNCTION float2 round(float2 x);
 STD_FUNCTION float3 round(float3 x);
 STD_FUNCTION float4 round(float4 x);
 
-//TODO: add more overloads
+// TODO: add more overloads
 STD_FUNCTION char4 sample(texture2d<char> texture, sampler samplr, float2 coord);
 STD_FUNCTION short4 sample(texture2d<short> texture, sampler samplr, float2 coord);
 STD_FUNCTION int4 sample(texture2d<int> texture, sampler samplr, float2 coord);
 STD_FUNCTION half4 sample(texture2d<half> texture, sampler samplr, float2 coord);
 STD_FUNCTION float4 sample(texture2d<float> texture, sampler samplr, float2 coord);
 
-//TODO: check if integers are supported
+// TODO: check if integers are supported
 STD_FUNCTION char sign(char x);
 STD_FUNCTION char2 sign(char2 x);
 STD_FUNCTION char3 sign(char3 x);
@@ -319,4 +319,4 @@ STD_FUNCTION float tan(float x);
 
 STD_FUNCTION float tanh(float x);
 
-//TODO: add transpose function
+// TODO: add transpose function

@@ -11,10 +11,10 @@ struct FragmentOut_Output {
 };
 
 FragmentOut_Output _testAdvancedFeatures() {
-	//Entry point call
+	// Entry point call
 	FragmentOut _entryPointOutput = testAdvancedFeatures();
 
-	//Output
+	// Output
 	FragmentOut_Output __output;
 	__output.output = _entryPointOutput;
 

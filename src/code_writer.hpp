@@ -11,7 +11,7 @@ struct CodeValue {
 
 class CodeWriter {
 public:
-    CodeWriter(Target aTarget, const AST& aAST) : target(aTarget), ast(aAST) {}
+    CodeWriter(Target aTarget, const AST& aAST, GLSLVersion aGLSLVersion) : target(aTarget), ast(aAST), glslVersion(aGLSLVersion) {}
 
     bool write(std::string& outputCode) {
         std::string codeHeader;
@@ -25,14 +25,24 @@ public:
         case Target::HLSL:
             break;
         case Target::GLSL:
-            codeHeader = "#version " + getGLSLVersionString()/* + " core"*/;
+            // Check if the GLSL version is supported
+            LVSLANG_CHECK_ARGUMENT(GLSLVersion, glslVersion);
+            switch (glslVersion) {
+            case GLSLVersion::_1_10 ... GLSLVersion::_1_50:
+                LVSLANG_ERROR_UNSUPPORTED_TARGET_VERSIONS("1.10 to 1.50", "GLSL");
+                break;
+            default:
+                break;
+            }
+            
+            codeHeader = "#version " + glslVersionMap.at(glslVersion)/* + " core"*/;
             break;
         default:
             LVSLANG_ERROR_UNSUPPORTED_TARGET("[IR target]");
             break;
         }
         
-        //TODO: enable them only if needed
+        // TODO: enable them only if needed
         if (target == Target::GLSL) {
             enableGLSLExtension(codeHeader, irb::Extension::_8bit_storage);
             enableGLSLExtension(codeHeader, irb::Extension::_16bit_storage);
@@ -42,7 +52,7 @@ public:
         std::string code;
         for (auto* expression : ast.getExpressions()) {
             if (auto* value = codegenExpression(expression)) {
-                //HACK: check if it contains something
+                // HACK: check if it contains something
                 if (value->code.size() > 0)
                     code += value->code + "\n\n";
             } else {
@@ -58,6 +68,8 @@ public:
 private:
     Target target;
     const AST& ast;
+
+    GLSLVersion glslVersion;
 
     uint32_t currentIndentation = 0;
 
@@ -98,6 +110,6 @@ private:
     CodeValue* codegenInitializerListExpression(const InitializerListExpressionAST* expression);
 };
 
-} //namespace lvslang
+} // namespace lvslang
 
 #endif

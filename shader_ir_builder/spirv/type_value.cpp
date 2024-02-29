@@ -89,13 +89,13 @@ Value* getTypeValue(SPIRVBuilder* builder, Type* type, bool decorate) {
         Value* value = builder->_addCodeToTypesVariablesConstantsBlock(type, code, getNameForRegister(structureType), structureType->getName());
 
         if (decorate && !structure->decorated) {
-            //We need to set @ref decorated to 'true' at the beginning, since @ref opMemberDecorate is going to call this function and we want to avoid endless loop
+            // We need to set @ref decorated to 'true' at the beginning, since @ref opMemberDecorate is going to call this function and we want to avoid endless loop
             structure->decorated = true;
             uint32_t offset = 0;
             for (uint32_t i = 0; i < structure->members.size(); i++) {
-                //Offset
+                // Offset
                 builder->opMemberDecorate(value, i, Decoration::Offset, {std::to_string(offset)});
-                offset += memberValues[i]->getType()->getBitCount(true) / 8; //To bytes
+                offset += memberValues[i]->getType()->getBitCount(true) / 8; // To bytes
             }
         }
 
@@ -106,7 +106,7 @@ Value* getTypeValue(SPIRVBuilder* builder, Type* type, bool decorate) {
         std::vector<Value*> argumentVs(functionType->getArguments().size());
         for (uint16_t i = 0; i < argumentVs.size(); i++) {
             irb::Type* type = functionType->getArguments()[i];
-            //HACK: only get pointer if its not a pointer already (buffers need this)
+            // HACK: only get pointer if its not a pointer already (buffers need this)
             if (!type->isPointer())
                 type = new PointerType(type->getContext(), type, StorageClass::Function);
             argumentVs[i] = getTypeValue(builder, type, decorate);
@@ -133,4 +133,4 @@ Value* getTypeValue(SPIRVBuilder* builder, Type* type, bool decorate) {
     return builder->_addCodeToTypesVariablesConstantsBlock(type, code, getNameForRegister(type));
 }
 
-} //namespace irb
+} // namespace irb

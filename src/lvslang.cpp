@@ -18,7 +18,6 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
         std::get<0>(ext) = false;
 
     irb::spirvVersion = options.spirvVersion;
-    lvslang::glslVersion = options.glslVersion;
 
     std::string extension = options.inputName.substr(options.inputName.find_last_of('.'));
     AST ast;
@@ -60,10 +59,10 @@ bool compile(const CompileOptions& options, std::string& outputCode) {
 
         return writer.write(outputCode);
     } else {
-        CodeWriter writer(options.target, ast);
+        CodeWriter writer(options.target, ast, options.glslVersion);
 
         return writer.write(outputCode);
     }
 }
 
-} //namespace lvslang
+} // namespace lvslang

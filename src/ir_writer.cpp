@@ -77,7 +77,7 @@ irb::Value* IRWriter::codegenNumberExpression(const NumberExpressionAST* express
         break;
     }
     
-    //TODO: find out why I do this
+    // TODO: find out why I do this
     if (!context.pushedRegisterName())
         context.pushRegisterName("const");
 
@@ -107,9 +107,9 @@ irb::Value* IRWriter::codegenBinaryExpression(const BinaryExpressionAST* express
             irb::Value* loadedVector = builder->opLoad(unloadedVector->getUnloadedVector());
             if (r->getType()->isScalar()) {
                 for (auto index : unloadedVector->getIndices())
-                    loadedVector = builder->opVectorInsert(loadedVector, r, new irb::ConstantInt(context, index, 32, true)); //TODO: should it be signed?
+                    loadedVector = builder->opVectorInsert(loadedVector, r, new irb::ConstantInt(context, index, 32, true)); // TODO: should it be signed?
             } else if (r->getType()->isVector()) {
-                //TODO: check if component count matches and if we are not accessing out of bounds
+                // TODO: check if component count matches and if we are not accessing out of bounds
                 for (uint8_t i = 0; i < unloadedVector->getIndices().size(); i++)
                     loadedVector = builder->opVectorInsert(loadedVector, builder->opVectorExtract(r, new irb::ConstantInt(context, i, 32, true)), new irb::ConstantInt(context, unloadedVector->getIndices()[i], 32, true));
             } else {
@@ -149,12 +149,12 @@ irb::Value* IRWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expre
             value = builder->opStandardFunctionDeclaration(static_cast<irb::FunctionType*>(expression->getType()), expression->name());
         } else {
             value = builder->opFunction(static_cast<irb::FunctionType*>(expression->getType()), expression->name());
-            //TODO: name the function properly
+            // TODO: name the function properly
             builder->opName(value, expression->name() + "(");
         }
     }
 
-    //HACK: set the value
+    // HACK: set the value
     const_cast<FunctionPrototypeAST*>(expression)->setValue(static_cast<irb::Function*>(value));
 
     return value;
@@ -237,7 +237,7 @@ irb::Value* IRWriter::codegenReturnExpression(const ReturnExpressionAST* express
 }
 
 irb::Value* IRWriter::codegenIfExpression(const IfExpressionAST* expression) {
-    std::vector<irb::Block*> elseBs(expression->getIfThenBlocks().size()); //Serve as conditions except for the else block
+    std::vector<irb::Block*> elseBs(expression->getIfThenBlocks().size()); // Serve as conditions except for the else block
     std::vector<irb::Block*> thenBs(expression->getIfThenBlocks().size());
     std::vector<irb::Block*> mergeBs(expression->getIfThenBlocks().size());
     for (uint32_t i = 0; i < expression->getIfThenBlocks().size(); i++) {
@@ -262,12 +262,12 @@ irb::Value* IRWriter::codegenIfExpression(const IfExpressionAST* expression) {
         builder->opBlockMerge(mergeBs[i]);
         builder->opBranchCond(condV, thenBs[i], elseBs[i]);
 
-        //Current body
+        // Current body
         builder->setInsertBlock(thenBs[i]);
         irb::Value* blockV = codegenExpression(expression->getIfThenBlocks()[i]->block);
         builder->opBranch(mergeBs[i]);
 
-        //Next condition or else block
+        // Next condition or else block
         builder->setInsertBlock(elseBs[i]);
     }
     if (expression->getElseBlock()) {
@@ -279,10 +279,10 @@ irb::Value* IRWriter::codegenIfExpression(const IfExpressionAST* expression) {
         builder->opBranch(mergeBs[i - 1]);
     }
 
-    //End
+    // End
     builder->setInsertBlock(endB);
 
-    //TODO: return something else
+    // TODO: return something else
     return endB;
 }
 
@@ -313,14 +313,14 @@ irb::Value* IRWriter::codegenWhileExpression(const WhileExpressionAST* expressio
 
     builder->opBranch(expression->getIsDoWhile() ? thenB : mergeB);
 
-    //Merge
+    // Merge
     if (target == Target::SPIRV) {
         builder->setInsertBlock(mergeB);
         builder->opLoopMerge(endB, afterThenB);
         builder->opBranch(condB);
     }
 
-    //Condition
+    // Condition
     builder->setInsertBlock(condB);
     
     irb::Value* condV = codegenExpression(expression->getCondition());
@@ -329,20 +329,20 @@ irb::Value* IRWriter::codegenWhileExpression(const WhileExpressionAST* expressio
 
     builder->opBranchCond(condV, thenB, endB);
 
-    //Then
+    // Then
     builder->setInsertBlock(thenB);
     irb::Value* blockV = codegenExpression(expression->getBlock());
     if (!blockV)
         return nullptr;
     builder->opBranch(afterThenB);
 
-    //After then
+    // After then
     if (target == Target::SPIRV) {
         builder->setInsertBlock(afterThenB);
         builder->opBranch(mergeB);
     }
 
-    //End
+    // End
     builder->setInsertBlock(endB);
 
     return endB;
@@ -357,8 +357,8 @@ irb::Value* IRWriter::codegenVariableDeclaration(const VariableDeclarationExpres
 
         irb::Value* initV = nullptr;
         if (initExpression) {
-            //TODO: uncomment?
-            //context.pushRegisterName(varName + "_init");
+            // TODO: uncomment?
+            // context.pushRegisterName(varName + "_init");
             initV = codegenExpression(initExpression);
             if (!initV)
                 return nullptr;
@@ -393,7 +393,7 @@ irb::Value* IRWriter::codegenSubscriptExpression(const SubscriptExpressionAST* e
     return value;
 }
 
-//TODO: support chained unloaded vector swizzle
+// TODO: support chained unloaded vector swizzle
 irb::Value* IRWriter::codegenMemberAccessExpression(const MemberAccessExpressionAST* expression) {
     irb::Value* exprV = codegenExpression(expression->getExpression());
     if (!exprV)
@@ -493,7 +493,7 @@ irb::Value* IRWriter::codegenInitializerListExpression(const InitializerListExpr
         components.push_back(component);
     }
     
-    //"Unpack" the vectors
+    // "Unpack" the vectors
     if (expression->getType()->isVector()) {
         for (uint32_t i = 0; i < components.size(); i++) {
             irb::Value* component = components[i];
@@ -511,13 +511,13 @@ irb::Value* IRWriter::codegenInitializerListExpression(const InitializerListExpr
     if (expression->getType()->isScalar())
         return builder->opCast(components[0], expression->getType());
     if (expression->getType()->isArray()) {
-        //TODO: implement this
+        // TODO: implement this
         logError("array initializer lists are not supported for IR backends yet");
         return nullptr;
     }
     if (expression->getType()->isVector()) {
         irb::VectorType* vectorType = static_cast<irb::VectorType*>(expression->getType());
-        //Fill the list in case it is just a one value initializer
+        // Fill the list in case it is just a one value initializer
         if (components.size() == 1) {
             components.reserve(vectorType->getComponentCount());
             for (uint8_t i = 1; i < vectorType->getComponentCount(); i++)
@@ -529,7 +529,7 @@ irb::Value* IRWriter::codegenInitializerListExpression(const InitializerListExpr
     }
     if (expression->getType()->isMatrix()) {
         irb::MatrixType* matrixType = static_cast<irb::MatrixType*>(expression->getType());
-        //Fill the list in case it is just a one value initializer
+        // Fill the list in case it is just a one value initializer
         if (components.size() == 1) {
             components.reserve(matrixType->getColumnCount());
             irb::Value* component;
@@ -551,4 +551,4 @@ irb::Value* IRWriter::codegenInitializerListExpression(const InitializerListExpr
     return nullptr;
 }
 
-} //namespace lvslang
+} // namespace lvslang

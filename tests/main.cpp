@@ -32,7 +32,7 @@ void writeToFile(const std::string& filename, const std::string& source) {
 }
 
 bool outputExpected = false;
-std::string baseDir = "../tests";
+std::string baseDir;
 
 inline void printTestPassed(const std::string& testName) {
     std::cout << SET_TEXT_COLOR("32") << "Test " << testName << " passed" << RESET_TEXT_COLOR() << std::endl;
@@ -42,7 +42,7 @@ inline void printTestFailed(const std::string& testName) {
     std::cout << SET_TEXT_COLOR("31") << "Test " << testName << " failed" << RESET_TEXT_COLOR() << std::endl;
 }
 
-//TODO: not return anything?
+// TODO: not return anything?
 bool _addTest(lvslang::CompileOptions& options, const std::string& testName, const std::string& filename, const std::string& expectedFilename) {
     std::cout << "Testing " << testName << " ..." << std::endl;
     options.inputName = std::filesystem::absolute(filename).string();
@@ -82,8 +82,8 @@ bool _addTest(lvslang::CompileOptions& options, const std::string& testName, con
         }
     } else {
         printTestFailed(testName);
-        //std::cout << "Error:" << std::endl;
-        //std::cout << result.error << std::endl;
+        // std::cout << "Error:" << std::endl;
+        // std::cout << result.error << std::endl;
 
         return false;
     }
@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
     auto params = parser.params();
     parser.config().program(argv[0]).description("LVSLANG tests");
     params.add_parameter(outputExpected, "--output-expected").nargs(0).help("Write results to expected files.");
-    params.add_parameter(baseDir, "--base-dir").nargs(1).help("Base directory for tests.").default_value(baseDir);
+    params.add_parameter(baseDir, "--base-dir").nargs(1).help("Base directory for tests.").default_value("../tests");
     params.add_parameter(testNames, "--tests").minargs(1).choices(availableTests).help("Run only specific tests.");
 
     if (!parser.parse_args(argc, argv, 1))

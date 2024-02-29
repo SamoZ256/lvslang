@@ -36,15 +36,15 @@ layout (location = 0) out VertexOut_Output {
 } _output;
 
 void main() {
-	//Input
+	// Input
 	VertexIn vertexIn;
 	vertexIn.pos = pos;
 	vertexIn.texCoord = texCoord;
 
-	//Entry point call
+	// Entry point call
 	VertexOut _entryPointOutput = vertexMain(vertexIn, model);
 
-	//Output
+	// Output
 	gl_Position = _entryPointOutput.pos;
 	_output._output.pos = _entryPointOutput.pos;
 	_output._output.texCoord = _entryPointOutput.texCoord;
@@ -74,12 +74,12 @@ layout (set = 1, binding = 0) uniform sampler colorSampler;
 layout (location = 0) out vec4 outColor;
 
 void main() {
-	//Input
+	// Input
 
-	//Entry point call
+	// Entry point call
 	FragmentOut _entryPointOutput = fragmentMain(fragmentIn, colorTexture, colorSampler);
 
-	//Output
+	// Output
 	outColor = _entryPointOutput.outColor;
 }
 

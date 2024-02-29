@@ -20,4 +20,4 @@ std::tuple<bool, std::string, std::string> extensions[(int)Extension::MaxEnum] =
     {false, "GL_EXT_shader_explicit_arithmetic_types", "SPV_AMD_gpu_shader_int16"}
 };
 
-} //namespace irb
+} // namespace irb
