@@ -194,8 +194,6 @@ Value* AIRBuilder::opOperation(Value* l, Value* r, Type* type, Operation operati
     bool signSensitive = (operation == Operation::Divide || operation == Operation::Modulo || operation == Operation::Remainder || needsOrd);
     bool needsPrefix = (operation == Operation::Add || operation == Operation::Subtract || operation == Operation::Multiply || operation == Operation::Divide || operation == Operation::Modulo || operation == Operation::Remainder || operation == Operation::And || operation == Operation::Or || operation == Operation::Equal || operation == Operation::NotEqual || needsOrd);
 
-    GET_OPERATION_NAME(operation);
-
     // TODO: do not use l for getting op prefix?
     std::string prefix = (needsPrefix ? getTypeOpPrefix(l->getType(), signSensitive, false) : "");
 

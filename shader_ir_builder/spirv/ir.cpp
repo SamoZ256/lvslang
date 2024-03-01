@@ -150,10 +150,61 @@ static std::map<std::string, StandardFunctionInfo> standardFunctionLUT = {
     // TODO: add transpose function
 };
 
-static std::string extensionsLUT[(int)Extension::MaxEnum] = {
+static const std::string extensionsLUT[(int)Extension::MaxEnum] = {
     "SPV_KHR_8bit_storage",
     "SPV_KHR_16bit_storage",
     "SPV_AMD_gpu_shader_int16"
+};
+
+static const std::string decorationLUT[] = {
+    "Block",
+    "ArrayStride",
+    "NoPerspective",
+    "Flat",
+    "Patch",
+    "Sample",
+    "Invariant",
+    "Restrict",
+    "Aliased",
+    "Volatile",
+    "Constant",
+    "Coherent",
+    "NonWritable",
+    "NonReadable",
+    "Uniform",
+    "Location",
+    "DescriptorSet",
+    "Binding",
+    "Offset",
+    "Alignment",
+
+    "BuiltIn Position"
+};
+
+static const std::string operationLUT[] = {
+    "Add",
+    "Sub",
+    "Mul",
+    "Div",
+    "Mod",
+    "Rem",
+    "BitwiseAnd",
+    "BitwiseOr",
+    "Equal",
+    "NotEqual",
+    "LogicalAnd",
+    "LogicalOr",
+    "GreaterThan",
+    "LessThan",
+    "GreaterThanEqual",
+    "LessThanEqual"
+};
+
+static const std::string functionRoleLUT[] = {
+    "None",
+    "Vertex",
+    "Fragment",
+    "Kernel"
 };
 
 class StandardFunctionValue : public SPIRVFunction {
@@ -212,8 +263,7 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
     Function* entryPointFunction = opFunction(new FunctionType(context, new ScalarType(context, TypeID::Void, 0, true), {}), name);
     setActiveFunction(entryPointFunction);
 
-    GET_FUNCTION_ROLE_NAME(functionRole);
-    std::string code = "OpEntryPoint " + functionRoleStr + " " + entryPointFunction->getName() + " \"" + name + "\"";
+    std::string code = "OpEntryPoint " + functionRoleLUT[(int)functionRole] + " " + entryPointFunction->getName() + " \"" + name + "\"";
     // TODO: support other origins as well
     if (functionRole == FunctionRole::Fragment)
         blockHeader->addCode("OpExecutionMode " + entryPointFunction->getName() + " OriginUpperLeft");
@@ -445,10 +495,8 @@ Value* SPIRVBuilder::opOperation(Value* l, Value* r, Type* type, Operation opera
     bool signSensitive = (operation == Operation::Divide || operation == Operation::Modulo || operation == Operation::Remainder || operation == Operation::GreaterThan || operation == Operation::GreaterThanEqual || operation == Operation::LessThan || operation == Operation::LessThanEqual);
     bool needsPrefix = (operation == Operation::Add || operation == Operation::Subtract || operation == Operation::Multiply || operation == Operation::Divide || operation == Operation::Modulo || operation == Operation::Remainder || needsOrd);
 
-    GET_OPERATION_NAME(operation);
-
     // TODO: do not use l for getting op prefix?
-    getSPIRVInsertBlock()->addCode("Op" + (needsPrefix ? getTypeOpPrefix(l->getType(), signSensitive, needsOrd) : "") + operationStr + " " + typeV->getName() + " " + l->getName() + " " + r->getName(), value);
+    getSPIRVInsertBlock()->addCode("Op" + (needsPrefix ? getTypeOpPrefix(l->getType(), signSensitive, needsOrd) : "") + operationLUT[(int)operation] + " " + typeV->getName() + " " + l->getName() + " " + r->getName(), value);
 
     // "Unpack" the vector
     if (type->getTypeID() == TypeID::Bool && value->getType()->isVector()) {
@@ -656,7 +704,7 @@ Value* SPIRVBuilder::opSample(Value* funcV, Value* texture, Value* sampler, Valu
 Value* SPIRVBuilder::opVariable(PointerType* type, Value* initializer)  {
     Value* typeV = getTypeValue(this, type);
     Value* value = new Value(context, type, context.popRegisterName());
-    std::string code = "OpVariable " + typeV->getName() + " " + storageClassLUT[(int) type->getStorageClass()];
+    std::string code = "OpVariable " + typeV->getName() + " " + storageClassLUT[(int)type->getStorageClass()];
     if (initializer) {
         if (initializer->isConstant())
             code += " " + initializer->getName();
@@ -777,8 +825,7 @@ void SPIRVBuilder::opMemberDecorate(Value* value, uint32_t memberIndex, Decorati
 }
 
 void SPIRVBuilder::_opDecorate(std::string begin, Decoration decoration, const std::vector<std::string>& values) {
-    GET_DECORATION_NAME(decoration);
-    std::string code = begin + " " + decorationStr;
+    std::string code = begin + " " + decorationLUT[(int)decoration];
     for (auto& value : values)
         code += " " + value;
     blockAnnotations->addCode(code);

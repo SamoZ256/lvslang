@@ -87,32 +87,16 @@ enum class StorageClass {
     Uniform,
     Output,
     Workgroup,
-    // CrossWorkgroup,
+    //CrossWorkgroup,
     Private,
     Function,
-    // Generic,
+    //Generic,
     PushConstant,
     AtomicCounter,
     Image,
     StorageBuffer,
 
     MaxEnum
-};
-
-const std::string storageClassLUT[] = {
-    "UniformConstant",
-    "Input",
-    "Uniform",
-    "Output",
-    "Workgroup",
-    // "CrossWorkgroup",
-    "Private",
-    "Function",
-    // "Generic",
-    "PushConstant",
-    "AtomicCounter",
-    "Image",
-    "StorageBuffer"
 };
 
 enum class Decoration {
@@ -141,35 +125,6 @@ enum class Decoration {
 
     MaxEnum
 };
-
-const std::string decorationLUT[] = {
-    "Block",
-    "ArrayStride",
-    "NoPerspective",
-    "Flat",
-    "Patch",
-    "Sample",
-    "Invariant",
-    "Restrict",
-    "Aliased",
-    "Volatile",
-    "Constant",
-    "Coherent",
-    "NonWritable",
-    "NonReadable",
-    "Uniform",
-    "Location",
-    "DescriptorSet",
-    "Binding",
-    "Offset",
-    "Alignment",
-
-    "BuiltIn Position"
-};
-
-#define GET_DECORATION_NAME(decoration) \
-IRB_VALIDATE_ENUM_ARGUMENT(Decoration, decoration); \
-const std::string& decoration##Str = decorationLUT[(int)decoration];
 
 enum class TextureViewType {
     _1D,
@@ -210,29 +165,6 @@ enum class Operation {
     MaxEnum
 };
 
-const std::string operationLUT_SPIRV[] = {
-    "Add",
-    "Sub",
-    "Mul",
-    "Div",
-    "Mod",
-    "Rem",
-    "BitwiseAnd",
-    "BitwiseOr",
-    "Equal",
-    "NotEqual",
-    "LogicalAnd",
-    "LogicalOr",
-    "GreaterThan",
-    "LessThan",
-    "GreaterThanEqual",
-    "LessThanEqual"
-};
-
-#define GET_OPERATION_NAME(operation) \
-IRB_VALIDATE_ENUM_ARGUMENT(Operation, operation); \
-std::string operation##Str = operationLUT_SPIRV[(int)operation];
-
 // TODO: rename?
 enum class FunctionRole {
     Normal,
@@ -242,17 +174,6 @@ enum class FunctionRole {
 
     MaxEnum
 };
-
-const std::string functionRoleLUT_SPIRV[] = {
-    "None",
-    "Vertex",
-    "Fragment",
-    "Kernel"
-};
-
-#define GET_FUNCTION_ROLE_NAME(functionRole) \
-IRB_VALIDATE_ENUM_ARGUMENT(FunctionRole, functionRole); \
-std::string functionRole##Str = functionRoleLUT_SPIRV[(int)functionRole];
 
 // Utility functions
 /*
