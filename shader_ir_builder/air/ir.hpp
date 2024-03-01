@@ -30,7 +30,7 @@ public:
         handle = new llvm::IRBuilder<>(*context.handle);
     }
 
-    void opExtension(const std::string& extensionName) override {}
+    void opExtension(irb::Extension extension) override {}
 
     void opImportSTD_EXT(const std::string& stdName) override {}
 

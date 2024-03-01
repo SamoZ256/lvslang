@@ -12,10 +12,4 @@ std::map<SPIRVVersion, std::string> spirvVersionMap = {
     {SPIRVVersion::_1_6, "1.6"}
 };
 
-std::tuple<bool, std::string, std::string> extensions[(int)Extension::MaxEnum] = {
-    {false, "GL_EXT_shader_8bit_storage", "SPV_KHR_8bit_storage"},
-    {false, "GL_EXT_shader_16bit_storage", "SPV_KHR_16bit_storage"},
-    {false, "GL_EXT_shader_explicit_arithmetic_types", "SPV_AMD_gpu_shader_int16"}
-};
-
 } // namespace irb

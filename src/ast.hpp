@@ -100,22 +100,6 @@ extern std::map<std::string, Variable> variables;
 extern std::map<std::string, std::vector<FunctionPrototypeAST*> > functionDeclarations;
 extern std::map<std::string, Enumeration*> enumerations;
 
-inline void enableSPIRVExtension(irb::Extension extension) {
-    auto& ext = irb::extensions[(int)extension];
-    if (!std::get<0>(ext)) {
-        builder->opExtension(std::get<2>(ext));
-        std::get<0>(ext) = true;
-    }
-}
-
-inline void enableGLSLExtension(std::string& codeHeader, irb::Extension extension) {
-    auto& ext = irb::extensions[(int)extension];
-    if (!std::get<0>(ext)) {
-        codeHeader += "\n\n#extension " + std::get<1>(ext) + " : enable";
-        std::get<0>(ext) = true;
-    }
-}
-
 inline bool typeIsPromoted(irb::TypeID a, irb::TypeID b) {
     static irb::TypeID typesSortedByPromotion[] = {
         irb::TypeID::Vector,

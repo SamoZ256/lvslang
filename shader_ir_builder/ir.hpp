@@ -25,7 +25,7 @@ public:
      * 
      * @param[in] extensionName the name of the extension, the list of all available extensions can be found at https:// github.com/KhronosGroup/SPIRV-Registry
      */
-    virtual void opExtension(const std::string& extensionName) = 0;
+    virtual void opExtension(irb::Extension extension) = 0;
     
     /**
      * Imports standard library.

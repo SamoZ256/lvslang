@@ -5,6 +5,12 @@
 
 namespace lvslang {
 
+static std::string extensionLUT[(int)irb::Extension::MaxEnum] = {
+    "GL_EXT_shader_8bit_storage",
+    "GL_EXT_shader_16bit_storage",
+    "GL_EXT_shader_explicit_arithmetic_types"
+};
+
 struct CodeValue {
     std::string code;
 };
@@ -69,10 +75,13 @@ private:
     Target target;
     const AST& ast;
 
+    // GLSL
     GLSLVersion glslVersion;
+    bool extensionsEnabled[(int)irb::Extension::MaxEnum] = {false};
 
     uint32_t currentIndentation = 0;
 
+    // Codegen
     CodeValue* codegenExpression(const ExpressionAST* expression);
 
     CodeValue* codegenNumberExpression(const NumberExpressionAST* expression);
@@ -108,6 +117,15 @@ private:
     CodeValue* codegenEnumValueExpression(const EnumValueExpressionAST* expression);
 
     CodeValue* codegenInitializerListExpression(const InitializerListExpressionAST* expression);
+
+    // Helper functions
+    inline void enableGLSLExtension(std::string& codeHeader, irb::Extension extension) {
+        bool& enabled = extensionsEnabled[(int)extension];
+        if (!enabled) {
+            codeHeader += "\n\n#extension " + extensionLUT[(int)extension] + " : enable";
+            enabled = true;
+        }
+    }
 };
 
 } // namespace lvslang

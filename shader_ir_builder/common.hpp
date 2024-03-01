@@ -80,10 +80,6 @@ enum class Extension {
     MaxEnum
 };
 
-// TODO: move the GLSL part to @ref ast.hpp
-// is enabled, glsl name, spirv name
-extern std::tuple<bool, std::string, std::string> extensions[(int)Extension::MaxEnum];
-
 // Enums
 enum class StorageClass {
     UniformConstant,

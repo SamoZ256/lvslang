@@ -150,6 +150,12 @@ static std::map<std::string, StandardFunctionInfo> standardFunctionLUT = {
     // TODO: add transpose function
 };
 
+static std::string extensionsLUT[(int)Extension::MaxEnum] = {
+    "SPV_KHR_8bit_storage",
+    "SPV_KHR_16bit_storage",
+    "SPV_AMD_gpu_shader_int16"
+};
+
 class StandardFunctionValue : public SPIRVFunction {
 public:
     using SPIRVFunction::SPIRVFunction;
@@ -183,8 +189,12 @@ SPIRVBuilder::SPIRVBuilder(Context& aContext, SPIRVVersion aSPIRVVersion, bool a
     blockMain->addCodeRawToBeginning("; All functions\n");
 }
 
-void SPIRVBuilder::opExtension(const std::string& extensionName)  {
-    blockHeader->addCodeToBeginning("OpExtension \"" + extensionName + "\"");
+void SPIRVBuilder::opExtension(irb::Extension extension)  {
+    bool& enabled = extensionsEnabled[(int)extension];
+    if (!enabled) {
+        blockHeader->addCodeToBeginning("OpExtension \"" + extensionsLUT[(int)extension] + "\"");
+        enabled = true;
+    }
 }
 
 void SPIRVBuilder::opImportSTD_EXT(const std::string& stdName)  {

@@ -27,9 +27,9 @@ public:
         
         // TODO: enable them only if needed
         if (target == Target::SPIRV) {
-            enableSPIRVExtension(irb::Extension::_8bit_storage);
-            enableSPIRVExtension(irb::Extension::_16bit_storage);
-            enableSPIRVExtension(irb::Extension::explicit_arithmetic_types);
+            builder->opExtension(irb::Extension::_8bit_storage);
+            builder->opExtension(irb::Extension::_16bit_storage);
+            builder->opExtension(irb::Extension::explicit_arithmetic_types);
             
             builder->opImportSTD_EXT("GLSL.std.450");
             builder->opMemoryModel();
@@ -63,6 +63,7 @@ private:
     std::string languageName;
     uint32_t languageVersionMajor, languageVersionMinor, languageVersionPatch;
 
+    // Codegen
     irb::Value* codegenExpression(const ExpressionAST* expression);
 
     irb::Value* codegenNumberExpression(const NumberExpressionAST* expression);

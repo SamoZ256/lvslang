@@ -13,7 +13,7 @@ class SPIRVBuilder : public IRBuilder {
 public:
     SPIRVBuilder(Context& aContext, SPIRVVersion aSPIRVVersion, bool aIncludeDebugInformation = false);
 
-    void opExtension(const std::string& extensionName) override;
+    void opExtension(irb::Extension extension) override;
 
     void opImportSTD_EXT(const std::string& stdName) override;
 
@@ -83,6 +83,7 @@ public:
 private:
     // Version
     SPIRVVersion spirvVersion;
+    bool extensionsEnabled[(int)Extension::MaxEnum] = {false};
 
     std::map<std::string, Value*> typesVariablesConstantsDefinitions;
 
