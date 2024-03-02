@@ -107,11 +107,11 @@ irb::Value* IRWriter::codegenBinaryExpression(const BinaryExpressionAST* express
             irb::Value* loadedVector = builder->opLoad(unloadedVector->getUnloadedVector());
             if (r->getType()->isScalar()) {
                 for (auto index : unloadedVector->getIndices())
-                    loadedVector = builder->opVectorInsert(loadedVector, r, new irb::ConstantInt(context, index, 32, true)); // TODO: should it be signed?
+                    loadedVector = builder->opInsert(loadedVector, r, new irb::ConstantInt(context, index, 32, true)); // TODO: should it be signed?
             } else if (r->getType()->isVector()) {
                 // TODO: check if component count matches and if we are not accessing out of bounds
                 for (uint8_t i = 0; i < unloadedVector->getIndices().size(); i++)
-                    loadedVector = builder->opVectorInsert(loadedVector, builder->opVectorExtract(r, new irb::ConstantInt(context, i, 32, true)), new irb::ConstantInt(context, unloadedVector->getIndices()[i], 32, true));
+                    loadedVector = builder->opInsert(loadedVector, builder->opExtract(r, new irb::ConstantInt(context, i, 32, true)), new irb::ConstantInt(context, unloadedVector->getIndices()[i], 32, true));
             } else {
                 logError("cannot assign to vector from type other than scalar and vector");
                 return nullptr;
@@ -449,7 +449,7 @@ irb::Value* IRWriter::codegenMemberAccessExpression(const MemberAccessExpression
                 break;
             }
             if (expression->getLoadOnCodegen())
-                components.push_back(builder->opVectorExtract(loadedVector, new irb::ConstantInt(context, index, 32, false)));
+                components.push_back(builder->opExtract(loadedVector, new irb::ConstantInt(context, index, 32, false)));
             else
                 indices.push_back(index);
         }
@@ -501,7 +501,7 @@ irb::Value* IRWriter::codegenInitializerListExpression(const InitializerListExpr
                 components.erase(components.begin() + i);
                 for (uint8_t j = 0; j < vectorType->getComponentCount(); j++) {
                     irb::Value* vectorComponent;
-                    vectorComponent = builder->opCast(builder->opVectorExtract(component, new irb::ConstantInt(context, j, 32, true)), expression->getType()->getBaseType());
+                    vectorComponent = builder->opCast(builder->opExtract(component, new irb::ConstantInt(context, j, 32, true)), expression->getType()->getBaseType());
                     components.insert(components.begin() + i + j, vectorComponent);
                 }
             }

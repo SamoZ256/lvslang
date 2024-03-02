@@ -110,9 +110,9 @@ public:
 
     virtual Value* opConstruct(Type* type, const std::vector<Value*>& components) = 0;
 
-    virtual Value* opVectorExtract(Value* vec, ConstantInt* index) = 0;
+    virtual Value* opExtract(Value* vec, ConstantInt* index) = 0;
 
-    virtual Value* opVectorInsert(Value* vec, Value* val, ConstantInt* index) = 0;
+    virtual Value* opInsert(Value* vec, Value* val, ConstantInt* index) = 0;
 
     virtual Value* opGetElementPtr(PointerType* elementType, Value* ptr, const std::vector<Value*>& indexes) = 0;
 

@@ -304,7 +304,7 @@ Value* AIRBuilder::opOperation(Value* l, Value* r, Type* type, Operation operati
         std::vector<Value*> resultComponents(static_cast<VectorType*>(value->getType())->getComponentCount());
         for (uint8_t i = 0; i < resultComponents.size(); i++) {
             context.pushRegisterName("vec_op_unpack");
-            resultComponents[i] = opVectorExtract(value, new ConstantInt(context, i, 32, true));
+            resultComponents[i] = opExtract(value, new ConstantInt(context, i, 32, true));
         }
         value = resultComponents[0];
         for (uint8_t i = 1; i < resultComponents.size(); i++)
@@ -376,6 +376,11 @@ void AIRBuilder::opBranchCond(Value* cond, Block* blockTrue, Block* blockFalse) 
 }
 
 Value* AIRBuilder::opConstruct(Type* type, const std::vector<Value*>& components) {
+    if (!type->isVector() && !type->isMatrix()){
+        IRB_INVALID_ARGUMENT_WITH_REASON("type", "type is not vector or matrix");
+        return nullptr;
+    }
+
     context.popRegisterName();
     bool allComponentsAreConstant = true;
     for (uint8_t i = 0; i < components.size(); i++) {
@@ -384,6 +389,7 @@ Value* AIRBuilder::opConstruct(Type* type, const std::vector<Value*>& components
             break;
         }
     }
+    
     if (allComponentsAreConstant) {
         Value* value = new Value(context, type);
         value->setIsConstant(true);
@@ -392,20 +398,23 @@ Value* AIRBuilder::opConstruct(Type* type, const std::vector<Value*>& components
         llvmComponents.reserve(components.size());
         for (const auto& component : components)
             llvmComponents.push_back(static_cast<llvm::Constant*>(getValueLLVMHandle(component)));
-        value->setHandle(llvm::ConstantVector::get(llvmComponents));
+        if (type->isVector())
+            value->setHandle(llvm::ConstantVector::get(llvmComponents));
+        else
+            value->setHandle(llvm::ConstantArray::get(static_cast<llvm::ArrayType*>(getTypeLLVMHandle(type)), llvmComponents));
 
         return value;
     } else {
         Value* value = new UndefinedValue(context, type);
         value->setHandle(llvm::UndefValue::get(getTypeLLVMHandle(type)));
         for (uint8_t i = 0; i < components.size(); i++)
-            value = opVectorInsert(value, components[i], new ConstantInt(context, i, 32, true));
+            value = opInsert(value, components[i], new ConstantInt(context, i, 32, true));
 
         return value;
     }
 }
 
-Value* AIRBuilder::opVectorExtract(Value* vec, ConstantInt* index) {
+Value* AIRBuilder::opExtract(Value* vec, ConstantInt* index) {
     Value* value = new Value(context, vec->getType()->getBaseType());
 
     value->setHandle(handle->CreateExtractElement(getValueLLVMHandle(vec), getValueLLVMHandle(index), context.popRegisterName()));
@@ -413,7 +422,7 @@ Value* AIRBuilder::opVectorExtract(Value* vec, ConstantInt* index) {
     return value;
 }
 
-Value* AIRBuilder::opVectorInsert(Value* vec, Value* val, ConstantInt* index) {
+Value* AIRBuilder::opInsert(Value* vec, Value* val, ConstantInt* index) {
     Value* value = new Value(context, vec->getType());
 
     value->setHandle(handle->CreateInsertElement(getValueLLVMHandle(vec), getValueLLVMHandle(val), getValueLLVMHandle(index), context.popRegisterName()));

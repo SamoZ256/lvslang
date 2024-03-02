@@ -103,6 +103,7 @@ extern std::map<std::string, Enumeration*> enumerations;
 inline bool typeIsPromoted(irb::TypeID a, irb::TypeID b) {
     static irb::TypeID typesSortedByPromotion[] = {
         irb::TypeID::Vector,
+        irb::TypeID::Matrix,
         irb::TypeID::Float,
         irb::TypeID::Pointer,
         irb::TypeID::Integer,

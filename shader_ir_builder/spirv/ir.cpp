@@ -503,7 +503,7 @@ Value* SPIRVBuilder::opOperation(Value* l, Value* r, Type* type, Operation opera
         std::vector<Value*> resultComponents(static_cast<VectorType*>(value->getType())->getComponentCount());
         for (uint8_t i = 0; i < resultComponents.size(); i++) {
             context.pushRegisterName("vec_op_unpack");
-            resultComponents[i] = opVectorExtract(value, new ConstantInt(context, i, 32, true));
+            resultComponents[i] = opExtract(value, new ConstantInt(context, i, 32, true));
         }
         value = resultComponents[0];
         for (uint8_t i = 1; i < resultComponents.size(); i++)
@@ -617,7 +617,7 @@ Value* SPIRVBuilder::opConstruct(Type* type, const std::vector<Value*>& componen
     return value;
 }
 
-Value* SPIRVBuilder::opVectorExtract(Value* vec, ConstantInt* index)  {
+Value* SPIRVBuilder::opExtract(Value* vec, ConstantInt* index)  {
     if (!vec->getType()->isVector()) {
         IRB_ERROR("cannot extract value from a non-vector type");
         return nullptr;
@@ -625,7 +625,7 @@ Value* SPIRVBuilder::opVectorExtract(Value* vec, ConstantInt* index)  {
     // VectorType* vecType = static_cast<VectorType*>(vec->getType());
     /*
     if (index->getInt() >= vecType->getComponentCount()) {
-        error("trying to get element at index " + std::to_string(index->getInt()) + ", but vector has only " +  + " elements", "SPIRVBuilder::opVectorExtract");
+        error("trying to get element at index " + std::to_string(index->getInt()) + ", but vector has only " +  + " elements", "SPIRVBuilder::opExtract");
         return nullptr;
     }
     */
@@ -637,7 +637,7 @@ Value* SPIRVBuilder::opVectorExtract(Value* vec, ConstantInt* index)  {
     return value;
 }
 
-Value* SPIRVBuilder::opVectorInsert(Value* vec, Value* val, ConstantInt* index)  {
+Value* SPIRVBuilder::opInsert(Value* vec, Value* val, ConstantInt* index)  {
     Value* value = new Value(context, vec->getType(), context.popRegisterName());
     getSPIRVInsertBlock()->addCode("OpCompositeInsert " + getTypeValue(this, vec->getType())->getName() + " " + val->getName() + " " + vec->getName() + " " + index->getName(), value);
 
