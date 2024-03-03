@@ -772,6 +772,16 @@ ExpressionAST* parseTypeExpression() {
     }
 }
 
+ExpressionAST* parseDereferenceExpression() {
+    getNextToken(); // '*'
+    ExpressionAST* expression = parseMain();
+    if (!expression)
+        return nullptr;
+    
+    return new DereferenceExpressionAST(expression);
+}
+
+// TODO: implement reference expression
 // Main parse
 ExpressionAST* parseMain() {
     switch (crntToken) {
@@ -799,6 +809,8 @@ ExpressionAST* parseMain() {
     case TOKEN_CONST:
     case TOKEN_TYPE_ENUM_MIN ... TOKEN_TYPE_ENUM_MAX:
         return parseTypeExpression();
+    case TOKEN_OPERATOR_DEREFERENCE:
+        return parseDereferenceExpression();
     default:
         logError("expected expression");
         return nullptr;

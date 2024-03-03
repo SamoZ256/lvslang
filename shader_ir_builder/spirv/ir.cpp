@@ -164,7 +164,10 @@ static const std::string extensionsLUT[(int)Extension::MaxEnum] = {
 
 static const std::string decorationLUT[] = {
     "Block",
+    "RowMajor",
+    "ColMajor",
     "ArrayStride",
+    "MatrixStride",
     "NoPerspective",
     "Flat",
     "Patch",
@@ -336,7 +339,7 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
         default:
             break;
         }
-        if (attr.isBuffer || (functionRole == FunctionRole::Vertex && attr.isInput))
+        if (attr.isBuffer && type->isStructure() || (functionRole == FunctionRole::Vertex && attr.isInput))
             opDecorate(getTypeValue(this, type, true), Decoration::Block);
         
         // Add to interface

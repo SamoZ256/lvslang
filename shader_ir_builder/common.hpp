@@ -101,7 +101,10 @@ enum class StorageClass {
 
 enum class Decoration {
     Block,
+    RowMajor,
+    ColMajor,
     ArrayStride,
+    MatrixStride,
     NoPerspective,
     Flat,
     Patch,

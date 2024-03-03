@@ -768,6 +768,16 @@ InitializerListExpressionAST* parseTypeExpression() {
     return expression;
 }
 
+ExpressionAST* parseDereferenceExpression() {
+    getNextToken(); // '*'
+    ExpressionAST* expression = parseMain();
+    if (!expression)
+        return nullptr;
+    
+    return new DereferenceExpressionAST(expression);
+}
+
+// TODO: implement reference expression
 // Main parse
 ExpressionAST* parseMain() {
     switch (crntToken) {
@@ -801,6 +811,8 @@ ExpressionAST* parseMain() {
         return parseBracesExpression();
     case '[':
         return parseSquareBracketsExpression();
+    case TOKEN_OPERATOR_DEREFERENCE:
+        return parseDereferenceExpression();
     case TOKEN_TYPE_ENUM_MIN ... TOKEN_TYPE_ENUM_MAX:
         return parseTypeExpression();
     default:

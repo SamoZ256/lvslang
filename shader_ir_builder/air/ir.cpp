@@ -682,29 +682,27 @@ std::string AIRBuilder::createMetadata(const std::string& languageName, uint32_t
                         IRB_ERROR("argument marked with 'buffer' attribute must have pointer type");
                         return "";
                     }
-                    // TODO: support non-structure types as well
-                    if (!argument.type->getElementType()->isStructure()) {
-                        IRB_ERROR("argument marked with 'buffer' attribute must have element type of structure");
-                        return "";
-                    }
-                    StructureType* structureType = static_cast<StructureType*>(argument.type->getElementType());
 
+                    str += "!\"air.buffer\", !\"air.location_index\", i32 " + std::to_string(argument.attributes.bindings.buffer) + ", i32 1, !\"air.read\", !\"air.address_space\", i32 " + std::to_string(getTypeLLVMHandle(argument.type)->getPointerAddressSpace());
+                    
                     // Structure info
-                    structureInfo = new MetadataValue(context);
-                    structureInfoStr = "!{";
-                    uint32_t offset = 0;
-                    for (uint32_t j = 0; j < structureType->getStructure()->members.size(); j++) {
-                        const auto& member = structureType->getStructure()->members[j];
-                        uint32_t size = member.type->getBitCount(true) / 8;
-                        if (j != 0)
-                            structureInfoStr += ", ";
-                        structureInfoStr += "i32 " + std::to_string(offset) + ", i32 " + std::to_string(size) + ", i32 0, !\"" + member.type->getDebugName() + "\", !\"" + member.name + "\""; // TODO: here
-                        offset += size;
-                    }
-                    structureInfoStr += "}";
+                    if (StructureType* structureType = dynamic_cast<StructureType*>(argument.type->getElementType())) {
+                        structureInfo = new MetadataValue(context);
+                        structureInfoStr = "!{";
+                        uint32_t offset = 0;
+                        for (uint32_t j = 0; j < structureType->getStructure()->members.size(); j++) {
+                            const auto& member = structureType->getStructure()->members[j];
+                            uint32_t size = member.type->getBitCount(true) / 8;
+                            if (j != 0)
+                                structureInfoStr += ", ";
+                            structureInfoStr += "i32 " + std::to_string(offset) + ", i32 " + std::to_string(size) + ", i32 0, !\"" + member.type->getDebugName() + "\", !\"" + member.name + "\""; // TODO: here
+                            offset += size;
+                        }
+                        structureInfoStr += "}";
 
-                    uint32_t align = 8; // TODO: do not hardcode this
-                    str += "!\"air.buffer\", !\"air.location_index\", i32 " + std::to_string(argument.attributes.bindings.buffer) + ", i32 1, !\"air.read\", !\"air.address_space\", i32 " + std::to_string(getTypeLLVMHandle(argument.type)->getPointerAddressSpace()) + ", !\"air.struct_type_info\", " + structureInfo->getName() + ", !\"air.arg_type_size\", i32 " + std::to_string(structureType->getBitCount(true) / 8) + ", !\"air.arg_type_align_size\", i32 " + std::to_string(align);
+                        uint32_t align = 8; // TODO: do not hardcode this
+                        str += ", !\"air.struct_type_info\", " + structureInfo->getName() + ", !\"air.arg_type_size\", i32 " + std::to_string(structureType->getBitCount(true) / 8) + ", !\"air.arg_type_align_size\", i32 " + std::to_string(align);
+                    }
                 } else if (argument.attributes.isTexture) {
                     // TODO: do not hardcode template arguments
                     str += "!\"air.texture\", !\"air.location_index\", i32 " + std::to_string(argument.attributes.bindings.texture) + ", i32 1, !\"air.sample\"";

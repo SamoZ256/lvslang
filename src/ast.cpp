@@ -498,4 +498,17 @@ irb::Type* InitializerListExpressionAST::_initialize() {
     return listType;
 }
 
+irb::Type* DereferenceExpressionAST::_initialize() {
+    irb::Type* type = expression->initialize();
+    if (!type)
+        return nullptr;
+
+    if (!type->isPointer()) {
+        logError("cannot dereference a non-pointer value");
+        return nullptr;
+    }
+
+    return type->getElementType();
+}
+
 } // namespace lvslang

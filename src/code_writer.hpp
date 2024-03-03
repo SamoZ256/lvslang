@@ -118,6 +118,8 @@ private:
 
     CodeValue* codegenInitializerListExpression(const InitializerListExpressionAST* expression);
 
+    CodeValue* codegenDereferenceExpression(const DereferenceExpressionAST* expression);
+
     // Helper functions
     inline void enableGLSLExtension(std::string& codeHeader, irb::Extension extension) {
         bool& enabled = extensionsEnabled[(int)extension];

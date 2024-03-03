@@ -96,6 +96,16 @@ Value* getTypeValue(SPIRVBuilder* builder, Type* type, bool decorate) {
                 // Offset
                 builder->opMemberDecorate(value, i, Decoration::Offset, {std::to_string(offset)});
                 offset += memberValues[i]->getType()->getBitCount(true) / 8; // To bytes
+
+                // TODO: decorate with array stride in case of array?
+
+                if (memberValues[i]->getType()->isMatrix()) {
+                    // TODO: support row major as well?
+                    builder->opMemberDecorate(value, i, Decoration::ColMajor);
+
+                    // TODO: check if this is correct
+                    builder->opMemberDecorate(value, i, Decoration::MatrixStride, {std::to_string(memberValues[i]->getType()->getBaseType()->getBitCount(true) / 8)});
+                }
             }
         }
 

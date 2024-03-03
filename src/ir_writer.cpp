@@ -42,6 +42,8 @@ irb::Value* IRWriter::codegenExpression(const ExpressionAST* expression) {
         value = codegenEnumValueExpression(e);
     } else if (auto* e = dynamic_cast<const InitializerListExpressionAST*>(expression)) {
         value = codegenInitializerListExpression(e);
+    } else if (auto* e = dynamic_cast<const DereferenceExpressionAST*>(expression)) {
+        value = codegenDereferenceExpression(e);
     } else {
         LVSLANG_ERROR("unknown expression type");
         return nullptr;
@@ -402,6 +404,7 @@ irb::Value* IRWriter::codegenMemberAccessExpression(const MemberAccessExpression
     irb::Value* exprV = codegenExpression(expression->getExpression());
     if (!exprV)
         return nullptr;
+    // TODO: load the value in SPIRV backend if it isn't input/buffer
     if (target == Target::AIR && expression->getExprShouldBeLoadedBeforeAccessingMember())
         exprV = builder->opLoad(exprV);
     irb::PointerType* exprType = static_cast<irb::PointerType*>(exprV->getType());
@@ -553,6 +556,18 @@ irb::Value* IRWriter::codegenInitializerListExpression(const InitializerListExpr
     }
 
     return nullptr;
+}
+
+irb::Value* IRWriter::codegenDereferenceExpression(const DereferenceExpressionAST* expression) {
+    irb::Value* value = codegenExpression(expression->getExpression());
+    if (!value)
+        return nullptr;
+    
+    // TODO: load the value in SPIRV backend if it isn't input/buffer
+    if (target == Target::AIR)
+        value = builder->opLoad(value);
+
+    return value;
 }
 
 } // namespace lvslang

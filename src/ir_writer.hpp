@@ -99,6 +99,8 @@ private:
     irb::Value* codegenEnumValueExpression(const EnumValueExpressionAST* expression);
 
     irb::Value* codegenInitializerListExpression(const InitializerListExpressionAST* expression);
+
+    irb::Value* codegenDereferenceExpression(const DereferenceExpressionAST* expression);
 };
 
 } // namespace lvslang

@@ -1,6 +1,6 @@
-struct Model {
-    member pos: float2
-    member scale: float2
+struct ViewProj {
+    member projection: float4x4
+    member view: float4x4
 }
 
 struct VertexIn {
@@ -14,9 +14,10 @@ struct VertexOut {
 }
 
 vertex vertexMain(vertexIn: struct VertexIn [[input]],
-                  model: constant struct Model* [[descriptor_set(0, 0)]]) -> struct VertexOut {
+                  viewProj: constant struct Model* [[descriptor_set(0, 0)]]
+                  model: constant float4x4* [[descriptor_set(1, 0)]]) -> struct VertexOut {
     var vertexOut: struct VertexOut
-    vertexOut.pos = float4(model->pos.x + vertexIn.pos.x * model->scale.x, model->pos.y + vertexIn.pos.y * model->scale.y, 0.0, 1.0)
+    vertexOut.pos = viewProj->projection * viewProj->view * model * float4(vertexIn.pos, 0.0, 1.0)
     vertexOut.texCoord = vertexIn.texCoord
 
     return vertexOut

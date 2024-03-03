@@ -42,6 +42,8 @@ CodeValue* CodeWriter::codegenExpression(const ExpressionAST* expression) {
         value = codegenEnumValueExpression(e);
     } else if (auto* e = dynamic_cast<const InitializerListExpressionAST*>(expression)) {
         value = codegenInitializerListExpression(e);
+    } else if (auto* e = dynamic_cast<const DereferenceExpressionAST*>(expression)) {
+        value = codegenDereferenceExpression(e);
     } else {
         LVSLANG_ERROR("unknown expression type");
         return nullptr;
@@ -94,6 +96,10 @@ CodeValue* CodeWriter::codegenBinaryExpression(const BinaryExpressionAST* expres
 
     if (expression->getOp() == "=")
         return new CodeValue{l->code + " = " + r->code};
+    
+    // HLSL matrix multiplication
+    if (target == Target::HLSL && expression->getOp() == "*" && (expression->getLHS()->getType()->isMatrix() || expression->getRHS()->getType()->isMatrix()))
+        return new CodeValue{"mul(" + l->code + ", " + r->code + ")"};
 
     // TODO: cast in some cases?
     return new CodeValue{"(" + l->code + " " + expression->getOp() + " " + r->code + ")"};
@@ -536,6 +542,7 @@ CodeValue* CodeWriter::codegenMemberAccessExpression(const MemberAccessExpressio
     irb::PointerType* exprType = static_cast<irb::PointerType*>(expression->getExpression()->getType());
     irb::Type* elementExprType = exprType->getElementType();
     if (expression->getExprShouldBeLoadedBeforeAccessingMember()) {
+        // TODO: load the value in HLSL/GLSL backend if it isn't input/buffer
         if (target == Target::Metal)
             exprV = new CodeValue{"(*" + exprV->code + ")"};
         elementExprType = elementExprType->getElementType();
@@ -620,6 +627,16 @@ CodeValue* CodeWriter::codegenInitializerListExpression(const InitializerListExp
     }
 
     return new CodeValue{codeStr + ")"};
+}
+
+CodeValue* CodeWriter::codegenDereferenceExpression(const DereferenceExpressionAST* expression) {
+    std::string code = codegenExpression(expression->getExpression())->code;
+
+    // TODO: load the value in HLSL/GLSL backend if it isn't input/buffer
+    if (target == Target::Metal)
+        code = "*(" + code + ")";
+
+    return new CodeValue{code};
 }
 
 } // namespace lvslang

@@ -1,6 +1,6 @@
-struct Model {
-    float2 pos;
-    float2 scale;
+struct ViewProj {
+    float4x4 projection;
+    float4x4 view;
 };
 
 struct VertexIn {
@@ -14,9 +14,10 @@ struct VertexOut {
 };
 
 vertex struct VertexOut vertexMain(struct VertexIn vertexIn [[input]],
-                                   constant struct Model* model [[descriptor_set(0, 0)]]) {
+                                   constant struct ViewProj* viewProj [[descriptor_set(0, 0)]],
+                                   constant float4x4* model [[descriptor_set(1, 0)]]) {
     struct VertexOut vertexOut;
-    vertexOut.pos = float4(model->pos + vertexIn.pos * model->scale, 0.0, 1.0);
+    vertexOut.pos = viewProj->projection * viewProj->view * *model * float4(vertexIn.pos, 0.0, 1.0);
     vertexOut.texCoord = vertexIn.texCoord;
 
     return vertexOut;

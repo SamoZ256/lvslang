@@ -709,6 +709,21 @@ private:
     irb::Type* _initialize() override;
 };
 
+class DereferenceExpressionAST : public ExpressionAST {
+public:
+    DereferenceExpressionAST(ExpressionAST* aExpression) : expression(aExpression) {}
+
+    // Getters
+    inline const ExpressionAST* getExpression() const {
+        return expression;
+    }
+
+private:
+    ExpressionAST* expression;
+
+    irb::Type* _initialize() override;
+};
+
 class AST {
 private:
     std::vector<ExpressionAST*> expressions;
