@@ -85,11 +85,11 @@ enum Token {
     TOKEN_ATTRIB_MUST_PROGRESS = -105,
     TOKEN_ATTRIB_WILL_RETURN = -106,
 
-    //  'attrib'
+    // 'attrib'
     TOKEN_ATTRIB_CONSTANT = -107,
     TOKEN_ATTRIB_DEVICE = -108,
 
-    //  '[[attrib]]'
+    // '[[attrib]]'
     TOKEN_ATTRIB_DESCRIPTOR_SET = -110,
     TOKEN_ATTRIB_POSITION = -111,
     TOKEN_ATTRIB_INPUT = -112,

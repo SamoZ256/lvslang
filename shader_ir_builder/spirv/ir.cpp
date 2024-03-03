@@ -284,7 +284,7 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
     Block* block = opBlock(entryPointFunction);
     setInsertBlock(block);
 
-    //  -------- Input --------
+    // -------- Input --------
     std::vector<Value*> argValues;
     argValues.reserve(arguments.size());
     for (const auto& argument : arguments) {
@@ -352,10 +352,10 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
         argValues.push_back(loadedAndStoredArgValue);
     }
 
-    //  -------- Call to entry point --------
+    // -------- Call to entry point --------
     Value* returnValue = opFunctionCall(entryPoint, argValues);
 
-    //  -------- Output --------
+    // -------- Output --------
     opDecorate(getTypeValue(this, returnType), Decoration::Block);
     context.pushRegisterName(name + "_output");
     Value* returnVariable = opVariable(new PointerType(context, returnType, StorageClass::Output));

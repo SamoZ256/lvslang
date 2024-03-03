@@ -20,8 +20,8 @@ int getTypeFromString(const std::string& strType) {
         return TOKEN_TYPE_SHORT;
     if (strType == "int")
         return TOKEN_TYPE_INT;
-    // if (strType == "int64")
-    //     return TOKEN_TYPE_INT64;
+    //if (strType == "int64")
+    //    return TOKEN_TYPE_INT64;
 
     if (strType == "bool")
         return TOKEN_TYPE_BOOL;
@@ -31,15 +31,15 @@ int getTypeFromString(const std::string& strType) {
         return TOKEN_TYPE_USHORT;
     if (strType == "uint")
         return TOKEN_TYPE_UINT;
-    // if (strType == "uint64")
-    //     return TOKEN_TYPE_UINT64;
+    //if (strType == "uint64")
+    //    return TOKEN_TYPE_UINT64;
 
     if (strType == "half")
         return TOKEN_TYPE_HALF;
     if (strType == "float")
         return TOKEN_TYPE_FLOAT;
-    // if (strType == "float64")
-    //     return TOKEN_TYPE_FLOAT64;
+    //if (strType == "float64")
+    //    return TOKEN_TYPE_FLOAT64;
     
     if (strType == "char2") {
         componentCount = 2;

@@ -578,10 +578,10 @@ CodeValue* CodeWriter::codegenStructureDefinition(const StructureDefinitionAST* 
             if (member.attributes.colorIndex != -1)
                 attributesEnd += " [[color(" + std::to_string(member.attributes.colorIndex) + ")]]";
         } else if (target == Target::HLSL) {
-            // TODO: add commas between attributes
-            // TODO: uncomment?
-            // if (member.attributes.isPosition)
-            //     attributesEnd += " : SV_Position";
+            //TODO: add commas between attributes
+            //TODO: uncomment?
+            //if (member.attributes.isPosition)
+            //    attributesEnd += " : SV_Position";
             if (member.attributes.locationIndex != -1)
                 attributesEnd += " : TEXCOORD" + std::to_string(member.attributes.locationIndex); // TODO: don't always use texcoord?
             if (member.attributes.colorIndex != -1)

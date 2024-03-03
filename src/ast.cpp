@@ -154,9 +154,9 @@ irb::Type* FunctionPrototypeAST::_initialize() {
                 }
                 attr.isBuffer = true;
                 attr.bindings.buffer = bufferBinding++;
-                // if ((irb::target == Target::SPIRV || irb::target == Target::GLSL || irb::target == Target::HLSL) && functionRole != irb::FunctionRole::Normal)
-                //     arg.type = arg.type->getElementType();
-                // pointerType->addAttribute(" noundef \"air-buffer-no-alias\"");
+                //if ((irb::target == Target::SPIRV || irb::target == Target::GLSL || irb::target == Target::HLSL) && functionRole != irb::FunctionRole::Normal)
+                //    arg.type = arg.type->getElementType();
+                //pointerType->addAttribute(" noundef \"air-buffer-no-alias\"");
             }
         }
     }
