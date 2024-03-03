@@ -17,6 +17,8 @@ irb::Type* NumberExpressionAST::_initialize() {
             scalarType = requiredType;
         } else if (requiredType->isVector()) {
             scalarType = requiredType->getBaseType();
+        } else if (requiredType->isMatrix()) {
+            scalarType = requiredType->getBaseType()->getBaseType();
         } else {
             logError("cannot cast constant expression of type constant number to '" + requiredType->getDebugName() + "'");
             return nullptr;
@@ -52,7 +54,7 @@ irb::Type* BinaryExpressionAST::_initialize() {
     irb::Type* lType = lhs->initialize();
     if (!lType)
         return nullptr;
-    irb::Type* rType = rhs->initialize(op == "=" ? lType->getElementType() : lType);
+    irb::Type* rType = rhs->initialize(op == "=" ? lType->getElementType() : nullptr);
     if (!rType)
         return nullptr;
 
@@ -68,7 +70,8 @@ irb::Type* BinaryExpressionAST::_initialize() {
         return nullptr;
     }
 
-    irb::Type* type = getPromotedType(lType, rType);
+    promotedType = findPromotedType(lType, rType);
+    irb::Type* type = promotedType;
 
     if (op == "+") {
         operation = irb::Operation::Add;

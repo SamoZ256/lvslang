@@ -95,6 +95,7 @@ CodeValue* CodeWriter::codegenBinaryExpression(const BinaryExpressionAST* expres
     if (expression->getOp() == "=")
         return new CodeValue{l->code + " = " + r->code};
 
+    // TODO: cast in some cases?
     return new CodeValue{"(" + l->code + " " + expression->getOp() + " " + r->code + ")"};
 }
 

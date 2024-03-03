@@ -76,9 +76,9 @@ public:
 
     Value* opConstruct(Type* type, const std::vector<Value*>& components) override;
 
-    Value* opExtract(Value* vec, ConstantInt* index) override;
+    Value* opExtract(Value* val, ConstantInt* index) override;
 
-    Value* opInsert(Value* vec, Value* val, ConstantInt* index) override;
+    Value* opInsert(Value* val1, Value* val2, ConstantInt* index) override;
 
     Value* opGetElementPtr(PointerType* elementType, Value* ptr, const std::vector<Value*>& indexes) override;
 
@@ -124,6 +124,13 @@ private:
     std::string sourceFilenameStr;
 
     Function* opFunctionDeclaration(FunctionType* functionType, const std::string& name, const std::vector<std::pair<llvm::Attribute::AttrKind, uint64_t> >& attributes = {});
+
+    // Matrix operations (column-major)
+    Value* _opMatrixTimesScalar(Value* matrix, Value* scalar);
+
+    Value* _opMatrixTimesVector(Value* matrix, Value* vector);
+
+    Value* _opMatrixTimesMatrix(Value* matrix1, Value* matrix2);
 
     inline AIRBlock* getAIRInsertBlock() {
         return static_cast<AIRBlock*>(getInsertBlock());

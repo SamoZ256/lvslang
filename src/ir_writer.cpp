@@ -124,6 +124,10 @@ irb::Value* IRWriter::codegenBinaryExpression(const BinaryExpressionAST* express
         return l;
     }
 
+    // TODO: don't always cast?
+    l = builder->opCast(l, expression->getPromotedType());
+    r = builder->opCast(r, expression->getPromotedType());
+
     context.pushRegisterName("op");
     irb::Value* value = builder->opOperation(l, r, expression->getType(), expression->getOperation());
 

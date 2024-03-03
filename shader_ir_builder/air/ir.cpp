@@ -183,6 +183,22 @@ Value* AIRBuilder::opOperation(Value* l, Value* r, Type* type, Operation operati
         return nullptr;
     }
 
+    if (operation == Operation::Multiply) {
+        if (l->getType()->isMatrix()) {
+            if (r->getType()->isScalar())
+                return _opMatrixTimesScalar(l, r);
+            else if (r->getType()->isVector())
+                return _opMatrixTimesVector(l, r);
+            else if (r->getType()->isMatrix())
+                return _opMatrixTimesMatrix(l, r);
+        } else if (r->getType()->isMatrix()) {
+            if (l->getType()->isScalar()) // TODO: check if this should be possible
+                return _opMatrixTimesScalar(r, l);
+            else if (l->getType()->isVector())
+                return nullptr; // TODO: implement this
+        }
+    }
+
     if (r->getType()->isVector() && l->getType()->isScalar())
         std::swap(l, r);
     if (l->getType()->isVector() && r->getType()->isScalar())
@@ -414,18 +430,24 @@ Value* AIRBuilder::opConstruct(Type* type, const std::vector<Value*>& components
     }
 }
 
-Value* AIRBuilder::opExtract(Value* vec, ConstantInt* index) {
-    Value* value = new Value(context, vec->getType()->getBaseType());
+Value* AIRBuilder::opExtract(Value* val, ConstantInt* index) {
+    Value* value = new Value(context, val->getType()->getBaseType());
 
-    value->setHandle(handle->CreateExtractElement(getValueLLVMHandle(vec), getValueLLVMHandle(index), context.popRegisterName()));
+    if (val->getType()->isVector())
+        value->setHandle(handle->CreateExtractElement(getValueLLVMHandle(val), getValueLLVMHandle(index), context.popRegisterName()));
+    else
+        value->setHandle(handle->CreateExtractValue(getValueLLVMHandle(val), index->getValue(), context.popRegisterName()));
 
     return value;
 }
 
-Value* AIRBuilder::opInsert(Value* vec, Value* val, ConstantInt* index) {
-    Value* value = new Value(context, vec->getType());
+Value* AIRBuilder::opInsert(Value* val1, Value* val2, ConstantInt* index) {
+    Value* value = new Value(context, val1->getType());
 
-    value->setHandle(handle->CreateInsertElement(getValueLLVMHandle(vec), getValueLLVMHandle(val), getValueLLVMHandle(index), context.popRegisterName()));
+    if (val1->getType()->isVector())
+        value->setHandle(handle->CreateInsertElement(getValueLLVMHandle(val1), getValueLLVMHandle(val2), getValueLLVMHandle(index), context.popRegisterName()));
+    else
+        value->setHandle(handle->CreateInsertValue(getValueLLVMHandle(val1), getValueLLVMHandle(val2), index->getValue(), context.popRegisterName()));
 
     return value;
 }
@@ -463,6 +485,7 @@ Value* AIRBuilder::opCast(Value* val, Type* type) {
     
     Type* castFromType = val->getType();
 
+    // TODO: support matrix casting
     // TODO: support vector casting
     if (type->isScalar() && castFromType->isScalar()) {
         FunctionType* functionType = new FunctionType(context, type, {castFromType});
@@ -859,6 +882,81 @@ Function* AIRBuilder::opFunctionDeclaration(FunctionType* functionType, const st
     functionDeclarations[name] = value;
 
     return value;
+}
+
+Value* AIRBuilder::_opMatrixTimesScalar(Value* matrix, Value* scalar) {
+    if (!matrix->getType()->getBaseType()->getBaseType()->equals(scalar->getType())) {
+        IRB_INVALID_ARGUMENT_WITH_REASON("matrix", "component type of column of 'matrix' is not equal to type of 'scalar'");
+        return nullptr;
+    }
+
+    MatrixType* matrixType = static_cast<MatrixType*>(matrix->getType());
+
+    Value* newMatrix = new UndefinedValue(context, matrixType);
+    newMatrix->setHandle(llvm::UndefValue::get(getTypeLLVMHandle(newMatrix->getType())));
+    for (uint8_t i = 0; i < matrixType->getColumnCount(); i++) {
+        Value* vec = opExtract(matrix, new ConstantInt(context, i, 32, true));
+        vec = opOperation(vec, scalar, vec->getType(), Operation::Multiply);
+        newMatrix = opInsert(newMatrix, vec, new ConstantInt(context, i, 32, true));
+    }
+
+    return newMatrix;
+}
+
+Value* AIRBuilder::_opMatrixTimesVector(Value* matrix, Value* vector) {
+    if (!matrix->getType()->getBaseType()->equals(vector->getType())) {
+        IRB_INVALID_ARGUMENT_WITH_REASON("matrix", "component type of 'matrix' is not equal to type of 'vector'");
+        return nullptr;
+    }
+
+    MatrixType* matrixType = static_cast<MatrixType*>(matrix->getType());
+
+    Value* newVector = new UndefinedValue(context, vector->getType());
+    newVector->setHandle(llvm::UndefValue::get(getTypeLLVMHandle(newVector->getType())));
+    for (uint8_t i = 0; i < matrixType->getColumnCount(); i++) {
+        Value* vec = new UndefinedValue(context, matrixType->getComponentType());
+        vec->setHandle(llvm::UndefValue::get(getTypeLLVMHandle(vec->getType())));
+        for (uint8_t j = 0; j < matrixType->getComponentType()->getComponentCount(); j++) {
+            Value* crnt = opExtract(matrix, new ConstantInt(context, j, 32, true));
+            crnt = opExtract(crnt, new ConstantInt(context, i, 32, true));
+            vec = opInsert(vec, crnt, new ConstantInt(context, j, 32, true));
+        }
+        newVector = opOperation(newVector, opOperation(vec, vector, vec->getType(), Operation::Multiply), newVector->getType(), Operation::Add);
+    }
+
+    return newVector;
+}
+
+Value* AIRBuilder::_opMatrixTimesMatrix(Value* matrix1, Value* matrix2) {
+    if (!matrix1->getType()->equals(matrix2->getType())) {
+        IRB_INVALID_ARGUMENT_WITH_REASON("matrix1", "type of 'matrix1' is not equal to type of 'matrix2'");
+        return nullptr;
+    }
+
+    MatrixType* matrixType = static_cast<MatrixType*>(matrix1->getType());
+
+    Value* newMatrix = new UndefinedValue(context, matrixType);
+    newMatrix->setHandle(llvm::UndefValue::get(getTypeLLVMHandle(newMatrix->getType())));
+    // TODO: check if this is correct
+    for (uint8_t i = 0; i < matrixType->getColumnCount(); i++) {
+        Value* vec = new UndefinedValue(context, matrixType->getComponentType());
+        vec->setHandle(llvm::UndefValue::get(getTypeLLVMHandle(vec->getType())));
+        for (uint8_t j = 0; j < matrixType->getComponentType()->getComponentCount(); j++) {
+            Value* crnt = new UndefinedValue(context, matrixType->getComponentType()->getBaseType());
+            crnt->setHandle(llvm::UndefValue::get(getTypeLLVMHandle(crnt->getType())));
+            for (uint8_t k = 0; k < matrixType->getComponentType()->getComponentCount(); k++) {
+                Value* crnt1 = opExtract(matrix1, new ConstantInt(context, k, 32, true));
+                crnt1 = opExtract(crnt1, new ConstantInt(context, i, 32, true));
+                Value* crnt2 = opExtract(matrix2, new ConstantInt(context, j, 32, true));
+                crnt2 = opExtract(crnt2, new ConstantInt(context, k, 32, true));
+                crnt = opOperation(crnt, opOperation(crnt1, crnt2, crnt1->getType(), Operation::Multiply), crnt->getType(), Operation::Add);
+            }
+            vec = opInsert(vec, crnt, new ConstantInt(context, j, 32, true));
+        }
+        newMatrix = opInsert(newMatrix, vec, new ConstantInt(context, i, 32, true));
+    }
+
+    return newMatrix;
 }
 
 } // namespace irb

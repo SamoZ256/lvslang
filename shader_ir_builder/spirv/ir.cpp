@@ -36,6 +36,12 @@ static std::string getTypeOpPrefix(Type* type, bool signSensitive, bool needsOrd
 
 // TODO: support matrices?
 static std::string getTypeCastOpName(Type* castFrom, Type* castTo) {
+    if (castFrom->isMatrix() || castTo->isMatrix()) {
+        if (castFrom->isMatrix() && castTo->isMatrix() && !castFrom->equals(castTo)) {
+            // TODO: cast matrices
+        }
+        return "NP"; // Not possible
+    }
     if (castTo->isScalar()) {
         if (castFrom->isVector())
             return "NP"; // Not possible
@@ -477,6 +483,29 @@ Value* SPIRVBuilder::opOperation(Value* l, Value* r, Type* type, Operation opera
         return nullptr;
     }
 
+    if (operation == Operation::Multiply && (l->getType()->isMatrix() || r->getType()->isMatrix())) {
+        std::string typeName = getTypeValue(this, type)->getName();
+        std::string code;
+        if (l->getType()->isMatrix()) {
+            if (r->getType()->isScalar())
+                code = "OpMatrixTimesScalar " + typeName + " " + l->getName() + " " + r->getName();
+            else if (r->getType()->isVector())
+                code = "OpMatrixTimesVector " + typeName + " " + l->getName() + " " + r->getName();
+            else if (r->getType()->isMatrix())
+                code = "OpMatrixTimesMatrix " + typeName + " " + l->getName() + " " + r->getName();
+        } else if (r->getType()->isMatrix()) {
+            if (l->getType()->isScalar()) // TODO: check if this should be possible
+                code = "OpMatrixTimesScalar " + typeName + " " + r->getName() + " " + l->getName();
+            else if (l->getType()->isVector())
+                code = "OpVectorTimesMatrix " + typeName + " " + l->getName() + " " + r->getName();
+        }
+
+        Value* value = new Value(context, type, context.popRegisterName());
+        getSPIRVInsertBlock()->addCode(code, value);
+
+        return value;
+    }
+
     if (r->getType()->isVector() && l->getType()->isScalar())
         std::swap(l, r);
     Value* value = new Value(context, (type->getTypeID() == TypeID::Bool && l->getType()->isVector() ? new VectorType(context, type, static_cast<VectorType*>(l->getType())->getComponentCount()) : type), context.popRegisterName());
@@ -617,8 +646,9 @@ Value* SPIRVBuilder::opConstruct(Type* type, const std::vector<Value*>& componen
     return value;
 }
 
-Value* SPIRVBuilder::opExtract(Value* vec, ConstantInt* index)  {
-    if (!vec->getType()->isVector()) {
+Value* SPIRVBuilder::opExtract(Value* val, ConstantInt* index)  {
+    // TODO: remove this error check
+    if (!val->getType()->isVector()) {
         IRB_ERROR("cannot extract value from a non-vector type");
         return nullptr;
     }
@@ -629,17 +659,17 @@ Value* SPIRVBuilder::opExtract(Value* vec, ConstantInt* index)  {
         return nullptr;
     }
     */
-    Type* type = vec->getType()->getBaseType();
+    Type* type = val->getType()->getBaseType();
 
     Value* value = new Value(context, type, context.popRegisterName());
-    getSPIRVInsertBlock()->addCode("OpCompositeExtract " + getTypeValue(this, type)->getName() + " " + vec->getName() + " " + index->getName(), value);
+    getSPIRVInsertBlock()->addCode("OpCompositeExtract " + getTypeValue(this, type)->getName() + " " + val->getName() + " " + index->getName(), value);
 
     return value;
 }
 
-Value* SPIRVBuilder::opInsert(Value* vec, Value* val, ConstantInt* index)  {
-    Value* value = new Value(context, vec->getType(), context.popRegisterName());
-    getSPIRVInsertBlock()->addCode("OpCompositeInsert " + getTypeValue(this, vec->getType())->getName() + " " + val->getName() + " " + vec->getName() + " " + index->getName(), value);
+Value* SPIRVBuilder::opInsert(Value* val1, Value* val2, ConstantInt* index)  {
+    Value* value = new Value(context, val1->getType(), context.popRegisterName());
+    getSPIRVInsertBlock()->addCode("OpCompositeInsert " + getTypeValue(this, val1->getType())->getName() + " " + val2->getName() + " " + val1->getName() + " " + index->getName(), value);
 
     return value;
 }
@@ -753,13 +783,14 @@ bool SPIRVBuilder::getCode(std::string& outputCode, OptimizationLevel optimizati
     spvtools::SpirvTools core(targetEnv);
     spvtools::Optimizer opt(targetEnv);
 
-    auto printMsgToStderr = [](spv_message_level_t, const char* source, const spv_position_t& pos, const char* message) {
+    auto printMsgToStderr = [&](spv_message_level_t, const char* source, const spv_position_t& pos, const char* message) {
         std::cerr << pos.line << ":" << pos.column << ": " << SET_TEXT_COLOR("31") << "error" << RESET_TEXT_COLOR() << ": " << message << std::endl;
-        // std::cout << source << std::endl;
-        // std::cout << pos.column << std::endl;
-        // for (uint32_t i = 0; i < pos.column - 1; i++)
-        //     std::cout << " ";
-        // std::cout << "^" << std::endl;
+        std::cout << code << std::endl;
+        //std::cout << source << std::endl;
+        //std::cout << pos.column << std::endl;
+        //for (uint32_t i = 0; i < pos.column - 1; i++)
+        //    std::cout << " ";
+        //std::cout << "^" << std::endl;
     };
     core.SetMessageConsumer(printMsgToStderr);
     opt.SetMessageConsumer(printMsgToStderr);

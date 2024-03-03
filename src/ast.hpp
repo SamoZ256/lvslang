@@ -122,7 +122,7 @@ inline bool typeIsPromoted(irb::TypeID a, irb::TypeID b) {
     return false;
 }
 
-inline irb::Type* getPromotedType(irb::Type* a, irb::Type* b) {
+inline irb::Type* findPromotedType(irb::Type* a, irb::Type* b) {
     return (typeIsPromoted(a->getTypeID(), b->getTypeID()) ? a : b);
 }
 
@@ -279,12 +279,18 @@ public:
         return operation;
     }
 
+    inline irb::Type* getPromotedType() const {
+        return promotedType;
+    }
+
 private:
     std::string op;
     ExpressionAST* lhs;
     ExpressionAST* rhs;
 
     irb::Operation operation;
+
+    irb::Type* promotedType;
 
     irb::Type* _initialize() override;
 };

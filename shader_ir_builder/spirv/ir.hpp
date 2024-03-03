@@ -57,9 +57,9 @@ public:
 
     Value* opConstruct(Type* type, const std::vector<Value*>& components) override;
 
-    Value* opExtract(Value* vec, ConstantInt* index) override;
+    Value* opExtract(Value* val, ConstantInt* index) override;
 
-    Value* opInsert(Value* vec, Value* val, ConstantInt* index) override;
+    Value* opInsert(Value* val1, Value* val2, ConstantInt* index) override;
 
     Value* opGetElementPtr(PointerType* elementType, Value* ptr, const std::vector<Value*>& indexes) override;
 
