@@ -419,9 +419,11 @@ int _getNextToken() {
             return TOKEN_ATTRIB_DESCRIPTOR_SET;
         if (identifierStr == "position")
             return TOKEN_ATTRIB_POSITION;
-        if (identifierStr == "input")
+        if (identifierStr == "stage_in")
             return TOKEN_ATTRIB_INPUT;
-        if (identifierStr == "location")
+        if (identifierStr == "attribute")
+            return TOKEN_ATTRIB_LOCATION;
+        if (identifierStr == "locn")
             return TOKEN_ATTRIB_LOCATION;
         if (identifierStr == "color")
             return TOKEN_ATTRIB_COLOR;

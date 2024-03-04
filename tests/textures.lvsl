@@ -1,0 +1,10 @@
+struct VertexOut {
+    member pos: float4 [[position]]
+    member texCoord: float2
+}
+
+fragment fragmentMain(fragmentIn: struct VertexOut [[input]],
+                       tex: texture2D<float> [[descriptor_set(0, 0)]],
+                       smp: sampler [[descriptor_set(0, 1)]]) -> float4 {
+    return sample(tex, smp, fragmentIn.texCoord)
+}

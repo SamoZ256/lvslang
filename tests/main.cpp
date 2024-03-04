@@ -114,7 +114,7 @@ void addTest(const std::string& testName) {
     }
 }
 
-const std::vector<std::string> availableTests = {"basic", "control_flow", "arrays", "vectors", "matrices", "standard_functions", "advanced_features"};
+const std::vector<std::string> availableTests = {"basic", "control_flow", "arrays", "vectors", "matrices", "textures", "standard_functions", "advanced_features"};
 
 int main(int argc, char* argv[]) {
     std::vector<std::string> testNames;

@@ -356,12 +356,13 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
     Value* returnValue = opFunctionCall(entryPoint, argValues);
 
     // -------- Output --------
-    opDecorate(getTypeValue(this, returnType), Decoration::Block);
+    if (returnType->isStructure())
+        opDecorate(getTypeValue(this, returnType), Decoration::Block);
     context.pushRegisterName(name + "_output");
     Value* returnVariable = opVariable(new PointerType(context, returnType, StorageClass::Output));
     opStore(returnVariable, returnValue);
     Value* positionVariable = nullptr;
-    if (functionRole == FunctionRole::Vertex) {
+    if (functionRole == FunctionRole::Vertex && returnType->getTypeID() != TypeID::Void) {
         opDecorate(returnVariable, Decoration::Location, {"0"});
     
         context.pushRegisterName("position");
@@ -369,30 +370,34 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
         opDecorate(positionVariable, Decoration::Position);
     }
     
-    // TODO: don't throw this error
-    if (!returnType->isStructure()) {
-        IRB_ERROR(("Entry point argument declared with the 'output' attribute must have a structure type, found '" + returnType->getDebugName() + "' instead").c_str());
-        return;
-    }
-    if (functionRole == FunctionRole::Vertex) {
-        Structure* structure = static_cast<StructureType*>(returnType)->getStructure();
-        Value* positionV = nullptr;
-        for (uint32_t i = 0; i < structure->members.size(); i++) {
-            if (structure->members[i].attributes.isPosition) {
-                Value* indexV = opConstant(new ConstantInt(context, i, 32, true));
+    if (returnType->getTypeID() != TypeID::Void) {
+        if (functionRole == FunctionRole::Vertex) {
+            Value* positionV = nullptr;
+            if (auto* structureType = dynamic_cast<StructureType*>(returnType)) {
+                Structure* structure = structureType->getStructure();
+                for (uint32_t i = 0; i < structure->members.size(); i++) {
+                    if (structure->members[i].attributes.isPosition) {
+                        Value* indexV = opConstant(new ConstantInt(context, i, 32, true));
 
-                positionV = opGetElementPtr(new PointerType(context, structure->members[i].type, StorageClass::Output), returnVariable, {indexV});
-                positionV = opLoad(positionV);
-                break;
+                        positionV = opGetElementPtr(new PointerType(context, structure->members[i].type, StorageClass::Output), returnVariable, {indexV});
+                        positionV = opLoad(positionV);
+                        break;
+                    }
+                }
+            } else {
+                positionV = opLoad(returnVariable);
+            }
+            if (positionV)
+                opStore(positionVariable, positionV);
+        } else if (functionRole == FunctionRole::Fragment) {
+            // TODO: do this decoration somewhere else?
+            if (auto* structureType = dynamic_cast<StructureType*>(returnType)) {
+                for (uint32_t i = 0; i < structureType->getStructure()->members.size(); i++)
+                    opMemberDecorate(getTypeValue(this, returnType), i, Decoration::Location, {std::to_string(structureType->getStructure()->members[i].attributes.colorIndex)});
+            } else {
+                opDecorate(returnVariable, Decoration::Location, {"0"});
             }
         }
-        if (positionV)
-            opStore(positionVariable, positionV);
-    } else if (functionRole == FunctionRole::Fragment) {
-        // TODO: do this decoration somewhere else
-        irb::Structure* structure = static_cast<StructureType*>(returnType)->getStructure();
-        for (uint32_t i = 0; i < structure->members.size(); i++)
-            opMemberDecorate(getTypeValue(this, returnType), i, Decoration::Location, {std::to_string(structure->members[i].attributes.colorIndex)});
     }
 
     // Add to interface

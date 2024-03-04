@@ -4,8 +4,8 @@ struct ViewProj {
 };
 
 struct VertexIn {
-    float2 pos [[location(0)]];
-    float2 texCoord [[location(1)]];
+    float2 pos [[attribute(0)]];
+    float2 texCoord [[attribute(1)]];
 };
 
 struct VertexOut {
@@ -13,7 +13,7 @@ struct VertexOut {
     float2 texCoord;
 };
 
-vertex struct VertexOut vertexMain(struct VertexIn vertexIn [[input]],
+vertex struct VertexOut vertexMain(struct VertexIn vertexIn [[stage_in]],
                                    constant struct ViewProj* viewProj [[descriptor_set(0, 0)]],
                                    constant float4x4* model [[descriptor_set(1, 0)]]) {
     struct VertexOut vertexOut;
@@ -27,7 +27,7 @@ struct FragmentOut {
     float4 outColor [[color(0)]];
 };
 
-fragment struct FragmentOut fragmentMain(struct VertexOut fragmentIn [[input]],
+fragment struct FragmentOut fragmentMain(struct VertexOut fragmentIn [[stage_in]],
                                          texture2d<half> colorTexture [[descriptor_set(0, 1)]],
                                          sampler colorSampler [[descriptor_set(1, 0)]]) {
     struct FragmentOut fragmentOut;

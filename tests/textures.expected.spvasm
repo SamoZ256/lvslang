@@ -1,0 +1,60 @@
+; SPIR-V
+; Version: 1.6
+; Generator: Khronos SPIR-V Tools Assembler; 0
+; Bound: 84
+; Schema: 0
+               OpCapability Shader
+               OpCapability Float16
+               OpCapability Int8
+               OpCapability Int16
+               OpExtension "SPV_KHR_8bit_storage"
+               OpExtension "SPV_KHR_16bit_storage"
+               OpExtension "SPV_AMD_gpu_shader_int16"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %2 "fragmentMain" %3 %4 %5 %6
+               OpExecutionMode %2 OriginUpperLeft
+
+               ; Annotations
+               OpDecorate %3 Location 0
+               OpDecorate %4 DescriptorSet 0
+               OpDecorate %4 Binding 0
+               OpDecorate %5 DescriptorSet 0
+               OpDecorate %5 Binding 1
+               OpDecorate %6 Location 0
+
+               ; Types, variables and constants
+      %float = OpTypeFloat 32
+    %v2float = OpTypeVector %float 2
+    %v4float = OpTypeVector %float 4
+ %_struct_31 = OpTypeStruct %v4float %v2float
+%_ptr_Input__struct_31 = OpTypePointer Input %_struct_31
+          %3 = OpVariable %_ptr_Input__struct_31 Input
+         %34 = OpTypeImage %float 2D 0 0 0 1 Unknown
+%_ptr_UniformConstant_34 = OpTypePointer UniformConstant %34
+          %4 = OpVariable %_ptr_UniformConstant_34 UniformConstant
+         %37 = OpTypeSampler
+%_ptr_UniformConstant_37 = OpTypePointer UniformConstant %37
+          %5 = OpVariable %_ptr_UniformConstant_37 UniformConstant
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+          %6 = OpVariable %_ptr_Output_v4float Output
+       %void = OpTypeVoid
+         %42 = OpTypeFunction %void
+         %45 = OpTypeSampledImage %34
+    %float_0 = OpConstant %float 0
+%_ptr_Input_v2float = OpTypePointer Input %v2float
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+
+               ; Function 2
+          %2 = OpFunction %void None %42
+         %48 = OpLabel
+         %82 = OpAccessChain %_ptr_Input_v2float %3 %uint_1
+         %83 = OpLoad %v2float %82
+         %53 = OpLoad %34 %4
+         %54 = OpLoad %37 %5
+         %74 = OpSampledImage %45 %53 %54
+         %75 = OpImageSampleExplicitLod %v4float %74 %83 Lod %float_0
+               OpStore %6 %75
+               OpReturn
+               OpFunctionEnd

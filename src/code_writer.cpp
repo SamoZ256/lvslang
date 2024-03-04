@@ -291,13 +291,12 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
                 entryPointStr += "layout (location = 0) out " + getTypeName(target, expression->getReturnType()) + "_Output {\n\t" + getTypeName(target, expression->getReturnType()) + " _output;\n} _output;\n\n";
                 break;
             case irb::FunctionRole::Fragment:
-                // TODO: do this error check for every backend?
-                if (!expression->getReturnType()->isStructure()) {
-                    logError("Entry point argument declared with the 'input' attribute must have a structure type");
-                    return nullptr;
+                if (auto* structureType = dynamic_cast<irb::StructureType*>(expression->getReturnType())) {
+                    for (const auto& member : structureType->getStructure()->members)
+                        entryPointStr += "layout (location = " + std::to_string(member.attributes.colorIndex) + ") out " + getTypeName(target, member.type) + " " + member.name + ";\n\n";
+                } else {
+                    entryPointStr += "layout (location = 0) out " + getTypeName(target, expression->getReturnType()) + " _outputColor;\n\n";
                 }
-                for (const auto& member : static_cast<irb::StructureType*>(expression->getReturnType())->getStructure()->members)
-                    entryPointStr += "layout (location = " + std::to_string(member.attributes.colorIndex) + ") out " + getTypeName(target, member.type) + " " + member.name + ";\n\n";
                 break;
             default:
                 logError("cannot use the 'output' attribute for kernel function");
@@ -335,33 +334,31 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
             if (expression->getReturnType()->getTypeID() != irb::TypeID::Void) {
                 entryPointStr += ");\n\n\t// Output\n";
 
-                // TODO: support other types besides structure
-                if (!expression->getReturnType()->isStructure()) {
-                    logError("Only structures can be returned from an entry point function");
-                    return nullptr;
-                }
-                irb::StructureType* structType = static_cast<irb::StructureType*>(expression->getReturnType());
-                irb::Structure* structure = structType->getStructure();
+                if (auto* structType = dynamic_cast<irb::StructureType*>(expression->getReturnType())) {
+                    irb::Structure* structure = structType->getStructure();
 
-                for (uint32_t i = 0; i < structure->members.size(); i++) {
-                    const irb::StructureMember& member = structure->members[i];
-                    std::string memberStr = outputVarName + "." + member.name;
-                    entryPointStr += "\t";
-                    if (member.attributes.isPosition) {
-                        entryPointStr += "gl_Position = " + memberStr + ";\n\t";
+                    for (uint32_t i = 0; i < structure->members.size(); i++) {
+                        const irb::StructureMember& member = structure->members[i];
+                        std::string memberStr = outputVarName + "." + member.name;
+                        entryPointStr += "\t";
+                        if (member.attributes.isPosition) {
+                            entryPointStr += "gl_Position = " + memberStr + ";\n\t";
+                        }
+                        switch (expression->getFunctionRole()) {
+                        case irb::FunctionRole::Vertex:
+                            entryPointStr += "_output._output." + member.name + " = " + memberStr;
+                            break;
+                        case irb::FunctionRole::Fragment:
+                            entryPointStr += member.name + " = " + memberStr;
+                            break;
+                        default:
+                            logError("'kernel' functions cannot return a value");
+                            break;
+                        }
+                        entryPointStr += ";\n";
                     }
-                    switch (expression->getFunctionRole()) {
-                    case irb::FunctionRole::Vertex:
-                        entryPointStr += "_output._output." + member.name + " = " + memberStr;
-                        break;
-                    case irb::FunctionRole::Fragment:
-                        entryPointStr += member.name + " = " + memberStr;
-                        break;
-                    default:
-                        logError("'kernel' functions cannot return a value");
-                        break;
-                    }
-                    entryPointStr += ";\n";
+                } else {
+                    entryPointStr += "\t_outputColor = " + outputVarName + ";\n";
                 }
             }
             
