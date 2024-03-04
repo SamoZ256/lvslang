@@ -140,7 +140,7 @@ irb::Type* _parseTypeExpression(irb::Attributes* attributes = nullptr) {
                 return nullptr;
             }
 
-            type = enumeration->type;
+            type = enumeration->getType();
         } else if (tokenIsTextureType(crntToken)) {
             irb::TextureViewType viewType;
             switch (crntToken) {
@@ -489,7 +489,8 @@ ExpressionAST* parseIdentifierExpression() {
 
     // Variable reference
     if (crntToken != '(') {
-        if (auto* enumeration = enumerations[idName]) {
+        if (enumerations.count(idName)) {
+            Enumeration* enumeration = enumerations[idName];
             if (crntToken != TOKEN_OPERATOR_DOT) {
                 logError("enum name must be followed by '.'");
                 return nullptr;
@@ -501,8 +502,8 @@ ExpressionAST* parseIdentifierExpression() {
             std::string valueName = identifierStr;
             getNextToken(); // value name
 
-            EnumValue* value = nullptr;
-            for (auto& enumValue : enumeration->values) {
+            const EnumValue* value = nullptr;
+            for (auto& enumValue : enumeration->getValues()) {
                 if (valueName == enumValue.name) {
                     value = &enumValue;
                     break;
@@ -514,8 +515,17 @@ ExpressionAST* parseIdentifierExpression() {
             }
 
             return new EnumValueExpressionAST(enumeration, *value);
-
         }
+
+        for (auto& enumeration : enumerations) {
+            if (!enumeration.second->getIsClass()) {
+                for (auto& value : enumeration.second->getValues()) {
+                    if (value.name == idName)
+                        return new EnumValueExpressionAST(enumeration.second, value);
+                }
+            }
+        }
+
         return new VariableExpressionAST(idName);
     }
     
@@ -1015,6 +1025,13 @@ StructureDefinitionAST* parseStructureDeclaration() {
 // TODO: rename to 'parseEnumDefinition'
 EnumDefinitionAST* parseEnumDeclaration() {
     getNextToken(); // 'enum'
+
+    bool isClass = false;
+    if (crntToken == TOKEN_CLASS) {
+        getNextToken(); // 'class'
+        isClass = true;
+    }
+    
     if (crntToken != TOKEN_IDENTIFIER) {
         logError("expected structure name after 'enum'");
         return nullptr;
@@ -1087,7 +1104,7 @@ EnumDefinitionAST* parseEnumDeclaration() {
     }
     getNextToken(); // '}'
 
-    return new EnumDefinitionAST(enumName, values);
+    return new EnumDefinitionAST(enumName, values, isClass);
 }
 
 ExpressionAST* parseExpression(int expressionPrecedence) {

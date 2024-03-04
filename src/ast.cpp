@@ -427,14 +427,14 @@ irb::Type* EnumDefinitionAST::_initialize() {
         return nullptr;
     }
 
-    Enumeration* enumeration = new Enumeration(values);
+    Enumeration* enumeration = new Enumeration(values, isClass);
     enumerations[name] = enumeration;
 
-    return enumeration->type;
+    return enumeration->getType();
 }
 
 irb::Type* EnumValueExpressionAST::_initialize() {
-    return enumeration->type;
+    return enumeration->getType();
 }
 
 irb::Type* InitializerListExpressionAST::_initialize() {

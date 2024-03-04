@@ -1,3 +1,11 @@
+"// -------- Enums --------\n" \
+"enum class Access {\n" \
+"    sample,\n" \
+"    read,\n" \
+"    write,\n" \
+"    read_write\n" \
+"};\n" \
+"// -------- Functions --------\n" \
 "STD_FUNCTION func abs(x: char) -> char\n" \
 "STD_FUNCTION func abs(x: char2) -> char2\n" \
 "STD_FUNCTION func abs(x: char3) -> char3\n" \

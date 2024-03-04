@@ -485,7 +485,7 @@ irb::Value* IRWriter::codegenEnumDefinition(const EnumDefinitionAST* expression)
 }
 
 irb::Value* IRWriter::codegenEnumValueExpression(const EnumValueExpressionAST* expression) {
-    return builder->opConstant(new irb::ConstantValue(context, expression->getEnumeration()->type, std::to_string(expression->getValue().value)));
+    return builder->opConstant(new irb::ConstantValue(context, expression->getEnumeration()->getType(), std::to_string(expression->getValue().value)));
 }
 
 irb::Value* IRWriter::codegenInitializerListExpression(const InitializerListExpressionAST* expression) {

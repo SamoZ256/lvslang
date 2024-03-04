@@ -1,3 +1,12 @@
+// -------- Enums --------
+enum class access {
+    sample,
+    read,
+    write,
+    read_write
+};
+
+// -------- Functions --------
 STD_FUNCTION char abs(char x);
 STD_FUNCTION char2 abs(char2 x);
 STD_FUNCTION char3 abs(char3 x);

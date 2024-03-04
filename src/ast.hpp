@@ -24,28 +24,8 @@ struct EnumValue {
 };
 
 class Enumeration {
-private:
-    inline uint16_t getFirstGreaterOrEqualPow2(long value) {
-        if (value == 0)
-            return 0;
-        long thePow = 1;
-        for (uint16_t i = 0;; i++) {
-            thePow *= 2;
-            if (value < thePow)
-                return i;
-        }
-
-        // Just in case
-        throw std::runtime_error("getFirstGreaterOrEqualPow2");
-
-        return 0;
-    }
-
 public:
-    irb::ScalarType* type;
-    std::vector<EnumValue> values;
-
-    Enumeration(const std::vector<EnumValue>& aValues) : values(aValues) {
+    Enumeration(const std::vector<EnumValue>& aValues, bool aIsClass) : values(aValues), isClass(aIsClass) {
         if (values.size() == 0) {
             logError("cannot define an enum with 0 values");
             return;
@@ -67,6 +47,39 @@ public:
         }
 
         type = new irb::ScalarType(context, irb::TypeID::Integer, numBits, (minValue != 0));
+    }
+
+    inline irb::ScalarType* getType() const {
+        return type;
+    }
+
+    inline const std::vector<EnumValue>& getValues() const {
+        return values;
+    }
+    
+    inline bool getIsClass() const {
+        return isClass;
+    }
+
+private:
+    irb::ScalarType* type;
+    std::vector<EnumValue> values;
+    bool isClass;
+
+    inline uint16_t getFirstGreaterOrEqualPow2(long value) {
+        if (value == 0)
+            return 0;
+        long thePow = 1;
+        for (uint16_t i = 0;; i++) {
+            thePow *= 2;
+            if (value < thePow)
+                return i;
+        }
+
+        // Just in case
+        throw std::runtime_error("getFirstGreaterOrEqualPow2");
+
+        return 0;
     }
 };
 
@@ -636,7 +649,7 @@ private:
 // Enumeration definition
 class EnumDefinitionAST : public ExpressionAST {
 public:
-    EnumDefinitionAST(const std::string& aName, const std::vector<EnumValue>& aValues) : name(aName), values(aValues) {}
+    EnumDefinitionAST(const std::string& aName, const std::vector<EnumValue>& aValues, bool aIsClass) : name(aName), values(aValues), isClass(aIsClass) {}
 
     // Getters
     inline const std::string& getName() const {
@@ -647,9 +660,14 @@ public:
         return values;
     }
 
+    inline bool getIsClass() const {
+        return isClass;
+    }
+
 private:
     std::string name;
     std::vector<EnumValue> values;
+    bool isClass;
 
     irb::Type* _initialize() override;
 };
@@ -658,20 +676,20 @@ private:
 // Enumeration value
 class EnumValueExpressionAST : public ExpressionAST {
 public:
-    EnumValueExpressionAST(Enumeration* aEnumeration, EnumValue& aValue) : enumeration(aEnumeration), value(aValue) {}
+    EnumValueExpressionAST(Enumeration* aEnumeration, const EnumValue& aValue) : enumeration(aEnumeration), value(aValue) {}
 
     // Getters
     inline Enumeration* getEnumeration() const {
         return enumeration;
     }
 
-    inline EnumValue& getValue() const {
+    inline const EnumValue& getValue() const {
         return value;
     }
 
 private:
     Enumeration* enumeration;
-    EnumValue& value;
+    const EnumValue& value;
 
     irb::Type* _initialize() override;
 };

@@ -391,6 +391,8 @@ int _getNextToken() {
             return TOKEN_REGISTER;
         if (identifierStr == "member")
             return TOKEN_MEMBER;
+        if (identifierStr == "class")
+            return TOKEN_CLASS;
         if (identifierStr == "STD_FUNCTION")
             return TOKEN_STD_FUNCTION;
         

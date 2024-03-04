@@ -13,6 +13,7 @@ namespace lvslang {
 bool compile(const CompileOptions& options, std::string& outputCode) {
     context.reset();
     functionDeclarations.clear();
+    enumerations.clear();
     source = Source{};
 
     std::string extension = options.inputName.substr(options.inputName.find_last_of('.'));

@@ -1,3 +1,11 @@
+"// -------- Enums --------\n" \
+"enum class access {\n" \
+"    sample,\n" \
+"    read,\n" \
+"    write,\n" \
+"    read_write\n" \
+"};\n" \
+"// -------- Functions --------\n" \
 "STD_FUNCTION char abs(char x);\n" \
 "STD_FUNCTION char2 abs(char2 x);\n" \
 "STD_FUNCTION char3 abs(char3 x);\n" \

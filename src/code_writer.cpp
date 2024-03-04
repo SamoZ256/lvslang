@@ -595,6 +595,8 @@ CodeValue* CodeWriter::codegenStructureDefinition(const StructureDefinitionAST* 
 }
 
 CodeValue* CodeWriter::codegenEnumDefinition(const EnumDefinitionAST* expression) {
+    // TODO: uncomment?
+    /*
     std::string codeStr;
     if (target == Target::Metal || target == Target::HLSL) {
         codeStr = "enum " + expression->getName() + " {\n";
@@ -604,15 +606,19 @@ CodeValue* CodeWriter::codegenEnumDefinition(const EnumDefinitionAST* expression
     } else {
         codeStr = "// Enum '" + expression->getName() + "'";
     }
+    */
 
-    return new CodeValue{codeStr};
+    return new CodeValue{};
 }
 
 CodeValue* CodeWriter::codegenEnumValueExpression(const EnumValueExpressionAST* expression) {
+    // TODO: uncomment?
+    /*
     if (target == Target::Metal || target == Target::HLSL)
         return new CodeValue{expression->getValue().name};
     else
-        return new CodeValue{std::to_string(expression->getValue().value)};
+    */
+    return new CodeValue{std::to_string(expression->getValue().value)};
 }
 
 CodeValue* CodeWriter::codegenInitializerListExpression(const InitializerListExpressionAST* expression) {
