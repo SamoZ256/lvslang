@@ -507,10 +507,10 @@ irb::Value* IRWriter::codegenInitializerListExpression(const InitializerListExpr
             if (auto vectorType = dynamic_cast<irb::VectorType*>(component->getType())) {
                 components.erase(components.begin() + i);
                 for (uint8_t j = 0; j < vectorType->getComponentCount(); j++) {
-                    irb::Value* vectorComponent;
-                    vectorComponent = builder->opCast(builder->opExtract(component, new irb::ConstantInt(context, j, 32, true)), expression->getType()->getBaseType());
+                    irb::Value* vectorComponent = builder->opCast(builder->opExtract(component, new irb::ConstantInt(context, j, 32, true)), expression->getType()->getBaseType());
                     components.insert(components.begin() + i + j, vectorComponent);
                 }
+                i += vectorType->getComponentCount() - 1;
             }
         }
     }

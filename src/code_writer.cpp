@@ -169,7 +169,7 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
                         // We need to get element type, since HLSL treats it without pointer
                         entryPointStr += arg.name + "_Uniform : register(b" + std::to_string(attr.bindings.buffer) + ") {\n\t" + getTypeName(target, arg.type->getElementType()) + " " + arg.name + ";\n}";
                     } else if (attr.isTexture) {
-                        entryPointStr += getTypeName(target, arg.type) + " " + arg.name + " : register(t" + std::to_string(attr.bindings.sampler) + ")";
+                        entryPointStr += getTypeName(target, arg.type) + " " + arg.name + " : register(t" + std::to_string(attr.bindings.texture) + ")";
                     } else if (attr.isSampler) {
                         entryPointStr += getTypeName(target, arg.type) + " " + arg.name + " : register(s" + std::to_string(attr.bindings.sampler) + ")";
                     }
@@ -211,7 +211,10 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
                     } else {
                         typeName = "uniform " + getTypeName(target, arg.type);
                     }
-                    entryPointStr += "layout (set = " + std::to_string(attr.bindings.set) + ", binding = " + std::to_string(attr.bindings.binding) + ") " + typeName;
+                    entryPointStr += "layout (set = " + std::to_string(attr.bindings.set) + ", binding = " + std::to_string(attr.bindings.binding);
+                    if (attr.isTexture)
+                        entryPointStr += ", rgba8"; // TODO: do not hardcode this
+                    entryPointStr += ") " + typeName;
                     if (!attr.isBuffer)
                         entryPointStr += " " + arg.name;
                     entryPointStr += ";\n\n";
@@ -409,6 +412,7 @@ CodeValue* CodeWriter::codegenFunctionCall(const CallExpressionAST* expression) 
     }
 
     std::string code;
+    // TODO: add more argument options
     if (expression->getCallee() == "sample") {
         switch (target) {
         case Target::Metal:
@@ -429,7 +433,7 @@ CodeValue* CodeWriter::codegenFunctionCall(const CallExpressionAST* expression) 
             code = argVs[0]->code + ".read(" + argVs[1]->code + ")";
             break;
         case Target::HLSL:
-            code = argVs[0]->code + ".Read(" + argVs[1]->code + ", 0)"; // TODO: check if this is correct
+            code = argVs[0]->code + ".Load(int2(" + argVs[1]->code + "))";
             break;
         case Target::GLSL:
             code = "imageLoad(" + argVs[0]->code + ", " + argVs[1]->code + ")";
@@ -443,7 +447,7 @@ CodeValue* CodeWriter::codegenFunctionCall(const CallExpressionAST* expression) 
             code = argVs[0]->code + ".write(" + argVs[1]->code + ", " + argVs[2]->code + ")";
             break;
         case Target::HLSL:
-            code = argVs[0]->code + ".Write(" + argVs[1]->code + ", " + argVs[2]->code + ", 0)"; // TODO: check if this is correct
+            code = argVs[0]->code + ".Store(" + argVs[1]->code + ", " + argVs[2]->code + ")"; // TODO: check if this is correct
             break;
         case Target::GLSL:
             code = "imageStore(" + argVs[0]->code + ", " + argVs[1]->code + ", " + argVs[2]->code + ")";
@@ -647,17 +651,51 @@ CodeValue* CodeWriter::codegenEnumValueExpression(const EnumValueExpressionAST* 
 }
 
 CodeValue* CodeWriter::codegenInitializerListExpression(const InitializerListExpressionAST* expression) {
-    std::string codeStr = getTypeName(target, expression->getType()) + "(";
-    for (uint32_t i = 0; i < expression->getExpressions().size(); i++) {
-        CodeValue* component = codegenExpression(expression->getExpressions()[i]);
+    std::vector<CodeValue*> components;
+    components.reserve(expression->getExpressions().size());
+    for (auto expr : expression->getExpressions()) {
+        CodeValue* component = codegenExpression(expr);
         if (!component)
             return nullptr;
-        if (i != 0)
-            codeStr += ", ";
-        codeStr += component->code;
+        components.push_back(component);
     }
 
-    return new CodeValue{codeStr + ")"};
+    // "Unpack" the vectors
+    if (target == Target::HLSL) {
+        if (expression->getType()->isVector()) {
+            uint32_t exprIndex = 0;
+            for (uint32_t i = 0; i < components.size(); i++) {
+                CodeValue* component = components[i];
+                if (auto vectorType = dynamic_cast<irb::VectorType*>(expression->getExpressions()[exprIndex]->getType())) {
+                    components.erase(components.begin() + i);
+                    for (uint8_t j = 0; j < vectorType->getComponentCount(); j++) {
+                        CodeValue* vectorComponent = new CodeValue{"(" + component->code + ")[" + std::to_string(j) + "]"};
+                        components.insert(components.begin() + i + j, vectorComponent);
+                    }
+                    i += vectorType->getComponentCount() - 1;
+                }
+                exprIndex++;
+            }
+            if (components.size() == 1) {
+                irb::VectorType* vectorType = static_cast<irb::VectorType*>(expression->getType());
+                components.reserve(vectorType->getComponentCount());
+                for (uint8_t i = 1; i < vectorType->getComponentCount(); i++)
+                    components.push_back(components[0]);
+            }
+        } else if (expression->getType()->isMatrix() && components.size() == 1) {
+            // TODO: create a matrix with components[0] at the diagonal
+        }
+    }
+
+    std::string codeStr = getTypeName(target, expression->getType()) + "(";
+    for (uint32_t i = 0; i < components.size(); i++) {
+        if (i != 0)
+            codeStr += ", ";
+        codeStr += components[i]->code;
+    }
+    codeStr += ")";
+
+    return new CodeValue{codeStr};
 }
 
 CodeValue* CodeWriter::codegenDereferenceExpression(const DereferenceExpressionAST* expression) {

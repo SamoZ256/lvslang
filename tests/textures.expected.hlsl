@@ -7,7 +7,7 @@ float4 fragmentMain(VertexOut fragmentIn, Texture2D tex1, Texture2D tex2, Sample
 
 Texture2D tex1 : register(t0);
 
-Texture2D tex2 : register(t0);
+Texture2D tex2 : register(t1);
 
 SamplerState smp : register(s0);
 
@@ -28,7 +28,7 @@ float4_Output _fragmentMain(VertexOut fragmentIn) {
 
 float4 fragmentMain(VertexOut fragmentIn, Texture2D tex1, Texture2D tex2, SamplerState smp) {
 	float4 sampled1 = tex1.SampleLevel(smp, fragmentIn.texCoord, 0.0f);
-	float4 sampled2 = tex2.Read(uint16_t2(0), 0);
+	float4 sampled2 = tex2.Load(int2(vector<uint16_t, 2>(0, 0)));
 	return (sampled1 * sampled2);
 }
 

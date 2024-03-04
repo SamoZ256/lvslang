@@ -38,7 +38,7 @@ VertexOut_Output _vertexMain(VertexIn vertexIn) {
 
 VertexOut vertexMain(VertexIn vertexIn, Model model) {
 	VertexOut vertexOut;
-	vertexOut.pos = float4((model.pos + (vertexIn.pos * model.scale)), 0.000000, 1.000000);
+	vertexOut.pos = float4(((model.pos + (vertexIn.pos * model.scale)))[0], ((model.pos + (vertexIn.pos * model.scale)))[1], 0.000000, 1.000000);
 	vertexOut.texCoord = vertexIn.texCoord;
 	return vertexOut;
 }

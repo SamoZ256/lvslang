@@ -109,7 +109,7 @@ std::string getTypeNameBegin_HLSL(irb::Type* type) {
     case irb::TypeID::Float:
         switch (type->getBitCount()) {
         case 16:
-            return "min16float";
+            return "half";
         case 32:
             return "float";
         default:
@@ -125,7 +125,11 @@ std::string getTypeNameBegin_HLSL(irb::Type* type) {
     case irb::TypeID::Function:
         return "FUNCTION"; // TODO: implement this
     case irb::TypeID::Vector:
-        return getTypeNameBegin_HLSL(type->getBaseType()) + std::to_string(static_cast<irb::VectorType*>(type)->getComponentCount());
+        strTmp = getTypeNameBegin_HLSL(type->getBaseType());
+        if (strTmp.substr(strTmp.size() - 2, 2) == "_t")
+            return "vector<" + strTmp + ", " + std::to_string(static_cast<irb::VectorType*>(type)->getComponentCount()) + ">";
+        else
+            return strTmp + std::to_string(static_cast<irb::VectorType*>(type)->getComponentCount());
     case irb::TypeID::Matrix:
         return getTypeNameBegin_HLSL(type->getBaseType()->getBaseType()) + std::to_string(static_cast<irb::MatrixType*>(type)->getColumnCount()) + "x" + std::to_string(static_cast<irb::VectorType*>(type->getBaseType())->getComponentCount());
     case irb::TypeID::Texture:
@@ -208,7 +212,7 @@ std::string getTypeNameBegin_GLSL(irb::Type* type) {
 
         return strTmp;
     case irb::TypeID::Texture:
-        return "texture" + textureViewTypeLUT_GLSL[(int)static_cast<irb::TextureType*>(type)->getViewType()]; // TODO: add type to the name
+        return (static_cast<irb::TextureType*>(type)->getAccess() == irb::TextureAccess::Sample ? "texture" : "image") + textureViewTypeLUT_GLSL[(int)static_cast<irb::TextureType*>(type)->getViewType()]; // TODO: add type to the name
     case irb::TypeID::Sampler:
         return "sampler";
     default:

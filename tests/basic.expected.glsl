@@ -67,7 +67,7 @@ layout (location = 0) in VertexOut_Input {
 	VertexOut fragmentIn;
 };
 
-layout (set = 0, binding = 1) uniform texture2D colorTexture;
+layout (set = 0, binding = 1, rgba8) uniform texture2D colorTexture;
 
 layout (set = 1, binding = 0) uniform sampler colorSampler;
 
