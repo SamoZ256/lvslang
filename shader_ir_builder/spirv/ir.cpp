@@ -786,9 +786,9 @@ bool SPIRVBuilder::getCode(std::string& outputCode, OptimizationLevel optimizati
     spvtools::SpirvTools core(targetEnv);
     spvtools::Optimizer opt(targetEnv);
 
-    auto printMsgToStderr = [&](spv_message_level_t, const char* source, const spv_position_t& pos, const char* message) {
+    auto printMsgToStderr = [](spv_message_level_t, const char* source, const spv_position_t& pos, const char* message) {
         std::cerr << pos.line << ":" << pos.column << ": " << SET_TEXT_COLOR("31") << "error" << RESET_TEXT_COLOR() << ": " << message << std::endl;
-        std::cout << code << std::endl;
+        //std::cout << code << std::endl;
         //std::cout << source << std::endl;
         //std::cout << pos.column << std::endl;
         //for (uint32_t i = 0; i < pos.column - 1; i++)

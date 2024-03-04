@@ -908,9 +908,15 @@ Value* AIRBuilder::_opMatrixTimesVector(Value* matrix, Value* vector) {
     }
 
     MatrixType* matrixType = static_cast<MatrixType*>(matrix->getType());
+    VectorType* vectorType = static_cast<VectorType*>(vector->getType());
 
-    Value* newVector = new UndefinedValue(context, vector->getType());
-    newVector->setHandle(llvm::UndefValue::get(getTypeLLVMHandle(newVector->getType())));
+    ConstantValue* zero;
+    if (vectorType->getBaseType()->getTypeID() == TypeID::Float)
+        zero = new ConstantFloat(context, 0.0f, vectorType->getBaseType()->getBitCount());
+    else
+        zero = new ConstantInt(context, 0, vectorType->getBaseType()->getBitCount(), vectorType->getBaseType()->getIsSigned());
+    
+    Value* newVector = opConstruct(vectorType, std::vector<Value*>(vectorType->getComponentCount(), zero));
     for (uint8_t i = 0; i < matrixType->getColumnCount(); i++) {
         Value* vec = new UndefinedValue(context, matrixType->getComponentType());
         vec->setHandle(llvm::UndefValue::get(getTypeLLVMHandle(vec->getType())));
@@ -933,6 +939,12 @@ Value* AIRBuilder::_opMatrixTimesMatrix(Value* matrix1, Value* matrix2) {
 
     MatrixType* matrixType = static_cast<MatrixType*>(matrix1->getType());
 
+    ConstantValue* zero;
+    if (matrixType->getBaseType()->getBaseType()->getTypeID() == TypeID::Float)
+        zero = new ConstantFloat(context, 0.0f, matrixType->getBaseType()->getBaseType()->getBitCount());
+    else
+        zero = new ConstantInt(context, 0, matrixType->getBaseType()->getBaseType()->getBitCount(), matrixType->getBaseType()->getBaseType()->getIsSigned());
+
     Value* newMatrix = new UndefinedValue(context, matrixType);
     newMatrix->setHandle(llvm::UndefValue::get(getTypeLLVMHandle(newMatrix->getType())));
     // TODO: check if this is correct
@@ -940,13 +952,12 @@ Value* AIRBuilder::_opMatrixTimesMatrix(Value* matrix1, Value* matrix2) {
         Value* vec = new UndefinedValue(context, matrixType->getComponentType());
         vec->setHandle(llvm::UndefValue::get(getTypeLLVMHandle(vec->getType())));
         for (uint8_t j = 0; j < matrixType->getComponentType()->getComponentCount(); j++) {
-            Value* crnt = new UndefinedValue(context, matrixType->getComponentType()->getBaseType());
-            crnt->setHandle(llvm::UndefValue::get(getTypeLLVMHandle(crnt->getType())));
+            Value* crnt = zero;
+            Value* matrix2Row = opExtract(matrix2, new ConstantInt(context, j, 32, true));
             for (uint8_t k = 0; k < matrixType->getComponentType()->getComponentCount(); k++) {
                 Value* crnt1 = opExtract(matrix1, new ConstantInt(context, k, 32, true));
                 crnt1 = opExtract(crnt1, new ConstantInt(context, i, 32, true));
-                Value* crnt2 = opExtract(matrix2, new ConstantInt(context, j, 32, true));
-                crnt2 = opExtract(crnt2, new ConstantInt(context, k, 32, true));
+                Value* crnt2 = opExtract(matrix2Row, new ConstantInt(context, k, 32, true));
                 crnt = opOperation(crnt, opOperation(crnt1, crnt2, crnt1->getType(), Operation::Multiply), crnt->getType(), Operation::Add);
             }
             vec = opInsert(vec, crnt, new ConstantInt(context, j, 32, true));
