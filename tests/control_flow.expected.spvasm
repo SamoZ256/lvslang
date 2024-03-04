@@ -27,13 +27,13 @@
       %float = OpTypeFloat 32
     %v4float = OpTypeVector %float 4
        %bool = OpTypeBool
+       %void = OpTypeVoid
   %_struct_5 = OpTypeStruct %float
 %_ptr_Uniform__struct_5 = OpTypePointer Uniform %_struct_5
           %3 = OpVariable %_ptr_Uniform__struct_5 Uniform
   %_struct_6 = OpTypeStruct %v4float
 %_ptr_Output__struct_6 = OpTypePointer Output %_struct_6
           %4 = OpVariable %_ptr_Output__struct_6 Output
-       %void = OpTypeVoid
          %35 = OpTypeFunction %void
     %float_0 = OpConstant %float 0
     %float_1 = OpConstant %float 1

@@ -223,6 +223,8 @@ int getTypeFromString(const std::string& strType) {
         return TOKEN_TYPE_TEXTURE_CUBE;
     if (identifierStr == "texturecube_array")
         return TOKEN_TYPE_TEXTURE_CUBE_ARRAY;
+    if (identifierStr == "texture_buffer")
+        return TOKEN_TYPE_TEXTURE_BUFFER;
 
     if (identifierStr == "sampler")
         return TOKEN_TYPE_SAMPLER;

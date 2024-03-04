@@ -82,6 +82,7 @@ static std::map<std::string, StandardFunctionInfo> standardFunctionLUT = {
     {"mix", {}},
     {"normalize", {}},
     {"pow", {}},
+    {"read", {{{llvm::Attribute::AttrKind::Convergent, 0}, {llvm::Attribute::AttrKind::NoUnwind, 0}, {llvm::Attribute::AttrKind::WillReturn, 0}, {llvm::Attribute::AttrKind::Memory, 1}}}} // TODO: check this
     {"reflect", {}},
     {"refract", {}},
     {"round", {}},
@@ -93,8 +94,9 @@ static std::map<std::string, StandardFunctionInfo> standardFunctionLUT = {
     {"sqrt", {}},
     {"step", {}},
     {"tan", {}},
-    {"tanh", {}}
+    {"tanh", {}},
     // TODO: add transpose function
+    {"write", {{{llvm::Attribute::AttrKind::Convergent, 0}, {llvm::Attribute::AttrKind::NoUnwind, 0}, {llvm::Attribute::AttrKind::WillReturn, 0}, {llvm::Attribute::AttrKind::Memory, 1}}}} // TODO: check this
 };
 */
 
@@ -141,6 +143,7 @@ Function* AIRBuilder::opStandardFunctionDeclaration(FunctionType* functionType, 
     // TODO: only add template name if there is at least one argument
     std::string fullName = "air." + name + "." + functionType->getArguments()[0]->getTemplateName();
 
+    // TODO: create exclusive calls for read and write as well
     if (name == "sample") {
         // TODO: do error checks
         functionType = new FunctionType(context, functionType->getReturnType(), {functionType->getArguments()[0], functionType->getArguments()[1], functionType->getArguments()[2], new ScalarType(context, TypeID::Bool, 8, false), new VectorType(context, new ScalarType(context, TypeID::Integer, 32, true), 2), new ScalarType(context, TypeID::Bool, 8, false), new ScalarType(context, TypeID::Float, 32, true), new ScalarType(context, TypeID::Float, 32, true), new ScalarType(context, TypeID::Integer, 32, true)});
@@ -573,7 +576,19 @@ private:
 };
 
 // TODO: check if it really called "kernel"
-const std::string functionNames[3] = {"vertex", "fragment", "kernel"};
+const std::string functionRoleLUT[3] = {
+    "vertex",
+    "fragment",
+    "kernel"
+};
+
+// TODO: check these
+const std::string textureAccessLUT[(int)TextureAccess::MaxEnum] = {
+    "sample",
+    "read",
+    "write",
+    "read_write"
+};
 
 // TODO: support other values whenever there is a 'TODO: here' comment
 std::string AIRBuilder::createMetadata(const std::string& languageName, uint32_t languageVersionMajor, uint32_t languageVersionMinor, uint32_t languageVersionPatch) {
@@ -710,8 +725,12 @@ std::string AIRBuilder::createMetadata(const std::string& languageName, uint32_t
                         str += ", !\"air.struct_type_info\", " + structureInfo->getName() + ", !\"air.arg_type_size\", i32 " + std::to_string(structureType->getBitCount(true) / 8) + ", !\"air.arg_type_align_size\", i32 " + std::to_string(align);
                     }
                 } else if (argument.attributes.isTexture) {
-                    // TODO: do not hardcode template arguments
-                    str += "!\"air.texture\", !\"air.location_index\", i32 " + std::to_string(argument.attributes.bindings.texture) + ", i32 1, !\"air.sample\"";
+                    TextureType* textureType = dynamic_cast<TextureType*>(argument.type);
+                    if (!textureType) {
+                        IRB_ERROR("argument marked with 'texture' attribute must have texture type");
+                        return "";
+                    }
+                    str += "!\"air.texture\", !\"air.location_index\", i32 " + std::to_string(argument.attributes.bindings.texture) + ", i32 1, !\"air." + textureAccessLUT[(int)textureType->getAccess()] + "\"";
                 } else if (argument.attributes.isSampler) {
                     str += "!\"air.sampler\", !\"air.location_index\", i32 " + std::to_string(argument.attributes.bindings.sampler) + ", i32 1";
                 } else {
@@ -772,7 +791,7 @@ std::string AIRBuilder::createMetadata(const std::string& languageName, uint32_t
     MetadataValue* airFunctions[3] = {nullptr};
     for (uint8_t i = 0; i < 3; i++) {
         if (entryPointFunctionInfos[i].size() != 0)
-            airFunctions[i] = new MetadataValue(context, "air." + functionNames[i]);
+            airFunctions[i] = new MetadataValue(context, "air." + functionRoleLUT[i]);
     }
     MetadataValue* airCompileOptions = new MetadataValue(context, "air.compile_options");
     MetadataValue* llvmIdent = new MetadataValue(context, "llvm.ident");

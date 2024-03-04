@@ -178,6 +178,15 @@ enum class FunctionRole {
     MaxEnum
 };
 
+enum class TextureAccess {
+    Sample,
+    Read,
+    Write,
+    ReadWrite,
+
+    MaxEnum
+};
+
 // Utility functions
 /*
 union DoubleToUint64 {

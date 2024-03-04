@@ -29,6 +29,7 @@
         %int = OpTypeInt 32 1
       %float = OpTypeFloat 32
     %v4float = OpTypeVector %float 4
+       %void = OpTypeVoid
        %uint = OpTypeInt 32 0
     %uint_32 = OpConstant %uint 32
 %_arr_float_uint_32 = OpTypeArray %float %uint_32
@@ -38,7 +39,6 @@
   %_struct_7 = OpTypeStruct %v4float
 %_ptr_Output__struct_7 = OpTypePointer Output %_struct_7
           %4 = OpVariable %_ptr_Output__struct_7 Output
-       %void = OpTypeVoid
          %38 = OpTypeFunction %void
     %float_0 = OpConstant %float 0
     %float_1 = OpConstant %float 1

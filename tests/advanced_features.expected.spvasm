@@ -22,10 +22,10 @@
                ; Types, variables and constants
       %float = OpTypeFloat 32
     %v4float = OpTypeVector %float 4
+       %void = OpTypeVoid
   %_struct_4 = OpTypeStruct %v4float
 %_ptr_Output__struct_4 = OpTypePointer Output %_struct_4
           %3 = OpVariable %_ptr_Output__struct_4 Output
-       %void = OpTypeVoid
          %31 = OpTypeFunction %void
 
                ; Function 2

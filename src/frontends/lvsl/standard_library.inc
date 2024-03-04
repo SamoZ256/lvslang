@@ -32,6 +32,7 @@
 "STD_FUNCTION func asinh(x: float) -> float\n" \
 "STD_FUNCTION func atan(x: float) -> float\n" \
 "STD_FUNCTION func atanh(x: float) -> float\n" \
+"// TODO: add atomic functions\n" \
 "STD_FUNCTION func ceil(x: half) -> half\n" \
 "STD_FUNCTION func ceil(x: half2) -> half2\n" \
 "STD_FUNCTION func ceil(x: half3) -> half3\n" \
@@ -210,6 +211,17 @@
 "STD_FUNCTION func pow(x: float2, y: float2) -> float2\n" \
 "STD_FUNCTION func pow(x: float3, y: float3) -> float3\n" \
 "STD_FUNCTION func pow(x: float4, y: float4) -> float4\n" \
+"// TODO: add more overloads\n" \
+"STD_FUNCTION func read(texture: texture2D<char>, coord: ushort2) -> char4;\n" \
+"STD_FUNCTION func read(texture: texture2D<short>, coord: ushort2) -> short4;\n" \
+"STD_FUNCTION func read(texture: texture2D<int>, coord: ushort2) -> int4;\n" \
+"STD_FUNCTION func read(texture: texture2D<half>, coord: ushort2) -> half4;\n" \
+"STD_FUNCTION func read(texture: texture2D<float>, coord: ushort2) -> float4;\n" \
+"STD_FUNCTION func read(texture: texture2D<char>, coord: uint2) -> char4;\n" \
+"STD_FUNCTION func read(texture: texture2D<short>, coord: uint2) -> short4;\n" \
+"STD_FUNCTION func read(texture: texture2D<int>, coord: uint2) -> int4;\n" \
+"STD_FUNCTION func read(texture: texture2D<half>, coord: uint2) -> half4;\n" \
+"STD_FUNCTION func read(texture: texture2D<float>, coord: uint2) -> float4;\n" \
 "STD_FUNCTION func reflect(I: half2, N: half2) -> half2\n" \
 "STD_FUNCTION func reflect(I: half3, N: half3) -> half3\n" \
 "STD_FUNCTION func reflect(I: half4, N: half4) -> half4\n" \
@@ -286,4 +298,15 @@
 "STD_FUNCTION func tan(x: float) -> float\n" \
 "STD_FUNCTION func tanh(x: float) -> float\n" \
 "// TODO: add transpose function\n" \
+"// TODO: add more overloads\n" \
+"STD_FUNCTION func write(texture: texture2D<char>, data: char4, coord: ushort2);\n" \
+"STD_FUNCTION func write(texture: texture2D<short>, data: short4, coord: ushort2);\n" \
+"STD_FUNCTION func write(texture: texture2D<int>, data: int4, coord: ushort2);\n" \
+"STD_FUNCTION func write(texture: texture2D<half>, data: half4, coord: ushort2);\n" \
+"STD_FUNCTION func write(texture: texture2D<float>, data: float4, coord: ushort2);\n" \
+"STD_FUNCTION func write(texture: texture2D<char>, data: char4, coord: uint2);\n" \
+"STD_FUNCTION func write(texture: texture2D<short>, data: short4, coord: uint2);\n" \
+"STD_FUNCTION func write(texture: texture2D<int>, data: int4, coord: uint2);\n" \
+"STD_FUNCTION func write(texture: texture2D<half>, data: half4, coord: uint2);\n" \
+"STD_FUNCTION func write(texture: texture2D<float>, data: float4, coord: uint2);\n" \
 ""

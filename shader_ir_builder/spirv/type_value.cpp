@@ -135,7 +135,8 @@ Value* getTypeValue(SPIRVBuilder* builder, Type* type, bool decorate) {
     } else if (type->getTypeID() == TypeID::Texture) {
         TextureType* textureType = static_cast<TextureType*>(type);
         Value* scalarV = getTypeValue(builder, textureType->getBaseType(), decorate);
-        code = "OpTypeImage " + scalarV->getName() + " " + textureViewTypeLUT[(int)textureType->getViewType()] + " 0 0 0 1 Unknown";
+        std::string format = "Unknown"; // TODO: do not hardcode this
+        code = "OpTypeImage " + scalarV->getName() + " " + textureViewTypeLUT[(int)textureType->getViewType()] + " 0 0 0 " + (textureType->getAccess() == TextureAccess::Sample ? "1" : "2") + " " + format;
     } else if (type->getTypeID() == TypeID::Sampler) {
         code = "OpTypeSampler";
     }

@@ -57,10 +57,6 @@ inline TypeID operator|(TypeID l, TypeID r) {
 }
 
 class Type {
-protected:
-    Context& context;
-    TypeID typeID;
-
 public:
     Type(Context& aContext, TypeID aTypeID = TypeID::None) : context(aContext), typeID(aTypeID) {}
 
@@ -146,19 +142,13 @@ public:
     }
 
     virtual std::string getDebugName() const = 0;
+
+protected:
+    Context& context;
+    TypeID typeID;
 };
 
 class Value {
-protected:
-    void* handle = nullptr;
-
-    Context& context;
-
-    Type* type;
-    bool _isConstant = false; // TODO: rename to isConstant?
-    std::string name;
-    std::string prefix;
-
 public:
     Value(Context& aContext, Type* aType, std::string aName = "", const std::string aPrefix = "%", bool checkIfNameIsAlreadyUsed = true) : context(aContext), type(aType), prefix(aPrefix) {
         name = aName;
@@ -209,6 +199,16 @@ public:
     void setIsConstant(bool aIsConstant) {
         _isConstant = aIsConstant;
     }
+
+protected:
+    void* handle = nullptr;
+
+    Context& context;
+
+    Type* type;
+    bool _isConstant = false; // TODO: rename to isConstant?
+    std::string name;
+    std::string prefix;
 };
 
 class UndefinedValue : public Value {
@@ -217,10 +217,6 @@ public:
 };
 
 class ScalarType : public Type {
-private:
-    uint32_t bitCount;
-    bool isSigned;
-
 public:
     ScalarType(Context& aContext, TypeID aTypeID, uint32_t aBitCount, bool aIsSigned = true) : Type(aContext, aTypeID), bitCount(aBitCount), isSigned(aIsSigned) {}
 
@@ -304,12 +300,13 @@ public:
 
         return "unknown";
     }
+
+private:
+    uint32_t bitCount;
+    bool isSigned;
 };
 
 class ConstantValue : public Value {
-protected:
-    std::string valueStr;
-
 public:
     ConstantValue(Context& aContext, Type* aType, std::string aValueStr) : Value(aContext, aType, "const"), valueStr(aValueStr) {
         _isConstant = true;
@@ -318,12 +315,12 @@ public:
     std::string getName() override {
         return valueStr;
     }
+
+protected:
+    std::string valueStr;
 };
 
 class ConstantBool : public ConstantValue {
-private:
-    bool value;
-
 public:
     ConstantBool(Context& aContext, bool aValue) : ConstantValue(aContext, new ScalarType(aContext, TypeID::Bool, 8, false), std::to_string(aValue)), value(aValue) {}
 
@@ -331,12 +328,12 @@ public:
     inline bool getValue() const {
         return value;
     }
+
+private:
+    bool value;
 };
 
 class ConstantInt : public ConstantValue {
-private:
-    long value;
-
 public:
     ConstantInt(Context& aContext, long aValue, uint8_t bitCount, bool isSigned) : ConstantValue(aContext, new ScalarType(aContext, TypeID::Integer, bitCount, isSigned), std::to_string(aValue)), value(aValue) {}
 
@@ -344,12 +341,12 @@ public:
     inline long getValue() const {
         return value;
     }
+
+private:
+    long value;
 };
 
 class ConstantFloat : public ConstantValue {
-private:
-    float value;
-
 public:
     ConstantFloat(Context& aContext, float aValue, uint8_t bitCount) : ConstantValue(aContext, new ScalarType(aContext, TypeID::Float, bitCount, true), std::to_string(aValue)), value(aValue) {}
 
@@ -357,15 +354,12 @@ public:
     inline float getValue() const {
         return value;
     }
+
+private:
+    float value;
 };
 
 class PointerType : public Type {
-private:
-    Type* elementType;
-    StorageClass storageClass;
-    // TODO: remove this?
-    uint64_t addressSpace;
-
 public:
     PointerType(Context& aContext, Type* aElementType, StorageClass aStorageClass, uint64_t aAddressSpace = 0) : Type(aContext, TypeID::Pointer), elementType(aElementType), storageClass(aStorageClass), addressSpace(aAddressSpace) {}
 
@@ -411,13 +405,15 @@ public:
     inline uint64_t getAddressSpace() const {
         return addressSpace;
     }
+
+private:
+    Type* elementType;
+    StorageClass storageClass;
+    // TODO: remove this?
+    uint64_t addressSpace;
 };
 
 class ArrayType : public Type {
-private:
-    Type* arrayType;
-    uint32_t size;
-
 public:
     ArrayType(Context& aContext, Type* aArrayType, uint32_t aSize) : Type(aContext, TypeID::Array), arrayType(aArrayType), size(aSize) {}
 
@@ -459,14 +455,13 @@ public:
     inline uint32_t getSize() const {
         return size;
     }
+
+private:
+    Type* arrayType;
+    uint32_t size;
 };
 
 class StructureType : public Type {
-private:
-    Structure* structure;
-
-    std::string name;
-
 public:
     StructureType(Context& aContext, const std::string& aName) : Type(aContext, TypeID::Structure), name(aName) {
         structure = context.structures[name];
@@ -511,13 +506,14 @@ public:
     const std::string& getName() const {
         return name;
     }
+
+private:
+    Structure* structure;
+
+    std::string name;
 };
 
 class FunctionType : public Type {
-private:
-    Type* returnType;
-    std::vector<Type*> arguments;
-
 public:
     FunctionType(Context& aContext, Type* aReturnType, const std::vector<Type*>& aArguments) : Type(aContext, TypeID::Function), returnType(aReturnType), arguments(aArguments) {}
 
@@ -570,13 +566,13 @@ public:
     inline void setReturnType(Type* aReturnType) {
         returnType = aReturnType;
     }
+
+private:
+    Type* returnType;
+    std::vector<Type*> arguments;
 };
 
 class VectorType : public Type {
-private:
-    Type* componentType;
-    uint32_t componentCount;
-
 public:
     VectorType(Context& aContext, Type* aComponentType, uint32_t aComponentCount) : Type(aContext, TypeID::Vector), componentType(aComponentType), componentCount(aComponentCount) {
         if (!componentType->isScalar()) {
@@ -630,13 +626,13 @@ public:
     inline uint32_t getComponentCount() const {
         return componentCount;
     }
+
+private:
+    Type* componentType;
+    uint32_t componentCount;
 };
 
 class MatrixType : public Type {
-private:
-    VectorType* componentType;
-    uint32_t columnCount;
-
 public:
     MatrixType(Context& aContext, VectorType* aComponentType, uint32_t aColumnCount) : Type(aContext, TypeID::Matrix), componentType(aComponentType), columnCount(aColumnCount) {
         if (columnCount < 2 || columnCount > 4) {
@@ -688,15 +684,15 @@ public:
     inline VectorType* getComponentType() const {
         return componentType;
     }
+
+private:
+    VectorType* componentType;
+    uint32_t columnCount;
 };
 
 class TextureType : public Type {
-private:
-    TextureViewType viewType;
-    Type* type;
-
 public:
-    TextureType(Context& aContext, TextureViewType aViewType, Type* aType) : Type(aContext, TypeID::Texture), viewType(aViewType), type(aType) {}
+    TextureType(Context& aContext, TextureViewType aViewType, Type* aType, TextureAccess aAccess) : Type(aContext, TypeID::Texture), viewType(aViewType), type(aType), access(aAccess) {}
 
     ~TextureType() = default;
 
@@ -727,15 +723,24 @@ public:
 
     std::string getDebugName() const override {
         // TODO: don't hardcode this
-        std::string viewTypeStr = "texture2d";
+        std::string viewTypeStr = "texture2D";
 
         return viewTypeStr + "<" + type->getDebugName() + ">";
     }
 
     // Getters
-    inline TextureViewType getViewType() {
+    inline TextureViewType getViewType() const {
         return viewType;
     }
+
+    inline TextureAccess getAccess() const {
+        return access;
+    }
+
+private:
+    TextureViewType viewType;
+    Type* type;
+    TextureAccess access;
 };
 
 // TODO: support some template arguments

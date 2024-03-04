@@ -179,12 +179,24 @@ irb::Type* _parseTypeExpression(irb::Attributes* attributes = nullptr) {
                 return nullptr;
             }
             irb::ScalarType* scalarType = static_cast<irb::ScalarType*>(textureType);
+            irb::TextureAccess access = irb::TextureAccess::Sample;
+            if (crntToken == ',') {
+                getNextToken(); // ','
+                ExpressionAST* accessExpr = parseMain();
+                EnumValueExpressionAST* accessEnumExpr = dynamic_cast<EnumValueExpressionAST*>(accessExpr);
+                if (!accessEnumExpr || accessEnumExpr->getEnumeration() != enumerations["Access"]) {
+                    logError("expected 'Access' enumeration value for the 2nd template argument");
+                    return nullptr;
+                }
+                accessEnumExpr->initialize();
+                access = (irb::TextureAccess)accessEnumExpr->getValue().value;
+            }
             if (crntToken != TOKEN_OPERATOR_RELATIONAL_GREATER_THAN) {
                 logError("expected '>' to match the '<'");
                 return nullptr;
             }
 
-            type = new irb::TextureType(context, viewType, scalarType);
+            type = new irb::TextureType(context, viewType, scalarType, access);
         } else if (crntToken == TOKEN_TYPE_SAMPLER) {
             type = new irb::SamplerType(context);
         } /* else if (typeIsBuiltin) {

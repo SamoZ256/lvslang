@@ -43,6 +43,7 @@
       %float = OpTypeFloat 32
     %v2float = OpTypeVector %float 2
     %v4float = OpTypeVector %float 4
+       %void = OpTypeVoid
  %_struct_12 = OpTypeStruct %v2float %v2float
 %_ptr_Input__struct_12 = OpTypePointer Input %_struct_12
           %3 = OpVariable %_ptr_Input__struct_12 Input
@@ -55,7 +56,6 @@
 %_ptr_Output_v4float = OpTypePointer Output %v4float
 %gl_Position = OpVariable %_ptr_Output_v4float Output
       %int_0 = OpConstant %int 0
-       %void = OpTypeVoid
          %48 = OpTypeFunction %void
     %float_0 = OpConstant %float 0
     %float_1 = OpConstant %float 1

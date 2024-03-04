@@ -141,6 +141,7 @@ static std::map<std::string, StandardFunctionInfo> standardFunctionLUT = {
     {"mix", {"Mix", true, 0}},
     {"normalize", {"Normalize"}},
     {"pow", {"Pow"}},
+    {"read", {"ImageRead", false}},
     {"reflect", {"Reflect"}},
     {"refract", {"Refract"}},
     {"round", {"Round"}},
@@ -152,8 +153,9 @@ static std::map<std::string, StandardFunctionInfo> standardFunctionLUT = {
     {"sqrt", {"Sqrt"}},
     {"step", {"Step"}},
     {"tan", {"Tan"}},
-    {"tanh", {"Tanh"}}
+    {"tanh", {"Tanh"}},
     // TODO: add transpose function
+    {"write", {"ImageWrite", false}}
 };
 
 static const std::string extensionsLUT[(int)Extension::MaxEnum] = {
@@ -725,8 +727,7 @@ Value* SPIRVBuilder::opCast(Value* val, Type* type)  {
 }
 
 Value* SPIRVBuilder::opSample(Value* funcV, Value* texture, Value* sampler, Value* coords, Value* lod)  {
-    Value* sampledImageTypeV = new Value(context, nullptr, "sampledImageType");
-    blockTypesVariablesConstants->addCode("OpTypeSampledImage " + getTypeValue(this, texture->getType())->getName(), sampledImageTypeV);
+    Value* sampledImageTypeV = _addCodeToTypesVariablesConstantsBlock(nullptr, "OpTypeSampledImage " + getTypeValue(this, texture->getType())->getName(), "sampledImageType");
 
     Value* sampledImage = new Value(context, nullptr, "samplerTexTmp");
     getSPIRVInsertBlock()->addCode("OpSampledImage " + sampledImageTypeV->getName() + " " + texture->getName() + " " + sampler->getName(), sampledImage);

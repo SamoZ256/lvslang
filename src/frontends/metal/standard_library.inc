@@ -32,6 +32,7 @@
 "STD_FUNCTION float asinh(float x);\n" \
 "STD_FUNCTION float atan(float x);\n" \
 "STD_FUNCTION float atanh(float x);\n" \
+"// TODO: add atomic functions\n" \
 "STD_FUNCTION half ceil(half x);\n" \
 "STD_FUNCTION half2 ceil(half2 x);\n" \
 "STD_FUNCTION half3 ceil(half3 x);\n" \
@@ -109,7 +110,6 @@
 "STD_FUNCTION float2 fract(float2 x);\n" \
 "STD_FUNCTION float3 fract(float3 x);\n" \
 "STD_FUNCTION float4 fract(float4 x);\n" \
-"// TODO: add image functions\n" \
 "STD_FUNCTION bool isinf(half x);\n" \
 "STD_FUNCTION bool2 isinf(half2 x);\n" \
 "STD_FUNCTION bool3 isinf(half3 x);\n" \
@@ -210,6 +210,17 @@
 "STD_FUNCTION float2 pow(float2 x, float2 y);\n" \
 "STD_FUNCTION float3 pow(float3 x, float3 y);\n" \
 "STD_FUNCTION float4 pow(float4 x, float4 y);\n" \
+"// TODO: add more overloads\n" \
+"STD_FUNCTION char4 read(texture2d<char> texture, ushort2 coord);\n" \
+"STD_FUNCTION short4 read(texture2d<short> texture, ushort2 coord);\n" \
+"STD_FUNCTION int4 read(texture2d<int> texture, ushort2 coord);\n" \
+"STD_FUNCTION half4 read(texture2d<half> texture, ushort2 coord);\n" \
+"STD_FUNCTION float4 read(texture2d<float> texture, ushort2 coord);\n" \
+"STD_FUNCTION char4 read(texture2d<char> texture, uint2 coord);\n" \
+"STD_FUNCTION short4 read(texture2d<short> texture, uint2 coord);\n" \
+"STD_FUNCTION int4 read(texture2d<int> texture, uint2 coord);\n" \
+"STD_FUNCTION half4 read(texture2d<half> texture, uint2 coord);\n" \
+"STD_FUNCTION float4 read(texture2d<float> texture, uint2 coord);\n" \
 "STD_FUNCTION half2 reflect(half2 I, half2 N);\n" \
 "STD_FUNCTION half3 reflect(half3 I, half3 N);\n" \
 "STD_FUNCTION half4 reflect(half4 I, half4 N);\n" \
@@ -286,4 +297,15 @@
 "STD_FUNCTION float tan(float x);\n" \
 "STD_FUNCTION float tanh(float x);\n" \
 "// TODO: add transpose function\n" \
+"// TODO: add more overloads\n" \
+"STD_FUNCTION void write(texture2d<char> texture, char4 data, ushort2 coord);\n" \
+"STD_FUNCTION void write(texture2d<short> texture, short4 data, ushort2 coord);\n" \
+"STD_FUNCTION void write(texture2d<int> texture, int4 data, ushort2 coord);\n" \
+"STD_FUNCTION void write(texture2d<half> texture, half4 data, ushort2 coord);\n" \
+"STD_FUNCTION void write(texture2d<float> texture, float4 data, ushort2 coord);\n" \
+"STD_FUNCTION void write(texture2d<char> texture, char4 data, uint2 coord);\n" \
+"STD_FUNCTION void write(texture2d<short> texture, short4 data, uint2 coord);\n" \
+"STD_FUNCTION void write(texture2d<int> texture, int4 data, uint2 coord);\n" \
+"STD_FUNCTION void write(texture2d<half> texture, half4 data, uint2 coord);\n" \
+"STD_FUNCTION void write(texture2d<float> texture, float4 data, uint2 coord);\n" \
 ""

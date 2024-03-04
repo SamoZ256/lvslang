@@ -441,7 +441,8 @@ irb::Type* InitializerListExpressionAST::_initialize() {
     std::vector<irb::Type*> components;
     components.reserve(expressions.size());
     for (auto* expression : expressions) {
-        irb::Type* component = expression->initialize();
+        // Provide required type in case of a number expression
+        irb::Type* component = expression->initialize((listType->isVector() && dynamic_cast<NumberExpressionAST*>(expression)) ? listType->getBaseType() : nullptr);
         if (!component)
             return nullptr;
         components.push_back(component);

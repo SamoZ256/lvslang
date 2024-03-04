@@ -11,7 +11,7 @@ const std::string textureViewTypeLUT_Metal[] = {
     "2d_array",
     "cube",
     "cube_array",
-    "UNSUPPORTED"
+    "buffer"
 };
 
 std::string getTypeNameBegin_Metal(irb::Type* type) {

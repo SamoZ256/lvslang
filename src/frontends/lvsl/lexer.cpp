@@ -215,14 +215,16 @@ int getTypeFromString(const std::string& strType) {
         return TOKEN_TYPE_TEXTURE_2D;
     if (identifierStr == "texture3D")
         return TOKEN_TYPE_TEXTURE_3D;
-    if (identifierStr == "texture1DArray")
+    if (identifierStr == "texture1D_array")
         return TOKEN_TYPE_TEXTURE_1D_ARRAY;
-    if (identifierStr == "texture2DArray")
+    if (identifierStr == "texture2D_array")
         return TOKEN_TYPE_TEXTURE_2D_ARRAY;
     if (identifierStr == "textureCube")
         return TOKEN_TYPE_TEXTURE_CUBE;
-    if (identifierStr == "textureCubeArray")
+    if (identifierStr == "textureCube_array")
         return TOKEN_TYPE_TEXTURE_CUBE_ARRAY;
+    if (identifierStr == "texture_buffer")
+        return TOKEN_TYPE_TEXTURE_BUFFER;
 
     if (identifierStr == "sampler")
         return TOKEN_TYPE_SAMPLER;

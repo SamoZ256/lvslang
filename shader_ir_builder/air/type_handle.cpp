@@ -24,6 +24,8 @@ llvm::FunctionType* getFunctionTypeLLVMHandle(FunctionType* type) {
 
 llvm::Type* getTypeLLVMHandle(Type* type) {
     switch (type->getTypeID()) {
+    case TypeID::Void:
+        return llvm::Type::getVoidTy(*type->getContext().handle);
     case TypeID::Bool:
         return llvm::Type::getInt1Ty(*type->getContext().handle);
     case TypeID::Integer:

@@ -6,7 +6,9 @@ struct VertexOut {
 	float2 texCoord;
 };
 
-fragment float4 fragmentMain(VertexOut fragmentIn [[stage_in]], texture2d<float> tex [[texture(0)]], sampler smp [[sampler(0)]]) {
-	return tex.sample(smp, fragmentIn.texCoord);
+fragment float4 fragmentMain(VertexOut fragmentIn [[stage_in]], texture2d<float> tex1 [[texture(0)]], texture2d<float> tex2 [[texture(1)]], sampler smp [[sampler(0)]]) {
+	float4 sampled1 = tex1.sample(smp, fragmentIn.texCoord);
+	float4 sampled2 = tex2.read(ushort2(0));
+	return (sampled1 * sampled2);
 }
 

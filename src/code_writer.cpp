@@ -423,6 +423,34 @@ CodeValue* CodeWriter::codegenFunctionCall(const CallExpressionAST* expression) 
         default:
             break;
         }
+    } else if (expression->getCallee() == "read") {
+        switch (target) {
+        case Target::Metal:
+            code = argVs[0]->code + ".read(" + argVs[1]->code + ")";
+            break;
+        case Target::HLSL:
+            code = argVs[0]->code + ".Read(" + argVs[1]->code + ", 0)"; // TODO: check if this is correct
+            break;
+        case Target::GLSL:
+            code = "imageLoad(" + argVs[0]->code + ", " + argVs[1]->code + ")";
+            break;
+        default:
+            break;
+        }
+    } else if (expression->getCallee() == "write") {
+        switch (target) {
+        case Target::Metal:
+            code = argVs[0]->code + ".write(" + argVs[1]->code + ", " + argVs[2]->code + ")";
+            break;
+        case Target::HLSL:
+            code = argVs[0]->code + ".Write(" + argVs[1]->code + ", " + argVs[2]->code + ", 0)"; // TODO: check if this is correct
+            break;
+        case Target::GLSL:
+            code = "imageStore(" + argVs[0]->code + ", " + argVs[1]->code + ", " + argVs[2]->code + ")";
+            break;
+        default:
+            break;
+        }
     } else {
         code = expression->getCallee() + "(" + argsStr + ")";
     }
