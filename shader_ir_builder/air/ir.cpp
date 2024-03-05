@@ -576,6 +576,50 @@ private:
     }
 };
 
+std::string getTypeNameForGenerated(Type* type) {
+    switch (type->getTypeID()) {
+    case TypeID::Bool:
+        return "b";
+    case TypeID::Integer:
+        if (type->getIsSigned()) {
+            switch (type->getBitCount()) {
+            case 8:
+                return "c";
+            case 16:
+                return "s";
+            case 32:
+                return "i";
+            default:
+                return "INVALID";
+            }
+        } else {
+            switch (type->getBitCount()) {
+            case 8:
+                return "h";
+            case 16:
+                return "t";
+            case 32:
+                return "j";
+            default:
+                return "INVALID";
+            }
+        }
+    case TypeID::Float:
+        switch (type->getBitCount()) {
+        case 16:
+            return "Dh";
+        case 32:
+            return "f";
+        default:
+            return "INVALID";
+        }
+    case TypeID::Vector:
+        return "v" + std::to_string(static_cast<VectorType*>(type)->getComponentCount()) + "_" + getTypeNameForGenerated(type->getBaseType());
+    default:
+        return "INVALID";
+    }
+}
+
 // TODO: check if it really called "kernel"
 const std::string functionRoleLUT[3] = {
     "vertex",
@@ -630,26 +674,34 @@ std::string AIRBuilder::createMetadata(const std::string& languageName, uint32_t
         std::string inputsStr;
 
         if (entryPoint.returnType->getTypeID() != TypeID::Void) {
-            if (auto* structureType = dynamic_cast<StructureType*>(entryPoint.returnType)) {
-                Structure* structure = structureType->getStructure();
-                for (uint32_t i = 0; i < structure->members.size(); i++) {
-                    const auto& member = structure->members[i];
-                    MetadataValue* crntOutput = new MetadataValue(context);
-                    std::string str = "!{";
-                    if (entryPoint.functionRole == FunctionRole::Vertex) {
-                        if (member.attributes.isPosition)
-                            str += "!\"air.position\"";
-                        else
-                            str += "!\"air.vertex_output\", !\"generated(randomstuff)\""; // TODO: find out what should be inside 'generated'
-                    } else if (entryPoint.functionRole == FunctionRole::Fragment) {
-                        str += "!\"air.render_target\", i32 " + std::to_string(member.attributes.colorIndex) + ", i32 0"; // TODO: find out if the last argument should always be 0
-                    }
-                    str += ", !\"air.arg_type_name\", !\"" + member.type->getDebugName() + "\", !\"air.arg_name\", !\"" + member.name + "\"}";
+            if (entryPoint.returnType->isStructure()) {
+                std::vector<StructureType*> structureTypes = {static_cast<StructureType*>(entryPoint.returnType)};
+                while (structureTypes.size() != 0) {
+                    Structure* structure = structureTypes[0]->getStructure();
+                    for (uint32_t i = 0; i < structure->members.size(); i++) {
+                        const auto& member = structure->members[i];
+                        if (member.type->isStructure()) {
+                            structureTypes.push_back(static_cast<StructureType*>(member.type));
+                        } else {
+                            MetadataValue* crntOutput = new MetadataValue(context);
+                            std::string str = "!{";
+                            if (entryPoint.functionRole == FunctionRole::Vertex) {
+                                if (member.attributes.isPosition)
+                                    str += "!\"air.position\"";
+                                else
+                                    str += "!\"air.vertex_output\", !\"generated(" + std::to_string(member.name.size()) + member.name + getTypeNameForGenerated(member.type) + ")\"";
+                            } else if (entryPoint.functionRole == FunctionRole::Fragment) {
+                                str += "!\"air.render_target\", i32 " + std::to_string(member.attributes.colorIndex) + ", i32 0"; // TODO: find out if the last argument should always be 0
+                            }
+                            str += ", !\"air.arg_type_name\", !\"" + member.type->getDebugName() + "\", !\"air.arg_name\", !\"" + member.name + "\"}";
 
-                    if (i != 0)
-                        outputsStr += ", ";
-                    outputsStr += crntOutput->getName();
-                    outputs.emplace_back(crntOutput, str);
+                            if (outputsStr != "")
+                                outputsStr += ", ";
+                            outputsStr += crntOutput->getName();
+                            outputs.emplace_back(crntOutput, str);
+                        }
+                    }
+                    structureTypes.erase(structureTypes.begin());
                 }
             } else {
                 MetadataValue* crntOutput = new MetadataValue(context);
