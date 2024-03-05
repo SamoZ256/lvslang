@@ -612,7 +612,8 @@ void SPIRVBuilder::opBranch(Block* block)  {
 }
 
 void SPIRVBuilder::opBranchCond(Value* cond, Block* blockTrue, Block* blockFalse)  {
-    getSPIRVInsertBlock()->addCode("OpBranchConditional " + cond->getName() + " " + blockTrue->getName() + " " + blockFalse->getName());
+    if (!getSPIRVInsertBlock()->hasReturned())
+        getSPIRVInsertBlock()->addCode("OpBranchConditional " + cond->getName() + " " + blockTrue->getName() + " " + blockFalse->getName());
 }
 
 void SPIRVBuilder::opBlockMerge(Block* block)  {

@@ -174,7 +174,7 @@ public:
 
     inline void* getHandle() {
         if (!handle)
-            IRB_ERROR(("handle is null (type: " + type->getDebugName() + ")").c_str());
+            IRB_ERROR(("handle is null (type: " + type->getDebugName() + ", name: " + name + ")").c_str());
         
         return handle;
     }

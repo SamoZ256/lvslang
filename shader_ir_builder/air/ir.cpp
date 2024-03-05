@@ -17,7 +17,7 @@ static llvm::Value* getValueLLVMHandle(Value* value) {
     if (auto* constantInt = dynamic_cast<ConstantInt*>(value))
         return llvm::ConstantInt::get(*value->getContext().handle, llvm::APInt(constantInt->getType()->getBitCount(), constantInt->getValue(), constantInt->getType()->getIsSigned()));
     if (auto* constantFloat = dynamic_cast<ConstantFloat*>(value))
-        return llvm::ConstantFP::get(*value->getContext().handle, llvm::APFloat(constantFloat->getValue()));
+        return llvm::ConstantFP::get(getTypeLLVMHandle(value->getType()), constantFloat->getValue());
 
     return static_cast<llvm::Value*>(value->getHandle());
 }
@@ -352,8 +352,7 @@ void AIRBuilder::opStore(Value* ptr, Value* v) {
 }
 
 void AIRBuilder::opReturn(Value* v) {
-    AIRBlock* block = getAIRInsertBlock();
-    if (block->hasReturned()) {
+    if (getAIRInsertBlock()->hasReturned()) {
         IRB_ERROR("cannot have more than 1 return instruction in a single block");
         return;
     }
@@ -387,11 +386,13 @@ Value* AIRBuilder::opFunctionCall(Value* funcV, const std::vector<Value*>& argum
 }
 
 void AIRBuilder::opBranch(Block* block) {
-    handle->CreateBr(static_cast<llvm::BasicBlock*>(getValueLLVMHandle(block)));
+    if (!getAIRInsertBlock()->hasReturned())
+        handle->CreateBr(static_cast<llvm::BasicBlock*>(getValueLLVMHandle(block)));
 }
 
 void AIRBuilder::opBranchCond(Value* cond, Block* blockTrue, Block* blockFalse) {
-    handle->CreateCondBr(getValueLLVMHandle(cond), static_cast<llvm::BasicBlock*>(getValueLLVMHandle(blockTrue)), static_cast<llvm::BasicBlock*>(getValueLLVMHandle(blockFalse)));
+    if (!getAIRInsertBlock()->hasReturned())
+        handle->CreateCondBr(getValueLLVMHandle(cond), static_cast<llvm::BasicBlock*>(getValueLLVMHandle(blockTrue)), static_cast<llvm::BasicBlock*>(getValueLLVMHandle(blockFalse)));
 }
 
 Value* AIRBuilder::opConstruct(Type* type, const std::vector<Value*>& components) {
@@ -460,7 +461,7 @@ Value* AIRBuilder::opGetElementPtr(PointerType* elementType, Value* ptr, const s
         IRB_INVALID_ARGUMENT_WITH_REASON("ptr", "type of 'ptr' is not pointer type");
         return nullptr;
     }
-    // elementType->setAddressSpace(static_cast<PointerType*>(ptr->getType())->getAddressSpace());
+    //elementType->setAddressSpace(static_cast<PointerType*>(ptr->getType())->getAddressSpace());
     Value* value = new Value(context, elementType);
 
     std::vector<llvm::Value*> llvmIndexes;
