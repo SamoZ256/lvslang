@@ -138,9 +138,9 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
     for (uint32_t i = 0; i < expression->arguments().size(); i++) {
         const irb::Argument& arg = expression->arguments()[i];
         auto& attr = arg.attributes;
-        if (i != 0)
-            argsStr += ", ";
         if (target == Target::Metal) {
+            if (i != 0)
+                argsStr += ", ";
             std::string addressSpace;
             if (attr.addressSpace == 2)
                 addressSpace = "constant ";
@@ -159,6 +159,8 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
 
             argsStr += addressSpace + getTypeName(target, arg.type) + " " + arg.name + attribute;
         } else if (target == Target::HLSL) {
+            if (i != 0)
+                argsStr += ", ";
             argsStr += getTypeName(target, (attr.isBuffer ? arg.type->getElementType() : arg.type)) + " " + arg.name;
 
             // Entry point
@@ -177,7 +179,13 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
                 }
             }
         } else {
-            argsStr += getTypeName(target, (attr.isBuffer ? arg.type->getElementType() : arg.type)) + " " + arg.name;
+            // TODO: check if this applies to all images
+            // HACK: Image types cannot be passed as arguments
+            if (!arg.type->isTexture() || static_cast<irb::TextureType*>(arg.type)->getAccess() == irb::TextureAccess::Sample) {
+                if (i != 0)
+                    argsStr += ", ";
+                argsStr += getTypeName(target, (attr.isBuffer ? arg.type->getElementType() : arg.type)) + " " + arg.name;
+            }
 
             // Entry point
             if (expression->getFunctionRole() != irb::FunctionRole::Normal) {
@@ -212,8 +220,10 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
                         typeName = "uniform " + getTypeName(target, arg.type);
                     }
                     entryPointStr += "layout (set = " + std::to_string(attr.bindings.set) + ", binding = " + std::to_string(attr.bindings.binding);
-                    if (attr.isTexture)
-                        entryPointStr += ", rgba8"; // TODO: do not hardcode this
+                    if (auto* textureType = dynamic_cast<irb::TextureType*>(arg.type)) {
+                        if (textureType->getAccess() != irb::TextureAccess::Sample)
+                            entryPointStr += ", rgba8"; // TODO: do not hardcode this
+                    }
                     entryPointStr += ") " + typeName;
                     if (!attr.isBuffer)
                         entryPointStr += " " + arg.name;
@@ -328,9 +338,11 @@ CodeValue* CodeWriter::codegenFunctionPrototype(const FunctionPrototypeAST* expr
             std::string outputVarName = "_entryPointOutput";
             entryPointStr += "\t" + (expression->getReturnType()->getTypeID() == irb::TypeID::Void ? "" : getTypeName(target, expression->getReturnType()) + " " + outputVarName + " = ") + expression->name() + "(";
             for (uint32_t i = 0; i < expression->arguments().size(); i++) {
-                if (i != 0)
-                    entryPointStr += ", ";
-                entryPointStr += expression->arguments()[i].name;
+                if (!expression->arguments()[i].type->isTexture() || static_cast<irb::TextureType*>(expression->arguments()[i].type)->getAccess() == irb::TextureAccess::Sample) {
+                    if (i != 0)
+                        entryPointStr += ", ";
+                    entryPointStr += expression->arguments()[i].name;
+                }
             }
 
             // -------- Output --------

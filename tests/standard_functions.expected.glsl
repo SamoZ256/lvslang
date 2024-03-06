@@ -12,7 +12,7 @@ struct FragmentOut {
 
 FragmentOut testStandardFunctions(texture2D testTexture, sampler testSampler);
 
-layout (set = 0, binding = 0, rgba8) uniform texture2D testTexture;
+layout (set = 0, binding = 0) uniform texture2D testTexture;
 
 layout (set = 0, binding = 0) uniform sampler testSampler;
 
