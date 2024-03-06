@@ -614,7 +614,7 @@ std::string getTypeNameForGenerated(Type* type) {
             return "INVALID";
         }
     case TypeID::Vector:
-        return "v" + std::to_string(static_cast<VectorType*>(type)->getComponentCount()) + "_" + getTypeNameForGenerated(type->getBaseType());
+        return "Dv" + std::to_string(static_cast<VectorType*>(type)->getComponentCount()) + "_" + getTypeNameForGenerated(type->getBaseType());
     default:
         return "INVALID";
     }
@@ -710,7 +710,7 @@ std::string AIRBuilder::createMetadata(const std::string& languageName, uint32_t
                     str += "!\"air.position\"";
                 else if (entryPoint.functionRole == FunctionRole::Fragment)
                     str += "!\"air.render_target\", i32 0, i32 0"; // TODO: find out if the last argument should always be 0
-                str += ", !\"air.arg_type_name\", !\"" + entryPoint.returnType->getDebugName() + "\", !\"air.arg_name\", !\"output\"}"; // TODO: do not hardcode 'output' here
+                str += ", !\"air.arg_type_name\", !\"" + entryPoint.returnType->getDebugName() + "\"}";
                 outputsStr += crntOutput->getName();
                 outputs.emplace_back(crntOutput, str);
             }
@@ -736,7 +736,7 @@ std::string AIRBuilder::createMetadata(const std::string& languageName, uint32_t
                         if (member.attributes.isPosition)
                             str += "!\"air.position\", !\"air.center\", !\"air.no_perspective\"";
                         else
-                            str += "!\"air.fragment_input\", !\"generated(randomstuff)\", !\"air.center\", !\"air.perspective\""; // TODO: here
+                            str += "!\"air.fragment_input\", !\"generated(" + std::to_string(member.name.size()) + member.name + getTypeNameForGenerated(member.type) + ")\", !\"air.center\", !\"air.perspective\""; // TODO: here
                     }
 
                     str += ", !\"air.arg_type_name\", !\"" + member.type->getDebugName() + "\", !\"air.arg_name\", !\"" + member.name + "\"}";
