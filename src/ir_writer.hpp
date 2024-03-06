@@ -55,6 +55,8 @@ private:
     Target target;
     const AST& ast;
 
+    irb::IRBuilder* builder;
+
     irb::OptimizationLevel optimizationLevel;
     bool outputAssembly;
     bool includeDebugInformation;

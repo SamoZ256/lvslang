@@ -3,7 +3,6 @@
 namespace lvslang {
 
 irb::Context context;
-irb::IRBuilder* builder;
 
 irb::Type* crntFunctionReturnType = nullptr;
 

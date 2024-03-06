@@ -14,7 +14,6 @@ namespace lvslang {
 class FunctionPrototypeAST;
 
 extern irb::Context context;
-extern irb::IRBuilder* builder;
 
 extern FunctionPrototypeAST* crntFunction;
 
