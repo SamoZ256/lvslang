@@ -15,8 +15,6 @@ class FunctionPrototypeAST;
 
 extern irb::Context context;
 
-extern FunctionPrototypeAST* crntFunction;
-
 struct EnumValue {
     std::string name;
     long value;
