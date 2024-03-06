@@ -14,7 +14,7 @@ This is a compiler for various shading languages. It compiles into other shading
 
 1. Clone the repo
    ```console
-   git clone https:// github.com/SamoZ256/lvslang.git
+   git clone https://github.com/SamoZ256/lvslang.git
    ```
 2. Build the project
    ```console
@@ -885,4 +885,4 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 Samuel Žúbor - samuliak77@gmail.com
 
-Project Link: [https:// github.com/SamoZ256/lvslang](https:// github.com/SamoZ256/lvslang)
+Project Link: [https://github.com/SamoZ256/lvslang](https://github.com/SamoZ256/lvslang)
