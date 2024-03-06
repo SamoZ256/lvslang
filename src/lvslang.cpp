@@ -12,6 +12,7 @@ namespace lvslang {
 
 bool compile(const CompileOptions& options, std::string& outputCode) {
     context.reset();
+    variables.clear();
     functionDeclarations.clear();
     enumerations.clear();
     source = Source{};
