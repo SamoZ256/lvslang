@@ -875,7 +875,7 @@ Note that the this output won't compile, since it contains more than one entry p
 * Samplers (without template arguments)
 * Shader inputs and outputs
 
-See the [open issues](https:// github.com/SamoZ256/lvslang/issues) for a full list of proposed features (and known issues).
+See the [open issues](https://github.com/SamoZ256/lvslang/issues) for a full list of proposed features (and known issues).
 
 ## License
 
