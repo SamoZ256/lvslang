@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.5)
 
 project(lvslang)
 
-option(USE_LLVM "Use LLVM to assemble and optimize the output" ON)
 option(BUILD_TESTS "Build tests" OFF)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -15,13 +14,9 @@ set(SPIRV-Headers_SOURCE_DIR ${PROJECT_SOURCE_DIR}/SPIRV-Headers)
 add_subdirectory(${PROJECT_SOURCE_DIR}/SPIRV-Tools)
 
 # LLVM
-if (USE_LLVM)
-    find_package(LLVM REQUIRED CONFIG)
+find_package(LLVM REQUIRED CONFIG)
 
-    llvm_map_components_to_libnames(LLVM_LIBS support core irreader passes)
-
-    add_compile_definitions(LVSLANG_USE_LLVM)
-endif()
+llvm_map_components_to_libnames(LLVM_LIBS support core irreader passes)
 
 # argumentum
 set(ARGUMENTUM_BUILD_STATIC_LIBS ON)
@@ -55,11 +50,9 @@ target_include_directories(lvslang_lib PRIVATE ${PROJECT_SOURCE_DIR}/SPIRV-Tools
 
 target_link_libraries(lvslang_lib PUBLIC SPIRV-Tools SPIRV-Tools-opt Argumentum::argumentum)
 
-if (USE_LLVM)
-    target_include_directories(lvslang_lib PRIVATE ${LLVM_INCLUDE_DIRS})
+target_include_directories(lvslang_lib PRIVATE ${LLVM_INCLUDE_DIRS})
 
-    target_link_libraries(lvslang_lib PUBLIC ${LLVM_LIBS})
-endif()
+target_link_libraries(lvslang_lib PUBLIC ${LLVM_LIBS})
 
 add_executable(lvslang tools/lvslang.cpp)
 
