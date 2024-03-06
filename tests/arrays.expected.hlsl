@@ -3,37 +3,31 @@ struct MyBuffer {
 	int i;
 };
 
-struct FragmentOut {
-	float4 outColor : SV_Target0;
-};
-
-FragmentOut testArrays(MyBuffer myBuffer);
+float4 testArrays(MyBuffer myBuffer);
 
 cbuffer myBuffer_Uniform : register(b0) {
 	MyBuffer myBuffer;
 };
 
-struct FragmentOut_Output {
-	FragmentOut output : TEXCOORD0;
+struct float4_Output {
+	float4 output : TEXCOORD0;
 };
 
-FragmentOut_Output _testArrays() {
+float4_Output _testArrays() {
 	// Entry point call
-	FragmentOut _entryPointOutput = testArrays(myBuffer);
+	float4 _entryPointOutput = testArrays(myBuffer);
 
 	// Output
-	FragmentOut_Output __output;
+	float4_Output __output;
 	__output.output = _entryPointOutput;
 
 	return __output;
 }
 
-FragmentOut testArrays(MyBuffer myBuffer) {
+float4 testArrays(MyBuffer myBuffer) {
 	float4 outColor;
 	int multiArray[32][32];
 	multiArray[10][myBuffer.i] = 1;
-	FragmentOut fragmentOut;
-	fragmentOut.outColor = float4(myBuffer.a[0], 0.000000, 0.000000, 1.000000);
-	return fragmentOut;
+	return float4(myBuffer.a[0], 0.000000, 0.000000, 1.000000);
 }
 

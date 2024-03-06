@@ -1,11 +1,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-struct FragmentOut {
-	float4 outColor [[color(0)]];
-};
-
-fragment FragmentOut testStandardFunctions(texture2d<float> testTexture [[texture(0)]], sampler testSampler [[sampler(0)]]) {
+fragment void testStandardFunctions(texture2d<float> testTexture [[texture(0)]], sampler testSampler [[sampler(0)]]) {
 	char absTestChar = abs(char(0));
 	char2 absTestChar2 = abs(char2(0));
 	char3 absTestChar3 = abs(char3(0));
@@ -277,8 +273,5 @@ fragment FragmentOut testStandardFunctions(texture2d<float> testTexture [[textur
 	float4 stepTestFloat4 = step(float4(0.000000), float4(0.000000));
 	float tanTest = tan(0.000000);
 	float tanhTest = tanh(0.000000);
-	FragmentOut fragmentOut;
-	fragmentOut.outColor = float4(0.000000, 0.000000, 0.000000, 1.000000);
-	return fragmentOut;
 }
 

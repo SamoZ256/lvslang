@@ -1,7 +1,7 @@
 ; SPIR-V
 ; Version: 1.6
 ; Generator: Khronos SPIR-V Tools Assembler; 0
-; Bound: 98
+; Bound: 86
 ; Schema: 0
                OpCapability Shader
                OpCapability Float16
@@ -22,8 +22,7 @@
                OpMemberDecorate %_struct_6 0 Offset 0
                OpMemberDecorate %_struct_6 1 Offset 128
                OpDecorate %_struct_6 Block
-               OpDecorate %_struct_7 Block
-               OpMemberDecorate %_struct_7 0 Location 0
+               OpDecorate %4 Location 0
 
                ; Types, variables and constants
         %int = OpTypeInt 32 1
@@ -36,22 +35,20 @@
   %_struct_6 = OpTypeStruct %_arr_float_uint_32 %int
 %_ptr_Uniform__struct_6 = OpTypePointer Uniform %_struct_6
           %3 = OpVariable %_ptr_Uniform__struct_6 Uniform
-  %_struct_7 = OpTypeStruct %v4float
-%_ptr_Output__struct_7 = OpTypePointer Output %_struct_7
-          %4 = OpVariable %_ptr_Output__struct_7 Output
-         %38 = OpTypeFunction %void
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+          %4 = OpVariable %_ptr_Output_v4float Output
+         %37 = OpTypeFunction %void
     %float_0 = OpConstant %float 0
     %float_1 = OpConstant %float 1
 %_ptr_Uniform_float = OpTypePointer Uniform %float
      %uint_0 = OpConstant %uint 0
 
                ; Function 2
-          %2 = OpFunction %void None %38
-         %54 = OpLabel
-         %96 = OpAccessChain %_ptr_Uniform_float %3 %uint_0 %uint_0
-         %97 = OpLoad %float %96
-         %87 = OpCompositeConstruct %v4float %97 %float_0 %float_0 %float_1
-         %92 = OpCompositeConstruct %_struct_7 %87
-               OpStore %4 %92
+          %2 = OpFunction %void None %37
+         %52 = OpLabel
+         %84 = OpAccessChain %_ptr_Uniform_float %3 %uint_0 %uint_0
+         %85 = OpLoad %float %84
+         %80 = OpCompositeConstruct %v4float %85 %float_0 %float_0 %float_1
+               OpStore %4 %80
                OpReturn
                OpFunctionEnd

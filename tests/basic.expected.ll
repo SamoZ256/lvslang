@@ -4,7 +4,6 @@ target triple = "air64-apple-macosx14.0.0"
 %VertexOut = type { <4 x float>, <2 x float> }
 %VertexIn = type { <2 x float>, <2 x float> }
 %Model = type { <2 x float>, <2 x float> }
-%FragmentOut = type { <4 x float> }
 
 ; Function Attrs: convergent mustprogress nofree nounwind willreturn
 declare <4 x float> @air.sample_texture_2d.v4f32(ptr addrspace(1) nocapture readonly, ptr addrspace(2) nocapture readonly, <2 x float>, i1, <2 x i32>, i1, float, float, i32) local_unnamed_addr #0
@@ -27,12 +26,11 @@ entry:
 }
 
 ; Function Attrs: mustprogress nofree nounwind willreturn
-define %FragmentOut @fragmentMain.sVertexOut.t1f32.sm(%VertexOut %fragmentIn, ptr addrspace(1) nocapture readonly %colorTexture, ptr addrspace(2) nocapture readonly %colorSampler) local_unnamed_addr #2 {
+define <4 x float> @fragmentMain.sVertexOut.t1f32.sm(%VertexOut %fragmentIn, ptr addrspace(1) nocapture readonly %colorTexture, ptr addrspace(2) nocapture readonly %colorSampler) local_unnamed_addr #2 {
 entry0:
   %fragmentIn.fca.1.extract = extractvalue %VertexOut %fragmentIn, 1
   %0 = tail call <4 x float> @air.sample_texture_2d.v4f32(ptr addrspace(1) %colorTexture, ptr addrspace(2) %colorSampler, <2 x float> %fragmentIn.fca.1.extract, i1 true, <2 x i32> zeroinitializer, i1 false, float 0.000000e+00, float 0.000000e+00, i32 0)
-  %.fca.0.insert = insertvalue %FragmentOut poison, <4 x float> %0, 0
-  ret %FragmentOut %.fca.0.insert
+  ret <4 x float> %0
 }
 
 attributes #0 = { convergent mustprogress nofree nounwind willreturn }
@@ -66,7 +64,7 @@ attributes #2 = { mustprogress nofree nounwind willreturn }
 !18 = !{ptr @fragmentMain.sVertexOut.t1f32.sm, !19, !20}
 !19 = !{!21}
 !20 = !{!22, !23, !24, !25}
-!21 = !{!"air.render_target", i32 0, i32 0, !"air.arg_type_name", !"float4", !"air.arg_name", !"outColor"}
+!21 = !{!"air.render_target", i32 0, i32 0, !"air.arg_type_name", !"float4"}
 !22 = !{i32 0, !"air.position", !"air.center", !"air.no_perspective", !"air.arg_type_name", !"float4", !"air.arg_name", !"pos"}
 !23 = !{i32 1, !"air.fragment_input", !"generated(8texCoordDv2_f)", !"air.center", !"air.perspective", !"air.arg_type_name", !"float2", !"air.arg_name", !"texCoord"}
 !24 = !{i32 2, !"air.texture", !"air.location_index", i32 0, i32 1, !"air.sample", !"air.arg_type_name", !"texture2D<float>", !"air.arg_name", !"colorTexture"}

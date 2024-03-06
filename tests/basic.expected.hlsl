@@ -43,34 +43,28 @@ VertexOut vertexMain(VertexIn vertexIn, Model model) {
 	return vertexOut;
 }
 
-struct FragmentOut {
-	float4 outColor : SV_Target0;
-};
-
-FragmentOut fragmentMain(VertexOut fragmentIn, Texture2D colorTexture, SamplerState colorSampler);
+float4 fragmentMain(VertexOut fragmentIn, Texture2D colorTexture, SamplerState colorSampler);
 
 Texture2D colorTexture : register(t0);
 
 SamplerState colorSampler : register(s0);
 
-struct FragmentOut_Output {
-	FragmentOut output : TEXCOORD0;
+struct float4_Output {
+	float4 output : TEXCOORD0;
 };
 
-FragmentOut_Output _fragmentMain(VertexOut fragmentIn) {
+float4_Output _fragmentMain(VertexOut fragmentIn) {
 	// Entry point call
-	FragmentOut _entryPointOutput = fragmentMain(fragmentIn, colorTexture, colorSampler);
+	float4 _entryPointOutput = fragmentMain(fragmentIn, colorTexture, colorSampler);
 
 	// Output
-	FragmentOut_Output __output;
+	float4_Output __output;
 	__output.output = _entryPointOutput;
 
 	return __output;
 }
 
-FragmentOut fragmentMain(VertexOut fragmentIn, Texture2D colorTexture, SamplerState colorSampler) {
-	FragmentOut fragmentOut;
-	fragmentOut.outColor = colorTexture.SampleLevel(colorSampler, fragmentIn.texCoord, 0.0f);
-	return fragmentOut;
+float4 fragmentMain(VertexOut fragmentIn, Texture2D colorTexture, SamplerState colorSampler) {
+	return colorTexture.SampleLevel(colorSampler, fragmentIn.texCoord, 0.0f);
 }
 

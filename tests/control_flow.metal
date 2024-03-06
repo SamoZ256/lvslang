@@ -2,11 +2,7 @@ struct MyBuffer {
     float a;
 };
 
-struct FragmentOut {
-    float4 outColor [[color(0)]];
-};
-
-fragment struct FragmentOut testControlFlow(constant struct MyBuffer* myBuffer [[descriptor_set(0, 0)]]) {
+fragment float4 testControlFlow(constant struct MyBuffer* myBuffer [[descriptor_set(0, 0)]]) {
     float4 outColor;
 
     if (myBuffer->a > 0.0)
@@ -29,8 +25,5 @@ fragment struct FragmentOut testControlFlow(constant struct MyBuffer* myBuffer [
         i = i + 1;
     }
 
-    struct FragmentOut fragmentOut;
-    fragmentOut.outColor = outColor;
-
-    return fragmentOut;
+    return outColor;
 }

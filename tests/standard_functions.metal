@@ -1,8 +1,4 @@
-struct FragmentOut {
-    float4 outColor [[color(0)]];
-};
-
-fragment struct FragmentOut testStandardFunctions(texture2d<float> testTexture, sampler testSampler) {
+fragment void testStandardFunctions(texture2d<float> testTexture, sampler testSampler) {
     char absTestChar = abs(char(0));
     char2 absTestChar2 = abs(char2(0));
     char3 absTestChar3 = abs(char3(0));
@@ -313,9 +309,4 @@ fragment struct FragmentOut testStandardFunctions(texture2d<float> testTexture, 
     float tanTest = tan(0.0);
 
     float tanhTest = tanh(0.0);
-
-    struct FragmentOut fragmentOut;
-    fragmentOut.outColor = float4(0.0, 0.0, 0.0, 1.0);
-
-    return fragmentOut;
 }

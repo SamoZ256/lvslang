@@ -1,8 +1,4 @@
-struct FragmentOut {
-    member outColor: float4 [[color(0)]]
-}
-
-fragment testStandardFunctions(testTexture: texture2D<float>, testSampler: sampler) -> struct FragmentOut {
+fragment testStandardFunctions(testTexture: texture2D<float>, testSampler: sampler) {
     var absTestChar = abs(char(0))
     var absTestChar2 = abs(char2(0))
     var absTestChar3 = abs(char3(0))
@@ -313,9 +309,4 @@ fragment testStandardFunctions(testTexture: texture2D<float>, testSampler: sampl
     var tanTest = tan(0.0)
 
     var tanhTest = tanh(0.0)
-
-    var fragmentOut: struct FragmentOut
-    fragmentOut.outColor = float4(0.0, 0.0, 0.0, 1.0)
-
-    return fragmentOut
 }

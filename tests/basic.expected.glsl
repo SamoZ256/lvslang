@@ -57,11 +57,7 @@ VertexOut vertexMain(VertexIn vertexIn, Model model) {
 	return vertexOut;
 }
 
-struct FragmentOut {
-	vec4 outColor;
-};
-
-FragmentOut fragmentMain(VertexOut fragmentIn, texture2D colorTexture, sampler colorSampler);
+vec4 fragmentMain(VertexOut fragmentIn, texture2D colorTexture, sampler colorSampler);
 
 layout (location = 0) in VertexOut_Input {
 	VertexOut fragmentIn;
@@ -71,21 +67,17 @@ layout (set = 0, binding = 1) uniform texture2D colorTexture;
 
 layout (set = 1, binding = 0) uniform sampler colorSampler;
 
-layout (location = 0) out vec4 outColor;
+layout (location = 0) out vec4 _outputColor;
 
 void main() {
-	// Input
-
 	// Entry point call
-	FragmentOut _entryPointOutput = fragmentMain(fragmentIn, colorTexture, colorSampler);
+	vec4 _entryPointOutput = fragmentMain(fragmentIn, colorTexture, colorSampler);
 
 	// Output
-	outColor = _entryPointOutput.outColor;
+	_outputColor = _entryPointOutput;
 }
 
-FragmentOut fragmentMain(VertexOut fragmentIn, texture2D colorTexture, sampler colorSampler) {
-	FragmentOut fragmentOut;
-	fragmentOut.outColor = texture(sampler2D(colorTexture, colorSampler), fragmentIn.texCoord);
-	return fragmentOut;
+vec4 fragmentMain(VertexOut fragmentIn, texture2D colorTexture, sampler colorSampler) {
+	return texture(sampler2D(colorTexture, colorSampler), fragmentIn.texCoord);
 }
 

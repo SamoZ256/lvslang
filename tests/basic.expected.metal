@@ -23,13 +23,7 @@ vertex VertexOut vertexMain(VertexIn vertexIn [[stage_in]], constant Model* mode
 	return vertexOut;
 }
 
-struct FragmentOut {
-	float4 outColor [[color(0)]];
-};
-
-fragment FragmentOut fragmentMain(VertexOut fragmentIn [[stage_in]], texture2d<float> colorTexture [[texture(0)]], sampler colorSampler [[sampler(0)]]) {
-	FragmentOut fragmentOut;
-	fragmentOut.outColor = colorTexture.sample(colorSampler, fragmentIn.texCoord);
-	return fragmentOut;
+fragment float4 fragmentMain(VertexOut fragmentIn [[stage_in]], texture2d<float> colorTexture [[texture(0)]], sampler colorSampler [[sampler(0)]]) {
+	return colorTexture.sample(colorSampler, fragmentIn.texCoord);
 }
 

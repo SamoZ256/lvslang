@@ -100,6 +100,7 @@ static std::string getTypeCastOpName(Type* castFrom, Type* castTo) {
             // TODO: cast twice in other cases
         }
     }
+    std::cout << castFrom->getDebugName() << " -> " << castTo->getDebugName() << std::endl;
 
     return "Unknown";
 }
@@ -291,20 +292,20 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
     argValues.reserve(arguments.size());
     for (const auto& argument : arguments) {
         Type* type = argument.type;
-        const auto& attr = argument.attributes;
+        const auto& attrs = argument.attributes;
         // Get element type in case of buffer
-        if (attr.isBuffer)
+        if (attrs.isBuffer)
             type = type->getElementType();
 
         StorageClass storageClass = StorageClass::MaxEnum;
         // TODO: do not hardcode the storage classes
-        if (attr.isBuffer)
+        if (attrs.isBuffer)
             storageClass = StorageClass::Uniform;
-        else if (attr.isTexture)
+        else if (attrs.isTexture)
             storageClass = StorageClass::UniformConstant;
-        else if (attr.isSampler)
+        else if (attrs.isSampler)
             storageClass = StorageClass::UniformConstant;
-        else if (attr.isInput)
+        else if (attrs.isInput)
             storageClass = StorageClass::Input;
             
         Value* argValue = opVariable(new PointerType(context, type, storageClass));
@@ -315,21 +316,19 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
         switch (storageClass) {
         case StorageClass::Uniform:
         case StorageClass::UniformConstant:
-            opDecorate(argValue, Decoration::DescriptorSet, {std::to_string(attr.bindings.set)});
-            opDecorate(argValue, Decoration::Binding, {std::to_string(attr.bindings.binding)});
+            opDecorate(argValue, Decoration::DescriptorSet, {std::to_string(attrs.bindings.set)});
+            opDecorate(argValue, Decoration::Binding, {std::to_string(attrs.bindings.binding)});
             break;
         case StorageClass::Input:
             switch (functionRole) {
             case FunctionRole::Vertex:
-                // TODO: do this somewhere else
-                // TODO: don't throw this error
-                if (!type->isStructure()) {
-                    IRB_ERROR("Entry point argument declared with the 'input' attribute must have a structure type");
-                    return;
+                if (auto* structureType = dynamic_cast<StructureType*>(type)) {
+                    structure = structureType->getStructure();
+                    for (uint32_t i = 0; i < structure->members.size(); i++)
+                        opMemberDecorate(getTypeValue(this, type), i, Decoration::Location, {std::to_string(structure->members[i].attributes.locationIndex)});
+                } else {
+                    opDecorate(argValue, Decoration::Location, {std::to_string(attrs.locationIndex)});
                 }
-                structure = static_cast<StructureType*>(type)->getStructure();
-                for (uint32_t i = 0; i < structure->members.size(); i++)
-                    opMemberDecorate(getTypeValue(this, type), i, Decoration::Location, {std::to_string(structure->members[i].attributes.locationIndex)});
                 break;
             case FunctionRole::Fragment:
                 opDecorate(argValue, Decoration::Location, {"0"});
@@ -341,7 +340,7 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
         default:
             break;
         }
-        if (attr.isBuffer && type->isStructure() || (functionRole == FunctionRole::Vertex && attr.isInput))
+        if (type->isStructure() && (attrs.isBuffer || (functionRole == FunctionRole::Vertex && attrs.isInput)))
             opDecorate(getTypeValue(this, type, true), Decoration::Block);
         
         // Add to interface
@@ -361,19 +360,18 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
     if (returnType->isStructure())
         opDecorate(getTypeValue(this, returnType), Decoration::Block);
     context.pushRegisterName(name + "_output");
-    Value* returnVariable = opVariable(new PointerType(context, returnType, StorageClass::Output));
-    opStore(returnVariable, returnValue);
-    Value* positionVariable = nullptr;
-    if (functionRole == FunctionRole::Vertex && returnType->getTypeID() != TypeID::Void) {
-        opDecorate(returnVariable, Decoration::Location, {"0"});
-    
-        context.pushRegisterName("position");
-        positionVariable = opVariable(new PointerType(context, new VectorType(context, new ScalarType(context, TypeID::Float, 32, true), 4), StorageClass::Output));
-        opDecorate(positionVariable, Decoration::Position);
-    }
     
     if (returnType->getTypeID() != TypeID::Void) {
+        Value* returnVariable = opVariable(new PointerType(context, returnType, StorageClass::Output));
+        opStore(returnVariable, returnValue);
+        Value* positionVariable = nullptr;
         if (functionRole == FunctionRole::Vertex) {
+            opDecorate(returnVariable, Decoration::Location, {"0"});
+        
+            context.pushRegisterName("position");
+            positionVariable = opVariable(new PointerType(context, new VectorType(context, new ScalarType(context, TypeID::Float, 32, true), 4), StorageClass::Output));
+            opDecorate(positionVariable, Decoration::Position);
+
             Value* positionV = nullptr;
             if (auto* structureType = dynamic_cast<StructureType*>(returnType)) {
                 Structure* structure = structureType->getStructure();
@@ -400,12 +398,12 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
                 opDecorate(returnVariable, Decoration::Location, {"0"});
             }
         }
-    }
 
-    // Add to interface
-    code += " " + returnVariable->getName();
-    if (positionVariable)
-        code += " " + positionVariable->getName();
+        // Add to interface
+        code += " " + returnVariable->getName();
+        if (positionVariable)
+            code += " " + positionVariable->getName();
+    }
 
     opReturn();
 

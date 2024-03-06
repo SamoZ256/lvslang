@@ -22,15 +22,8 @@ vertex struct VertexOut vertexMain(struct VertexIn vertexIn [[stage_in]],
     return vertexOut;
 };
 
-struct FragmentOut {
-    float4 outColor [[color(0)]];
-};
-
-fragment struct FragmentOut fragmentMain(struct VertexOut fragmentIn [[stage_in]],
-                                         texture2d<float> colorTexture [[descriptor_set(0, 1)]],
-                                         sampler colorSampler [[descriptor_set(1, 0)]]) {
-    struct FragmentOut fragmentOut;
-    fragmentOut.outColor = sample(colorTexture, colorSampler, fragmentIn.texCoord);
-
-    return fragmentOut;
+fragment float4 fragmentMain(struct VertexOut fragmentIn [[stage_in]],
+                             texture2d<float> colorTexture [[descriptor_set(0, 1)]],
+                             sampler colorSampler [[descriptor_set(1, 0)]]) {
+    return sample(colorTexture, colorSampler, fragmentIn.texCoord);
 }

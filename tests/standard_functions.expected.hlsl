@@ -1,29 +1,15 @@
-struct FragmentOut {
-	float4 outColor : SV_Target0;
-};
-
-FragmentOut testStandardFunctions(Texture2D testTexture, SamplerState testSampler);
+void testStandardFunctions(Texture2D testTexture, SamplerState testSampler);
 
 Texture2D testTexture : register(t0);
 
 SamplerState testSampler : register(s0);
 
-struct FragmentOut_Output {
-	FragmentOut output : TEXCOORD0;
-};
-
-FragmentOut_Output _testStandardFunctions() {
+void_Output _testStandardFunctions() {
 	// Entry point call
-	FragmentOut _entryPointOutput = testStandardFunctions(testTexture, testSampler);
-
-	// Output
-	FragmentOut_Output __output;
-	__output.output = _entryPointOutput;
-
-	return __output;
+	testStandardFunctions(testTexture, testSampler);
 }
 
-FragmentOut testStandardFunctions(Texture2D testTexture, SamplerState testSampler) {
+void testStandardFunctions(Texture2D testTexture, SamplerState testSampler) {
 	int16_t absTestChar = abs(int16_t(0));
 	vector<int16_t, 2> absTestChar2 = abs(vector<int16_t, 2>(0, 0));
 	vector<int16_t, 3> absTestChar3 = abs(vector<int16_t, 3>(0, 0, 0));
@@ -295,8 +281,5 @@ FragmentOut testStandardFunctions(Texture2D testTexture, SamplerState testSample
 	float4 stepTestFloat4 = step(float4(0.000000, 0.000000, 0.000000, 0.000000), float4(0.000000, 0.000000, 0.000000, 0.000000));
 	float tanTest = tan(0.000000);
 	float tanhTest = tanh(0.000000);
-	FragmentOut fragmentOut;
-	fragmentOut.outColor = float4(0.000000, 0.000000, 0.000000, 1.000000);
-	return fragmentOut;
 }
 

@@ -1,8 +1,4 @@
-struct FragmentOut {
-    float4 outColor [[color(0)]];
-};
-
-fragment struct FragmentOut testMatrices() {
+fragment float4 testMatrices() {
     // Initialization
     float4x4 matrix1 = float4x4(float4(1.0, 2.0, 3.0, 4.0),
                                 float4(5.0, 6.0, 7.0, 8.0),
@@ -15,8 +11,5 @@ fragment struct FragmentOut testMatrices() {
     float4   result2 = matrix1 * float4(1.0, 2.0, 3.0, 4.0);
     float4x4 result3 = matrix1 * matrix2;
 
-    struct FragmentOut fragmentOut;
-    fragmentOut.outColor = result3[2];
-
-    return fragmentOut;
+    return result3[2];
 }

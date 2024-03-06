@@ -2,11 +2,7 @@ struct MyBuffer {
     member a: float
 }
 
-struct FragmentOut {
-    member outColor: float4 [[color(0)]]
-}
-
-fragment testControlFlow(myBuffer: constant struct MyBuffer* [[descriptor_set(0, 0)]]) -> struct FragmentOut {
+fragment testControlFlow(myBuffer: constant struct MyBuffer* [[descriptor_set(0, 0)]]) -> float4 {
     var outColor: float4
 
     if (myBuffer->a > 0.0)
@@ -29,8 +25,5 @@ fragment testControlFlow(myBuffer: constant struct MyBuffer* [[descriptor_set(0,
         i = i + 1;
     }
 
-    var fragmentOut: struct FragmentOut
-    fragmentOut.outColor = outColor
-
-    return fragmentOut
+    return outColor
 }

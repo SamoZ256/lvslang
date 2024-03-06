@@ -126,9 +126,21 @@ irb::Value* IRWriter::codegenBinaryExpression(const BinaryExpressionAST* express
         return l;
     }
 
-    // TODO: don't always cast?
-    l = builder->opCast(l, expression->getPromotedType());
-    r = builder->opCast(r, expression->getPromotedType());
+    // TODO: account for other cases as well
+    if (expression->getPromotedType()->isVector()) {
+        if (l->getType()->isScalar())
+            l = builder->opCast(l, expression->getPromotedType()->getBaseType());
+        else
+            ; // TODO: do something
+        if (r->getType()->isScalar())
+            r = builder->opCast(r, expression->getPromotedType()->getBaseType());
+        else
+            ; // TODO: do something
+    } else {
+        // TODO: don't always cast?
+        l = builder->opCast(l, expression->getPromotedType());
+        r = builder->opCast(r, expression->getPromotedType());
+    }
 
     context.pushRegisterName("op");
     irb::Value* value = builder->opOperation(l, r, expression->getType(), expression->getOperation());

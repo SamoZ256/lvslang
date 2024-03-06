@@ -1,12 +1,10 @@
 target datalayout = "e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v24:32:32-v32:32:32-v48:64:64-v64:64:64-v96:128:128-v128:128:128-v192:256:256-v256:256:256-v512:512:512-v1024:1024:1024-n8:16:32"
 target triple = "air64-apple-macosx14.0.0"
 
-%FragmentOut = type { <4 x float> }
-
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
-define %FragmentOut @testMatrices() local_unnamed_addr #0 {
+define <4 x float> @testMatrices() local_unnamed_addr #0 {
 entry:
-  ret %FragmentOut { <4 x float> <float 3.600000e+01, float 3.600000e+01, float 3.600000e+01, float 3.600000e+01> }
+  ret <4 x float> <float 3.600000e+01, float 3.600000e+01, float 3.600000e+01, float 3.600000e+01>
 }
 
 attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn }
@@ -28,7 +26,7 @@ attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn }
 !9 = !{ptr @testMatrices, !10, !11}
 !10 = !{!12}
 !11 = !{}
-!12 = !{!"air.render_target", i32 0, i32 0, !"air.arg_type_name", !"float4", !"air.arg_name", !"outColor"}
+!12 = !{!"air.render_target", i32 0, i32 0, !"air.arg_type_name", !"float4"}
 !13 = !{!"air.compile.denorms_disable"}
 !14 = !{!"air.compile.fast_math_disable"}
 !15 = !{!"air.compile.framebuffer_fetch_enable"}

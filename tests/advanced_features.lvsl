@@ -1,15 +1,7 @@
 func forwardDeclaredFunction(a: int, b: int3) -> bool
 
-struct FragmentOut {
-    member outColor: float4 [[color(0)]]
-}
-
-fragment testAdvancedFeatures() -> struct FragmentOut {
+fragment testAdvancedFeatures() {
     var a = forwardDeclaredFunction(1, int3(1, 2, 3))
-
-    var fragmentOut: struct FragmentOut
-
-    return fragmentOut
 }
 
 func forwardDeclaredFunction(a: int, b: int3) -> bool {

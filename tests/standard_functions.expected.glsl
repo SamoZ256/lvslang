@@ -6,29 +6,20 @@
 
 #extension GL_EXT_shader_explicit_arithmetic_types : enable
 
-struct FragmentOut {
-	vec4 outColor;
-};
-
-FragmentOut testStandardFunctions(texture2D testTexture, sampler testSampler);
+void testStandardFunctions(texture2D testTexture, sampler testSampler);
 
 layout (set = 0, binding = 0) uniform texture2D testTexture;
 
 layout (set = 0, binding = 0) uniform sampler testSampler;
 
-layout (location = 0) out vec4 outColor;
+layout (location = 0) out void _outputColor;
 
 void main() {
-	// Input
-
 	// Entry point call
-	FragmentOut _entryPointOutput = testStandardFunctions(testTexture, testSampler);
-
-	// Output
-	outColor = _entryPointOutput.outColor;
+	testStandardFunctions(testTexture, testSampler);
 }
 
-FragmentOut testStandardFunctions(texture2D testTexture, sampler testSampler) {
+void testStandardFunctions(texture2D testTexture, sampler testSampler) {
 	int absTestChar = abs(int(0));
 	i8vec2 absTestChar2 = abs(i8vec2(0));
 	i8vec3 absTestChar3 = abs(i8vec3(0));
@@ -300,8 +291,5 @@ FragmentOut testStandardFunctions(texture2D testTexture, sampler testSampler) {
 	vec4 stepTestFloat4 = step(vec4(0.000000), vec4(0.000000));
 	float tanTest = tan(0.000000);
 	float tanhTest = tanh(0.000000);
-	FragmentOut fragmentOut;
-	fragmentOut.outColor = vec4(0.000000, 0.000000, 0.000000, 1.000000);
-	return fragmentOut;
 }
 

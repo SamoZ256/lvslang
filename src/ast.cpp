@@ -417,6 +417,16 @@ irb::Type* StructureDefinitionAST::_initialize() {
         return nullptr;
     }
 
+    // Check if none of the members have structure type and were declared with the location attribute at the same time
+    for (const auto member : members) {
+        if (member.attributes.locationIndex != -1) {
+            if (member.type->isArray() || member.type->isStructure()) {
+                logError("arrays and structures cannot have the 'location' attribute");
+                return nullptr;
+            }
+        }
+    }
+
     irb::Structure* structure = new irb::Structure;
     structure->members = members;
     context.structures[name] = structure;

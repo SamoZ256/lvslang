@@ -719,22 +719,21 @@ std::string AIRBuilder::createMetadata(const std::string& languageName, uint32_t
         for (uint32_t i = 0; i < entryPoint.arguments.size(); i++) {
             const auto& argument = entryPoint.arguments[i];
             if (argument.attributes.isInput) {
-                // TODO: support non-structure types as well
-                if (!argument.type->isStructure()) {
-                    IRB_ERROR("argument marked with 'buffer' attribute must have element type of structure");
-                    return "";
-                }
-                Structure* structure = static_cast<StructureType*>(argument.type)->getStructure();
-                for (uint32_t j = 0; j < structure->members.size(); j++) {
-                    const auto& member = structure->members[j];
+                std::vector<StructureMember> members;
+                if (auto* structureType = dynamic_cast<StructureType*>(argument.type))
+                    members = structureType->getStructure()->members;
+                else
+                    members.push_back({argument.name, argument.type, {}});
+                for (uint32_t j = 0; j < members.size(); j++) {
+                    const auto& member = members[j];
                     MetadataValue* crntInput = new MetadataValue(context);
                     std::string str = "!{i32 " + std::to_string(inputIndex) + ", ";
 
                     if (entryPoint.functionRole == FunctionRole::Vertex) {
-                        str += "!\"air.vertex_input\", !\"air.location_index\", i32 " + std::to_string(j) + ", i32 1"; // TODO: here
+                        str += "!\"air.vertex_input\", !\"air.location_index\", i32 " + std::to_string(j) + ", i32 1";
                     } else if (entryPoint.functionRole == FunctionRole::Fragment) {
                         if (member.attributes.isPosition)
-                            str += "!\"air.position\", !\"air.center\", !\"air.no_perspective\"";
+                            str += "!\"air.position\", !\"air.center\", !\"air.no_perspective\""; // TODO: here
                         else
                             str += "!\"air.fragment_input\", !\"generated(" + std::to_string(member.name.size()) + member.name + getTypeNameForGenerated(member.type) + ")\", !\"air.center\", !\"air.perspective\""; // TODO: here
                     }
