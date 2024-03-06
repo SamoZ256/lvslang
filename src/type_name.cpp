@@ -133,9 +133,10 @@ std::string getTypeNameBegin_HLSL(irb::Type* type) {
     case irb::TypeID::Matrix:
         return getTypeNameBegin_HLSL(type->getBaseType()->getBaseType()) + std::to_string(static_cast<irb::MatrixType*>(type)->getColumnCount()) + "x" + std::to_string(static_cast<irb::VectorType*>(type->getBaseType())->getComponentCount());
     case irb::TypeID::Texture:
+        // HLSL requires the full type for the texture (e.g. float4 instead of 4)
         strTmp = "Texture" + textureViewTypeLUT_HLSL[(int)static_cast<irb::TextureType*>(type)->getViewType()];
         if (type->getBaseType()->getTypeID() != irb::TypeID::Float || type->getBaseType()->getBitCount() != 32)
-            strTmp += "<" + getTypeNameBegin_HLSL(type->getBaseType()) + ">";
+            strTmp += "<" + getTypeNameBegin_HLSL(type->getBaseType()) + "4>";
         
         return strTmp;
     case irb::TypeID::Sampler:
