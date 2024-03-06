@@ -748,7 +748,7 @@ VertexOut_Output _vertexMain(VertexIn vertexIn) {
 
 VertexOut vertexMain(VertexIn vertexIn, ViewProj viewProj, float4x4 model) {
 	VertexOut vertexOut;
-	vertexOut.pos = mul(mul(mul(viewProj.projection, viewProj.view), model), float4(vertexIn.pos, 0.000000, 1.000000));
+	vertexOut.pos = mul(mul(mul(viewProj.projection, viewProj.view), model), float4((vertexIn.pos)[0], (vertexIn.pos)[1], 0.000000, 1.000000));
 	vertexOut.texCoord = vertexIn.texCoord;
 	return vertexOut;
 }
@@ -757,9 +757,9 @@ struct FragmentOut {
 	float4 outColor : SV_Target0;
 };
 
-FragmentOut fragmentMain(VertexOut fragmentIn, Texture2D<min16float> colorTexture, SamplerState colorSampler);
+FragmentOut fragmentMain(VertexOut fragmentIn, Texture2D<half4> colorTexture, SamplerState colorSampler);
 
-Texture2D<min16float> colorTexture : register(t0);
+Texture2D<half4> colorTexture : register(t0);
 
 SamplerState colorSampler : register(s0);
 
@@ -778,9 +778,9 @@ FragmentOut_Output _fragmentMain(VertexOut fragmentIn) {
 	return __output;
 }
 
-FragmentOut fragmentMain(VertexOut fragmentIn, Texture2D<min16float> colorTexture, SamplerState colorSampler) {
+FragmentOut fragmentMain(VertexOut fragmentIn, Texture2D<half4> colorTexture, SamplerState colorSampler) {
 	FragmentOut fragmentOut;
-	fragmentOut.outColor = float4(colorTexture.SampleLevel(colorSampler, fragmentIn.texCoord, 0.0f));
+	fragmentOut.outColor = float4((colorTexture.SampleLevel(colorSampler, fragmentIn.texCoord, 0.0f))[0], (colorTexture.SampleLevel(colorSampler, fragmentIn.texCoord, 0.0f))[1], (colorTexture.SampleLevel(colorSampler, fragmentIn.texCoord, 0.0f))[2], (colorTexture.SampleLevel(colorSampler, fragmentIn.texCoord, 0.0f))[3]);
 	return fragmentOut;
 }
 ```
