@@ -582,14 +582,15 @@ CodeValue* CodeWriter::codegenMemberAccessExpression(const MemberAccessExpressio
         return nullptr;
     irb::PointerType* exprType = static_cast<irb::PointerType*>(expression->getExpression()->getType());
     irb::Type* elementExprType = exprType->getElementType();
+    std::string accessOperator = ".";
     if (expression->getExprShouldBeLoadedBeforeAccessingMember()) {
-        // TODO: load the value in HLSL/GLSL backend if it isn't input/buffer
+        // TODO: do this in HLSL/GLSL backend as well if it isn't input/buffer
         if (target == Target::Metal)
-            exprV = new CodeValue{"(*" + exprV->code + ")"};
+            accessOperator = "->";
         elementExprType = elementExprType->getElementType();
     }
     if (elementExprType->isStructure()) {
-        return new CodeValue{exprV->code + "." + expression->getMemberName()};
+        return new CodeValue{exprV->code + accessOperator + expression->getMemberName()};
     } else if (elementExprType->isVector()) {
         irb::Type* type;
         if (expression->getMemberName().size() == 1)

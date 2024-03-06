@@ -18,7 +18,7 @@ struct VertexOut {
 
 vertex VertexOut vertexMain(VertexIn vertexIn [[stage_in]], constant Model* model [[buffer(0)]]) {
 	VertexOut vertexOut;
-	vertexOut.pos = float4(((*model).pos + (vertexIn.pos * (*model).scale)), 0.000000, 1.000000);
+	vertexOut.pos = float4((model->pos + (vertexIn.pos * model->scale)), 0.000000, 1.000000);
 	vertexOut.texCoord = vertexIn.texCoord;
 	return vertexOut;
 }
