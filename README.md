@@ -683,7 +683,7 @@ struct VertexOut {
 
 vertex VertexOut vertexMain(VertexIn vertexIn [[stage_in]], constant ViewProj* viewProj [[buffer(0)]], constant float4x4* model [[buffer(1)]]) {
 	VertexOut vertexOut;
-	vertexOut.pos = ((((*viewProj).projection * (*viewProj).view) * *(model)) * float4(vertexIn.pos, 0.000000, 1.000000));
+	vertexOut.pos = (((viewProj->projection * viewProj->view) * *(model)) * float4(vertexIn.pos, 0.000000, 1.000000));
 	vertexOut.texCoord = vertexIn.texCoord;
 	return vertexOut;
 }

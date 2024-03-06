@@ -17,7 +17,7 @@ vertex vertexMain(vertexIn: struct VertexIn [[input]],
                   viewProj: constant struct Model* [[descriptor_set(0, 0)]]
                   model: constant float4x4* [[descriptor_set(1, 0)]]) -> struct VertexOut {
     var vertexOut: struct VertexOut
-    vertexOut.pos = viewProj->projection * viewProj->view * model * float4(vertexIn.pos, 0.0, 1.0)
+    vertexOut.pos = viewProj->projection * viewProj->view * *model * float4(vertexIn.pos, 0.0, 1.0)
     vertexOut.texCoord = vertexIn.texCoord
 
     return vertexOut
