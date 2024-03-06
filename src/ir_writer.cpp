@@ -391,8 +391,10 @@ irb::Value* IRWriter::codegenSubscriptExpression(const SubscriptExpressionAST* e
     irb::Value* indexV = codegenExpression(expression->getIndex());
     if (!ptrV || !indexV)
         return nullptr;
+    
+    irb::PointerType* type = (expression->getLoadOnCodegen() ? new irb::PointerType(context, expression->getType(), irb::StorageClass::Function) : static_cast<irb::PointerType*>(expression->getType()));
 
-    irb::Value* value = builder->opGetElementPtr(static_cast<irb::PointerType*>(expression->getType()), ptrV, {indexV});
+    irb::Value* value = builder->opGetElementPtr(type, ptrV, {indexV});
     if (expression->getLoadOnCodegen())
         value = builder->opLoad(value);
 

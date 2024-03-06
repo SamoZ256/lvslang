@@ -6,7 +6,7 @@ target triple = "air64-apple-macosx14.0.0"
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
 define %FragmentOut @testMatrices() local_unnamed_addr #0 {
 entry:
-  ret %FragmentOut { <4 x float> <float 0.000000e+00, float 0.000000e+00, float 0.000000e+00, float 1.000000e+00> }
+  ret %FragmentOut { <4 x float> <float 3.600000e+01, float 3.600000e+01, float 3.600000e+01, float 3.600000e+01> }
 }
 
 attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn }

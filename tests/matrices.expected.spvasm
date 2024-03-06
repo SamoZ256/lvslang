@@ -1,7 +1,7 @@
 ; SPIR-V
 ; Version: 1.6
 ; Generator: Khronos SPIR-V Tools Assembler; 0
-; Bound: 105
+; Bound: 108
 ; Schema: 0
                OpCapability Shader
                OpCapability Float16
@@ -28,13 +28,36 @@
           %3 = OpVariable %_ptr_Output__struct_4 Output
          %31 = OpTypeFunction %void
     %float_1 = OpConstant %float 1
-    %float_0 = OpConstant %float 0
-         %62 = OpConstantComposite %v4float %float_0 %float_0 %float_0 %float_1
-        %104 = OpConstantComposite %_struct_4 %62
+    %float_2 = OpConstant %float 2
+    %float_3 = OpConstant %float 3
+    %float_4 = OpConstant %float 4
+         %36 = OpConstantComposite %v4float %float_1 %float_2 %float_3 %float_4
+    %float_5 = OpConstant %float 5
+    %float_6 = OpConstant %float 6
+    %float_7 = OpConstant %float 7
+    %float_8 = OpConstant %float 8
+         %41 = OpConstantComposite %v4float %float_5 %float_6 %float_7 %float_8
+    %float_9 = OpConstant %float 9
+   %float_10 = OpConstant %float 10
+   %float_11 = OpConstant %float 11
+   %float_12 = OpConstant %float 12
+         %46 = OpConstantComposite %v4float %float_9 %float_10 %float_11 %float_12
+   %float_13 = OpConstant %float 13
+   %float_14 = OpConstant %float 14
+   %float_15 = OpConstant %float 15
+   %float_16 = OpConstant %float 16
+         %51 = OpConstantComposite %v4float %float_13 %float_14 %float_15 %float_16
+%mat4v4float = OpTypeMatrix %v4float 4
+         %53 = OpConstantComposite %mat4v4float %36 %41 %46 %51
+         %55 = OpConstantComposite %v4float %float_1 %float_1 %float_1 %float_1
+         %56 = OpConstantComposite %mat4v4float %55 %55 %55 %55
 
                ; Function 2
           %2 = OpFunction %void None %31
-         %64 = OpLabel
-               OpStore %3 %104
+         %63 = OpLabel
+         %98 = OpMatrixTimesMatrix %mat4v4float %53 %56
+        %101 = OpCompositeExtract %v4float %98 2
+        %107 = OpCompositeConstruct %_struct_4 %101
+               OpStore %3 %107
                OpReturn
                OpFunctionEnd

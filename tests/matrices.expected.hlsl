@@ -26,7 +26,7 @@ FragmentOut testMatrices() {
 	float4 result2 = mul(matrix1, float4(1.000000, 2.000000, 3.000000, 4.000000));
 	float4x4 result3 = mul(matrix1, matrix2);
 	FragmentOut fragmentOut;
-	fragmentOut.outColor = float4(0.000000, 0.000000, 0.000000, 1.000000);
+	fragmentOut.outColor = result3[2];
 	return fragmentOut;
 }
 

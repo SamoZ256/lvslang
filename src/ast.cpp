@@ -351,13 +351,17 @@ irb::Type* SubscriptExpressionAST::_initialize() {
         logError("only operator friendly types can be used for indexing");
         return nullptr;
     }
-    irb::PointerType* type = dynamic_cast<irb::PointerType*>(ptrType);
-    if (!type) {
+    irb::PointerType* pointerType = dynamic_cast<irb::PointerType*>(ptrType);
+    if (!pointerType) {
         logError("cannot index into a non-pointer value");
         return nullptr;
     }
 
-    return new irb::PointerType(context, type->getElementType()->getBaseType(), type->getStorageClass());
+    irb::Type* type = pointerType->getElementType()->getBaseType();
+    if (!loadOnCodegen)
+        type = new irb::PointerType(context, type, pointerType->getStorageClass());
+
+    return type;
 }
 
 irb::Type* MemberAccessExpressionAST::_initialize() {

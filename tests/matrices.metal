@@ -16,7 +16,7 @@ fragment struct FragmentOut testMatrices() {
     float4x4 result3 = matrix1 * matrix2;
 
     struct FragmentOut fragmentOut;
-    fragmentOut.outColor = float4(0.0, 0.0, 0.0, 1.0);//matrix1[0];
+    fragmentOut.outColor = result3[2];
 
     return fragmentOut;
 }
