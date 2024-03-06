@@ -75,7 +75,7 @@ Here are the outputs for each backend:
 ; SPIR-V
 ; Version: 1.6
 ; Generator: Khronos SPIR-V Tools Assembler; 0
-; Bound: 197
+; Bound: 184
 ; Schema: 0
                OpCapability Shader
                OpCapability Float16
@@ -115,8 +115,7 @@ Here are the outputs for each backend:
                OpDecorate %10 Binding 1
                OpDecorate %11 DescriptorSet 1
                OpDecorate %11 Binding 0
-               OpDecorate %_struct_18 Block
-               OpMemberDecorate %_struct_18 0 Location 0
+               OpDecorate %12 Location 0
 
                ; Types, variables and constants
         %int = OpTypeInt 32 1
@@ -125,6 +124,7 @@ Here are the outputs for each backend:
       %float = OpTypeFloat 32
     %v2float = OpTypeVector %float 2
     %v4float = OpTypeVector %float 4
+       %void = OpTypeVoid
  %_struct_15 = OpTypeStruct %v2float %v2float
 %_ptr_Input__struct_15 = OpTypePointer Input %_struct_15
           %3 = OpVariable %_ptr_Input__struct_15 Input
@@ -140,70 +140,66 @@ Here are the outputs for each backend:
 %_ptr_Output_v4float = OpTypePointer Output %v4float
 %gl_Position = OpVariable %_ptr_Output_v4float Output
       %int_0 = OpConstant %int 0
-       %void = OpTypeVoid
-         %54 = OpTypeFunction %void
+         %53 = OpTypeFunction %void
     %float_0 = OpConstant %float 0
     %float_1 = OpConstant %float 1
 %_ptr_Input__struct_17 = OpTypePointer Input %_struct_17
           %9 = OpVariable %_ptr_Input__struct_17 Input
-         %63 = OpTypeImage %half 2D 0 0 0 1 Unknown
-%_ptr_UniformConstant_63 = OpTypePointer UniformConstant %63
-         %10 = OpVariable %_ptr_UniformConstant_63 UniformConstant
-         %66 = OpTypeSampler
-%_ptr_UniformConstant_66 = OpTypePointer UniformConstant %66
-         %11 = OpVariable %_ptr_UniformConstant_66 UniformConstant
- %_struct_18 = OpTypeStruct %v4float
-%_ptr_Output__struct_18 = OpTypePointer Output %_struct_18
-         %12 = OpVariable %_ptr_Output__struct_18 Output
-         %71 = OpTypeSampledImage %63
+         %62 = OpTypeImage %half 2D 0 0 0 1 Unknown
+%_ptr_UniformConstant_62 = OpTypePointer UniformConstant %62
+         %10 = OpVariable %_ptr_UniformConstant_62 UniformConstant
+         %65 = OpTypeSampler
+%_ptr_UniformConstant_65 = OpTypePointer UniformConstant %65
+         %11 = OpVariable %_ptr_UniformConstant_65 UniformConstant
+         %12 = OpVariable %_ptr_Output_v4float Output
+         %68 = OpTypeSampledImage %62
 %_ptr_Input_v2float = OpTypePointer Input %v2float
        %uint = OpTypeInt 32 0
      %uint_1 = OpConstant %uint 1
 
                ; Function 2
-          %2 = OpFunction %void None %54
-         %73 = OpLabel
-         %77 = OpLoad %_struct_15 %3
-         %78 = OpLoad %_struct_16 %4
-         %79 = OpLoad %mat4v4float %5
-        %141 = OpCompositeExtract %mat4v4float %78 0
-        %143 = OpCompositeExtract %mat4v4float %78 1
-        %144 = OpMatrixTimesMatrix %mat4v4float %141 %143
-        %146 = OpMatrixTimesMatrix %mat4v4float %144 %79
-        %148 = OpCompositeExtract %v2float %77 0
-        %149 = OpCompositeExtract %float %148 0
-        %150 = OpCompositeExtract %float %148 1
-        %151 = OpCompositeConstruct %v4float %149 %150 %float_0 %float_1
-        %152 = OpMatrixTimesVector %v4float %146 %151
-        %155 = OpCompositeExtract %v2float %77 1
-        %190 = OpCompositeConstruct %_struct_17 %152 %155
-               OpStore %6 %190
-         %81 = OpAccessChain %_ptr_Output_v4float %6 %int_0
-         %82 = OpLoad %v4float %81
-               OpStore %gl_Position %82
+          %2 = OpFunction %void None %53
+         %70 = OpLabel
+         %74 = OpLoad %_struct_15 %3
+         %75 = OpLoad %_struct_16 %4
+         %76 = OpLoad %mat4v4float %5
+        %135 = OpCompositeExtract %mat4v4float %75 0
+        %137 = OpCompositeExtract %mat4v4float %75 1
+        %138 = OpMatrixTimesMatrix %mat4v4float %135 %137
+        %140 = OpMatrixTimesMatrix %mat4v4float %138 %76
+        %142 = OpCompositeExtract %v2float %74 0
+        %143 = OpCompositeExtract %float %142 0
+        %144 = OpCompositeExtract %float %142 1
+        %145 = OpCompositeConstruct %v4float %143 %144 %float_0 %float_1
+        %146 = OpMatrixTimesVector %v4float %140 %145
+        %149 = OpCompositeExtract %v2float %74 1
+        %178 = OpCompositeConstruct %_struct_17 %146 %149
+               OpStore %6 %178
+         %78 = OpAccessChain %_ptr_Output_v4float %6 %int_0
+         %79 = OpLoad %v4float %78
+               OpStore %gl_Position %79
                OpReturn
                OpFunctionEnd
 
                ; Function 8
-          %8 = OpFunction %void None %54
-        %106 = OpLabel
-        %195 = OpAccessChain %_ptr_Input_v2float %9 %uint_1
-        %196 = OpLoad %v2float %195
-        %111 = OpLoad %63 %10
-        %112 = OpLoad %66 %11
-        %165 = OpSampledImage %71 %111 %112
-        %166 = OpImageSampleExplicitLod %v4half %165 %196 Lod %float_0
-        %167 = OpCompositeExtract %half %166 0
-        %168 = OpFConvert %float %167
-        %169 = OpCompositeExtract %half %166 1
-        %170 = OpFConvert %float %169
-        %171 = OpCompositeExtract %half %166 2
-        %172 = OpFConvert %float %171
-        %173 = OpCompositeExtract %half %166 3
-        %174 = OpFConvert %float %173
-        %175 = OpCompositeConstruct %v4float %168 %170 %172 %174
-        %191 = OpCompositeConstruct %_struct_18 %175
-               OpStore %12 %191
+          %8 = OpFunction %void None %53
+        %103 = OpLabel
+        %182 = OpAccessChain %_ptr_Input_v2float %9 %uint_1
+        %183 = OpLoad %v2float %182
+        %108 = OpLoad %62 %10
+        %109 = OpLoad %65 %11
+        %157 = OpSampledImage %68 %108 %109
+        %158 = OpImageSampleExplicitLod %v4half %157 %183 Lod %float_0
+        %159 = OpCompositeExtract %half %158 0
+        %160 = OpFConvert %float %159
+        %161 = OpCompositeExtract %half %158 1
+        %162 = OpFConvert %float %161
+        %163 = OpCompositeExtract %half %158 2
+        %164 = OpFConvert %float %163
+        %165 = OpCompositeExtract %half %158 3
+        %166 = OpFConvert %float %165
+        %167 = OpCompositeConstruct %v4float %160 %162 %164 %166
+               OpStore %12 %167
                OpReturn
                OpFunctionEnd
 ```
@@ -221,7 +217,6 @@ target triple = "air64-apple-macosx14.0.0"
 %VertexOut = type { <4 x float>, <2 x float> }
 %VertexIn = type { <2 x float>, <2 x float> }
 %ViewProj = type { [4 x <4 x float>], [4 x <4 x float>] }
-%FragmentOut = type { <4 x float> }
 
 ; Function Attrs: convergent mustprogress nofree nounwind willreturn
 declare <4 x half> @air.sample_texture_2d.v4f16(ptr addrspace(1) nocapture readonly, ptr addrspace(2) nocapture readonly, <2 x float>, i1, <2 x i32>, i1, float, float, i32) local_unnamed_addr #0
@@ -589,7 +584,7 @@ entry:
 }
 
 ; Function Attrs: mustprogress nofree nounwind willreturn
-define %FragmentOut @fragmentMain.sVertexOut.t1f16.sm(%VertexOut %fragmentIn, ptr addrspace(1) nocapture readonly %colorTexture, ptr addrspace(2) nocapture readonly %colorSampler) local_unnamed_addr #2 {
+define <4 x float> @fragmentMain.sVertexOut.t1f16.sm(%VertexOut %fragmentIn, ptr addrspace(1) nocapture readonly %colorTexture, ptr addrspace(2) nocapture readonly %colorSampler) local_unnamed_addr #2 {
 entry0:
   %fragmentIn.fca.1.extract = extractvalue %VertexOut %fragmentIn, 1
   %0 = tail call <4 x half> @air.sample_texture_2d.v4f16(ptr addrspace(1) %colorTexture, ptr addrspace(2) %colorSampler, <2 x float> %fragmentIn.fca.1.extract, i1 true, <2 x i32> zeroinitializer, i1 false, float 0.000000e+00, float 0.000000e+00, i32 0)
@@ -605,8 +600,7 @@ entry0:
   %10 = insertelement <4 x float> %9, float %4, i64 1
   %11 = insertelement <4 x float> %10, float %6, i64 2
   %12 = insertelement <4 x float> %11, float %8, i64 3
-  %.fca.0.insert = insertvalue %FragmentOut poison, <4 x float> %12, 0
-  ret %FragmentOut %.fca.0.insert
+  ret <4 x float> %12
 }
 
 attributes #0 = { convergent mustprogress nofree nounwind willreturn }
@@ -635,7 +629,7 @@ attributes #2 = { mustprogress nofree nounwind willreturn }
 !10 = !{!12, !13}
 !11 = !{!14, !15, !16, !18}
 !12 = !{!"air.position", !"air.arg_type_name", !"float4", !"air.arg_name", !"pos"}
-!13 = !{!"air.vertex_output", !"generated(randomstuff)", !"air.arg_type_name", !"float2", !"air.arg_name", !"texCoord"}
+!13 = !{!"air.vertex_output", !"generated(8texCoordDv2_f)", !"air.arg_type_name", !"float2", !"air.arg_name", !"texCoord"}
 !14 = !{i32 0, !"air.vertex_input", !"air.location_index", i32 0, i32 1, !"air.arg_type_name", !"float2", !"air.arg_name", !"pos"}
 !15 = !{i32 1, !"air.vertex_input", !"air.location_index", i32 1, i32 1, !"air.arg_type_name", !"float2", !"air.arg_name", !"texCoord"}
 !16 = !{i32 2, !"air.buffer", !"air.location_index", i32 0, i32 1, !"air.read", !"air.address_space", i32 2, !"air.struct_type_info", !17, !"air.arg_type_size", i32 128, !"air.arg_type_align_size", i32 8, !"air.arg_type_name", !"struct ViewProj*", !"air.arg_name", !"viewProj"}
@@ -644,10 +638,10 @@ attributes #2 = { mustprogress nofree nounwind willreturn }
 !19 = !{ptr @fragmentMain.sVertexOut.t1f16.sm, !20, !21}
 !20 = !{!22}
 !21 = !{!23, !24, !25, !26}
-!22 = !{!"air.render_target", i32 0, i32 0, !"air.arg_type_name", !"float4", !"air.arg_name", !"outColor"}
+!22 = !{!"air.render_target", i32 0, i32 0, !"air.arg_type_name", !"float4"}
 !23 = !{i32 0, !"air.position", !"air.center", !"air.no_perspective", !"air.arg_type_name", !"float4", !"air.arg_name", !"pos"}
-!24 = !{i32 1, !"air.fragment_input", !"generated(randomstuff)", !"air.center", !"air.perspective", !"air.arg_type_name", !"float2", !"air.arg_name", !"texCoord"}
-!25 = !{i32 2, !"air.texture", !"air.location_index", i32 0, i32 1, !"air.sample", !"air.arg_type_name", !"texture2d<half>", !"air.arg_name", !"colorTexture"}
+!24 = !{i32 1, !"air.fragment_input", !"generated(8texCoordDv2_f)", !"air.center", !"air.perspective", !"air.arg_type_name", !"float2", !"air.arg_name", !"texCoord"}
+!25 = !{i32 2, !"air.texture", !"air.location_index", i32 0, i32 1, !"air.sample", !"air.arg_type_name", !"texture2D<half>", !"air.arg_name", !"colorTexture"}
 !26 = !{i32 3, !"air.sampler", !"air.location_index", i32 0, i32 1, !"air.arg_type_name", !"sampler", !"air.arg_name", !"colorSampler"}
 !27 = !{!"air.compile.denorms_disable"}
 !28 = !{!"air.compile.fast_math_disable"}
@@ -688,14 +682,8 @@ vertex VertexOut vertexMain(VertexIn vertexIn [[stage_in]], constant ViewProj* v
 	return vertexOut;
 }
 
-struct FragmentOut {
-	float4 outColor [[color(0)]];
-};
-
-fragment FragmentOut fragmentMain(VertexOut fragmentIn [[stage_in]], texture2d<half> colorTexture [[texture(0)]], sampler colorSampler [[sampler(0)]]) {
-	FragmentOut fragmentOut;
-	fragmentOut.outColor = float4(colorTexture.sample(colorSampler, fragmentIn.texCoord));
-	return fragmentOut;
+fragment float4 fragmentMain(VertexOut fragmentIn [[stage_in]], texture2d<half> colorTexture [[texture(0)]], sampler colorSampler [[sampler(0)]]) {
+	return float4(colorTexture.sample(colorSampler, fragmentIn.texCoord));
 }
 ```
 </details>
@@ -753,35 +741,29 @@ VertexOut vertexMain(VertexIn vertexIn, ViewProj viewProj, float4x4 model) {
 	return vertexOut;
 }
 
-struct FragmentOut {
-	float4 outColor : SV_Target0;
-};
-
-FragmentOut fragmentMain(VertexOut fragmentIn, Texture2D<half4> colorTexture, SamplerState colorSampler);
+float4 fragmentMain(VertexOut fragmentIn, Texture2D<half4> colorTexture, SamplerState colorSampler);
 
 Texture2D<half4> colorTexture : register(t0);
 
 SamplerState colorSampler : register(s0);
 
-struct FragmentOut_Output {
-	FragmentOut output : TEXCOORD0;
+struct float4_Output {
+	float4 output : TEXCOORD0;
 };
 
-FragmentOut_Output _fragmentMain(VertexOut fragmentIn) {
+float4_Output _fragmentMain(VertexOut fragmentIn) {
 	// Entry point call
-	FragmentOut _entryPointOutput = fragmentMain(fragmentIn, colorTexture, colorSampler);
+	float4 _entryPointOutput = fragmentMain(fragmentIn, colorTexture, colorSampler);
 
 	// Output
-	FragmentOut_Output __output;
+	float4_Output __output;
 	__output.output = _entryPointOutput;
 
 	return __output;
 }
 
-FragmentOut fragmentMain(VertexOut fragmentIn, Texture2D<half4> colorTexture, SamplerState colorSampler) {
-	FragmentOut fragmentOut;
-	fragmentOut.outColor = float4((colorTexture.SampleLevel(colorSampler, fragmentIn.texCoord, 0.0f))[0], (colorTexture.SampleLevel(colorSampler, fragmentIn.texCoord, 0.0f))[1], (colorTexture.SampleLevel(colorSampler, fragmentIn.texCoord, 0.0f))[2], (colorTexture.SampleLevel(colorSampler, fragmentIn.texCoord, 0.0f))[3]);
-	return fragmentOut;
+float4 fragmentMain(VertexOut fragmentIn, Texture2D<half4> colorTexture, SamplerState colorSampler) {
+	return float4((colorTexture.SampleLevel(colorSampler, fragmentIn.texCoord, 0.0f))[0], (colorTexture.SampleLevel(colorSampler, fragmentIn.texCoord, 0.0f))[1], (colorTexture.SampleLevel(colorSampler, fragmentIn.texCoord, 0.0f))[2], (colorTexture.SampleLevel(colorSampler, fragmentIn.texCoord, 0.0f))[3]);
 }
 ```
 </details>
@@ -853,11 +835,7 @@ VertexOut vertexMain(VertexIn vertexIn, ViewProj viewProj, mat4 model) {
 	return vertexOut;
 }
 
-struct FragmentOut {
-	vec4 outColor;
-};
-
-FragmentOut fragmentMain(VertexOut fragmentIn, texture2D colorTexture, sampler colorSampler);
+vec4 fragmentMain(VertexOut fragmentIn, texture2D colorTexture, sampler colorSampler);
 
 layout (location = 0) in VertexOut_Input {
 	VertexOut fragmentIn;
@@ -867,22 +845,20 @@ layout (set = 0, binding = 1) uniform texture2D colorTexture;
 
 layout (set = 1, binding = 0) uniform sampler colorSampler;
 
-layout (location = 0) out vec4 outColor;
+layout (location = 0) out vec4 _outputColor;
 
 void main() {
 	// Input
 
 	// Entry point call
-	FragmentOut _entryPointOutput = fragmentMain(fragmentIn, colorTexture, colorSampler);
+	vec4 _entryPointOutput = fragmentMain(fragmentIn, colorTexture, colorSampler);
 
 	// Output
-	outColor = _entryPointOutput.outColor;
+	_outputColor = _entryPointOutput;
 }
 
-FragmentOut fragmentMain(VertexOut fragmentIn, texture2D colorTexture, sampler colorSampler) {
-	FragmentOut fragmentOut;
-	fragmentOut.outColor = vec4(texture(sampler2D(colorTexture, colorSampler), fragmentIn.texCoord));
-	return fragmentOut;
+vec4 fragmentMain(VertexOut fragmentIn, texture2D colorTexture, sampler colorSampler) {
+	return vec4(texture(sampler2D(colorTexture, colorSampler), fragmentIn.texCoord));
 }
 ```
 
