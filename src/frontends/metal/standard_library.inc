@@ -1,25 +1,3 @@
-"// -------- Enums --------\n" \
-"STD enum class access {\n" \
-"    sample,\n" \
-"    read,\n" \
-"    write,\n" \
-"    read_write\n" \
-"};\n" \
-"// -------- Structs --------\n" \
-"STD struct bias {\n" \
-"    float value;\n" \
-"};\n" \
-"STD struct level {\n" \
-"    float lod;\n" \
-"};\n" \
-"STD struct gradient2d {\n" \
-"    float2 dPdx;\n" \
-"    float2 dPdy;\n" \
-"};\n" \
-"STD struct min_lod_clamp {\n" \
-"    float lod;\n" \
-"};\n" \
-"// -------- Functions --------\n" \
 "STD char abs(char x);\n" \
 "STD char2 abs(char2 x);\n" \
 "STD char3 abs(char3 x);\n" \
@@ -224,17 +202,6 @@
 "STD float2 pow(float2 x, float2 y);\n" \
 "STD float3 pow(float3 x, float3 y);\n" \
 "STD float4 pow(float4 x, float4 y);\n" \
-"// TODO: add more overloads\n" \
-"STD char4 read(texture2d<char> texture, ushort2 coord);\n" \
-"STD short4 read(texture2d<short> texture, ushort2 coord);\n" \
-"STD int4 read(texture2d<int> texture, ushort2 coord);\n" \
-"STD half4 read(texture2d<half> texture, ushort2 coord);\n" \
-"STD float4 read(texture2d<float> texture, ushort2 coord);\n" \
-"STD char4 read(texture2d<char> texture, uint2 coord);\n" \
-"STD short4 read(texture2d<short> texture, uint2 coord);\n" \
-"STD int4 read(texture2d<int> texture, uint2 coord);\n" \
-"STD half4 read(texture2d<half> texture, uint2 coord);\n" \
-"STD float4 read(texture2d<float> texture, uint2 coord);\n" \
 "STD half2 reflect(half2 I, half2 N);\n" \
 "STD half3 reflect(half3 I, half3 N);\n" \
 "STD half4 reflect(half4 I, half4 N);\n" \
@@ -255,12 +222,6 @@
 "STD float2 round(float2 x);\n" \
 "STD float3 round(float3 x);\n" \
 "STD float4 round(float4 x);\n" \
-"// TODO: add more overloads\n" \
-"STD char4 sample(texture2d<char> texture, sampler samplr, float2 coord, int2 offset = int2(0));\n" \
-"STD short4 sample(texture2d<short> texture, sampler samplr, float2 coord, int2 offset = int2(0));\n" \
-"STD int4 sample(texture2d<int> texture, sampler samplr, float2 coord, int2 offset = int2(0));\n" \
-"STD half4 sample(texture2d<half> texture, sampler samplr, float2 coord, int2 offset = int2(0));\n" \
-"STD float4 sample(texture2d<float> texture, sampler samplr, float2 coord, int2 offset = int2(0));\n" \
 "// TODO: check if integers are supported\n" \
 "STD char sign(char x);\n" \
 "STD char2 sign(char2 x);\n" \
@@ -311,6 +272,46 @@
 "STD float tan(float x);\n" \
 "STD float tanh(float x);\n" \
 "// TODO: add transpose function\n" \
+"STD enum class access {\n" \
+"    sample,\n" \
+"    read,\n" \
+"    write,\n" \
+"    read_write\n" \
+"};\n" \
+"STD struct bias {\n" \
+"    float value;\n" \
+"};\n" \
+"STD struct level {\n" \
+"    float lod;\n" \
+"};\n" \
+"STD struct gradient2d {\n" \
+"    float2 dPdx;\n" \
+"    float2 dPdy;\n" \
+"};\n" \
+"STD struct min_lod_clamp {\n" \
+"    float lod;\n" \
+"};\n" \
+"// -------- 2D --------\n" \
+"// Sample\n" \
+"// TODO: add more overloads\n" \
+"STD char4 sample(texture2d<char> texture, sampler samplr, float2 coord, int2 offset = int2(0));\n" \
+"STD short4 sample(texture2d<short> texture, sampler samplr, float2 coord, int2 offset = int2(0));\n" \
+"STD int4 sample(texture2d<int> texture, sampler samplr, float2 coord, int2 offset = int2(0));\n" \
+"STD half4 sample(texture2d<half> texture, sampler samplr, float2 coord, int2 offset = int2(0));\n" \
+"STD float4 sample(texture2d<float> texture, sampler samplr, float2 coord, int2 offset = int2(0));\n" \
+"// Read\n" \
+"// TODO: add more overloads\n" \
+"STD char4 read(texture2d<char> texture, ushort2 coord);\n" \
+"STD short4 read(texture2d<short> texture, ushort2 coord);\n" \
+"STD int4 read(texture2d<int> texture, ushort2 coord);\n" \
+"STD half4 read(texture2d<half> texture, ushort2 coord);\n" \
+"STD float4 read(texture2d<float> texture, ushort2 coord);\n" \
+"STD char4 read(texture2d<char> texture, uint2 coord);\n" \
+"STD short4 read(texture2d<short> texture, uint2 coord);\n" \
+"STD int4 read(texture2d<int> texture, uint2 coord);\n" \
+"STD half4 read(texture2d<half> texture, uint2 coord);\n" \
+"STD float4 read(texture2d<float> texture, uint2 coord);\n" \
+"// Write\n" \
 "// TODO: add more overloads\n" \
 "STD void write(texture2d<char> texture, char4 data, ushort2 coord);\n" \
 "STD void write(texture2d<short> texture, short4 data, ushort2 coord);\n" \

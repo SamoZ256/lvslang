@@ -1,30 +1,3 @@
-// -------- Enums --------
-STD enum class access {
-    sample,
-    read,
-    write,
-    read_write
-};
-
-// -------- Structs --------
-STD struct bias {
-    float value;
-};
-
-STD struct level {
-    float lod;
-};
-
-STD struct gradient2d {
-    float2 dPdx;
-    float2 dPdy;
-};
-
-STD struct min_lod_clamp {
-    float lod;
-};
-
-// -------- Functions --------
 STD char abs(char x);
 STD char2 abs(char2 x);
 STD char3 abs(char3 x);
@@ -259,18 +232,6 @@ STD float2 pow(float2 x, float2 y);
 STD float3 pow(float3 x, float3 y);
 STD float4 pow(float4 x, float4 y);
 
-// TODO: add more overloads
-STD char4 read(texture2d<char> texture, ushort2 coord);
-STD short4 read(texture2d<short> texture, ushort2 coord);
-STD int4 read(texture2d<int> texture, ushort2 coord);
-STD half4 read(texture2d<half> texture, ushort2 coord);
-STD float4 read(texture2d<float> texture, ushort2 coord);
-STD char4 read(texture2d<char> texture, uint2 coord);
-STD short4 read(texture2d<short> texture, uint2 coord);
-STD int4 read(texture2d<int> texture, uint2 coord);
-STD half4 read(texture2d<half> texture, uint2 coord);
-STD float4 read(texture2d<float> texture, uint2 coord);
-
 STD half2 reflect(half2 I, half2 N);
 STD half3 reflect(half3 I, half3 N);
 STD half4 reflect(half4 I, half4 N);
@@ -293,13 +254,6 @@ STD float round(float x);
 STD float2 round(float2 x);
 STD float3 round(float3 x);
 STD float4 round(float4 x);
-
-// TODO: add more overloads
-STD char4 sample(texture2d<char> texture, sampler samplr, float2 coord, int2 offset = int2(0));
-STD short4 sample(texture2d<short> texture, sampler samplr, float2 coord, int2 offset = int2(0));
-STD int4 sample(texture2d<int> texture, sampler samplr, float2 coord, int2 offset = int2(0));
-STD half4 sample(texture2d<half> texture, sampler samplr, float2 coord, int2 offset = int2(0));
-STD float4 sample(texture2d<float> texture, sampler samplr, float2 coord, int2 offset = int2(0));
 
 // TODO: check if integers are supported
 STD char sign(char x);
@@ -359,15 +313,3 @@ STD float tan(float x);
 STD float tanh(float x);
 
 // TODO: add transpose function
-
-// TODO: add more overloads
-STD void write(texture2d<char> texture, char4 data, ushort2 coord);
-STD void write(texture2d<short> texture, short4 data, ushort2 coord);
-STD void write(texture2d<int> texture, int4 data, ushort2 coord);
-STD void write(texture2d<half> texture, half4 data, ushort2 coord);
-STD void write(texture2d<float> texture, float4 data, ushort2 coord);
-STD void write(texture2d<char> texture, char4 data, uint2 coord);
-STD void write(texture2d<short> texture, short4 data, uint2 coord);
-STD void write(texture2d<int> texture, int4 data, uint2 coord);
-STD void write(texture2d<half> texture, half4 data, uint2 coord);
-STD void write(texture2d<float> texture, float4 data, uint2 coord);

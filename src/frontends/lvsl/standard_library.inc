@@ -1,25 +1,3 @@
-"// -------- Enums --------\n" \
-"STD enum class Access {\n" \
-"    sample,\n" \
-"    read,\n" \
-"    write,\n" \
-"    read_write\n" \
-"};\n" \
-"// -------- Structs --------\n" \
-"STD struct bias {\n" \
-"    member value: float\n" \
-"}\n" \
-"STD struct level {\n" \
-"    member lod: float\n" \
-"}\n" \
-"STD struct gradient2d {\n" \
-"    member dPdx: float2\n" \
-"    member dPdy: float2\n" \
-"}\n" \
-"STD struct min_lod_clamp {\n" \
-"    member lod: float\n" \
-"}\n" \
-"// -------- Functions --------\n" \
 "STD func abs(x: char) -> char\n" \
 "STD func abs(x: char2) -> char2\n" \
 "STD func abs(x: char3) -> char3\n" \
@@ -124,7 +102,6 @@
 "STD func fract(x: float2) -> float2\n" \
 "STD func fract(x: float3) -> float3\n" \
 "STD func fract(x: float4) -> float4\n" \
-"// TODO: add image functions\n" \
 "STD func isinf(x: half) -> bool\n" \
 "STD func isinf(x: half2) -> bool2\n" \
 "STD func isinf(x: half3) -> bool3\n" \
@@ -225,17 +202,6 @@
 "STD func pow(x: float2, y: float2) -> float2\n" \
 "STD func pow(x: float3, y: float3) -> float3\n" \
 "STD func pow(x: float4, y: float4) -> float4\n" \
-"// TODO: add more overloads\n" \
-"STD func read(texture: texture2D<char>, coord: ushort2) -> char4;\n" \
-"STD func read(texture: texture2D<short>, coord: ushort2) -> short4;\n" \
-"STD func read(texture: texture2D<int>, coord: ushort2) -> int4;\n" \
-"STD func read(texture: texture2D<half>, coord: ushort2) -> half4;\n" \
-"STD func read(texture: texture2D<float>, coord: ushort2) -> float4;\n" \
-"STD func read(texture: texture2D<char>, coord: uint2) -> char4;\n" \
-"STD func read(texture: texture2D<short>, coord: uint2) -> short4;\n" \
-"STD func read(texture: texture2D<int>, coord: uint2) -> int4;\n" \
-"STD func read(texture: texture2D<half>, coord: uint2) -> half4;\n" \
-"STD func read(texture: texture2D<float>, coord: uint2) -> float4;\n" \
 "STD func reflect(I: half2, N: half2) -> half2\n" \
 "STD func reflect(I: half3, N: half3) -> half3\n" \
 "STD func reflect(I: half4, N: half4) -> half4\n" \
@@ -256,12 +222,6 @@
 "STD func round(x: float2) -> float2\n" \
 "STD func round(x: float3) -> float3\n" \
 "STD func round(x: float4) -> float4\n" \
-"// TODO: add more overloads\n" \
-"STD func sample(texture: texture2D<char>, samplr: sampler, coord: float2, offset: int2 = int2(0)) -> char4\n" \
-"STD func sample(texture: texture2D<short>, samplr: sampler, coord: float2, offset: int2 = int2(0)) -> short4\n" \
-"STD func sample(texture: texture2D<int>, samplr: sampler, coord: float2, offset: int2 = int2(0)) -> int4\n" \
-"STD func sample(texture: texture2D<half>, samplr: sampler, coord: float2, offset: int2 = int2(0)) -> half4\n" \
-"STD func sample(texture: texture2D<float>, samplr: sampler, coord: float2, offset: int2 = int2(0)) -> float4\n" \
 "// TODO: check if integers are supported\n" \
 "STD func sign(x: char) -> char\n" \
 "STD func sign(x: char2) -> char2\n" \
@@ -312,6 +272,46 @@
 "STD func tan(x: float) -> float\n" \
 "STD func tanh(x: float) -> float\n" \
 "// TODO: add transpose function\n" \
+"STD enum class Access {\n" \
+"    sample,\n" \
+"    read,\n" \
+"    write,\n" \
+"    read_write\n" \
+"};\n" \
+"STD struct bias {\n" \
+"    member value: float\n" \
+"}\n" \
+"STD struct level {\n" \
+"    member lod: float\n" \
+"}\n" \
+"STD struct gradient2d {\n" \
+"    member dPdx: float2\n" \
+"    member dPdy: float2\n" \
+"}\n" \
+"STD struct min_lod_clamp {\n" \
+"    member lod: float\n" \
+"}\n" \
+"// -------- 2D --------\n" \
+"// Sample\n" \
+"// TODO: add more overloads\n" \
+"STD func sample(texture: texture2D<char>, samplr: sampler, coord: float2, offset: int2 = int2(0)) -> char4\n" \
+"STD func sample(texture: texture2D<short>, samplr: sampler, coord: float2, offset: int2 = int2(0)) -> short4\n" \
+"STD func sample(texture: texture2D<int>, samplr: sampler, coord: float2, offset: int2 = int2(0)) -> int4\n" \
+"STD func sample(texture: texture2D<half>, samplr: sampler, coord: float2, offset: int2 = int2(0)) -> half4\n" \
+"STD func sample(texture: texture2D<float>, samplr: sampler, coord: float2, offset: int2 = int2(0)) -> float4\n" \
+"// Read\n" \
+"// TODO: add more overloads\n" \
+"STD func read(texture: texture2D<char>, coord: ushort2) -> char4;\n" \
+"STD func read(texture: texture2D<short>, coord: ushort2) -> short4;\n" \
+"STD func read(texture: texture2D<int>, coord: ushort2) -> int4;\n" \
+"STD func read(texture: texture2D<half>, coord: ushort2) -> half4;\n" \
+"STD func read(texture: texture2D<float>, coord: ushort2) -> float4;\n" \
+"STD func read(texture: texture2D<char>, coord: uint2) -> char4;\n" \
+"STD func read(texture: texture2D<short>, coord: uint2) -> short4;\n" \
+"STD func read(texture: texture2D<int>, coord: uint2) -> int4;\n" \
+"STD func read(texture: texture2D<half>, coord: uint2) -> half4;\n" \
+"STD func read(texture: texture2D<float>, coord: uint2) -> float4;\n" \
+"// Write\n" \
 "// TODO: add more overloads\n" \
 "STD func write(texture: texture2D<char>, data: char4, coord: ushort2);\n" \
 "STD func write(texture: texture2D<short>, data: short4, coord: ushort2);\n" \

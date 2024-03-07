@@ -1,0 +1,59 @@
+STD enum class Access {
+    sample,
+    read,
+    write,
+    read_write
+};
+
+STD struct bias {
+    member value: float
+}
+
+STD struct level {
+    member lod: float
+}
+
+STD struct gradient2d {
+    member dPdx: float2
+    member dPdy: float2
+}
+
+STD struct min_lod_clamp {
+    member lod: float
+}
+
+// -------- 2D --------
+
+// Sample
+// TODO: add more overloads
+STD func sample(texture: texture2D<char>, samplr: sampler, coord: float2, offset: int2 = int2(0)) -> char4
+STD func sample(texture: texture2D<short>, samplr: sampler, coord: float2, offset: int2 = int2(0)) -> short4
+STD func sample(texture: texture2D<int>, samplr: sampler, coord: float2, offset: int2 = int2(0)) -> int4
+STD func sample(texture: texture2D<half>, samplr: sampler, coord: float2, offset: int2 = int2(0)) -> half4
+STD func sample(texture: texture2D<float>, samplr: sampler, coord: float2, offset: int2 = int2(0)) -> float4
+
+// Read
+// TODO: add more overloads
+STD func read(texture: texture2D<char>, coord: ushort2) -> char4;
+STD func read(texture: texture2D<short>, coord: ushort2) -> short4;
+STD func read(texture: texture2D<int>, coord: ushort2) -> int4;
+STD func read(texture: texture2D<half>, coord: ushort2) -> half4;
+STD func read(texture: texture2D<float>, coord: ushort2) -> float4;
+STD func read(texture: texture2D<char>, coord: uint2) -> char4;
+STD func read(texture: texture2D<short>, coord: uint2) -> short4;
+STD func read(texture: texture2D<int>, coord: uint2) -> int4;
+STD func read(texture: texture2D<half>, coord: uint2) -> half4;
+STD func read(texture: texture2D<float>, coord: uint2) -> float4;
+
+// Write
+// TODO: add more overloads
+STD func write(texture: texture2D<char>, data: char4, coord: ushort2);
+STD func write(texture: texture2D<short>, data: short4, coord: ushort2);
+STD func write(texture: texture2D<int>, data: int4, coord: ushort2);
+STD func write(texture: texture2D<half>, data: half4, coord: ushort2);
+STD func write(texture: texture2D<float>, data: float4, coord: ushort2);
+STD func write(texture: texture2D<char>, data: char4, coord: uint2);
+STD func write(texture: texture2D<short>, data: short4, coord: uint2);
+STD func write(texture: texture2D<int>, data: int4, coord: uint2);
+STD func write(texture: texture2D<half>, data: half4, coord: uint2);
+STD func write(texture: texture2D<float>, data: float4, coord: uint2);

@@ -63,25 +63,27 @@ target_link_libraries(lvslang PUBLIC lvslang_lib)
 # -------- Embed standard libraries --------
 add_executable(embed_standard_library src/embed_standard_library.cpp)
 
-function (run_embed_standard_library name)
-    set(PATH_WITHOUT_EXTENSION ${PROJECT_SOURCE_DIR}/src/frontends/${name}/standard_library)
+function (run_embed_standard_library name extension)
+    set(BASE_NAME ${PROJECT_SOURCE_DIR}/src/frontends/${name}/standard_library)
+    set(SOURCES ${BASE_NAME}/math.${extension} ${BASE_NAME}/textures.${extension})
+    set(OUTPUT ${BASE_NAME}.inc)
     add_custom_command(
-        OUTPUT ${PATH_WITHOUT_EXTENSION}.inc
-        COMMAND embed_standard_library ${PATH_WITHOUT_EXTENSION}.${name} ${PATH_WITHOUT_EXTENSION}.inc
-        DEPENDS embed_standard_library ${PATH_WITHOUT_EXTENSION}.${name}
-        COMMENT "Embedding standard library ${name}"
+        OUTPUT ${OUTPUT}
+        COMMAND embed_standard_library ${OUTPUT} ${SOURCES}
+        DEPENDS embed_standard_library ${SOURCES}
+        COMMENT "Embedding standard library for ${name} frontend"
     )
 
     add_custom_target(
         run_embed_standard_library_${name} ALL
-        DEPENDS ${PATH_WITHOUT_EXTENSION}.inc
+        DEPENDS ${OUTPUT}
     )
 
     add_dependencies(lvslang_lib run_embed_standard_library_${name})
 endfunction()
 
-run_embed_standard_library(metal)
-run_embed_standard_library(lvsl)
+run_embed_standard_library(metal metal)
+run_embed_standard_library(lvsl lvsl)
 
 # -------- Tests --------
 if (BUILD_TESTS)

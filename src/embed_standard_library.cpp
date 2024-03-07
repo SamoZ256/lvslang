@@ -30,12 +30,10 @@ void writeToFile(const std::string& filename, const std::string& source) {
 }
 
 int main(int argc, char** argv) {
-    if (argc != 3) {
-        std::cout << "Expected exactly 3 arguments" << std::endl;
-        return 1;
-    }
+    std::string source;
+    for (uint32_t i = 2; i < argc; i++)
+        source += readFile(argv[i]) + "\n";
 
-    std::string source = readFile(argv[1]);
     std::string output = "\"";
     size_t oldPos = 0;
     size_t pos = 0;
@@ -49,5 +47,5 @@ int main(int argc, char** argv) {
     }
     output += "\"";
 
-    writeToFile(argv[2], output);
+    writeToFile(argv[1], output);
 }

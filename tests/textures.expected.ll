@@ -3,11 +3,11 @@ target triple = "air64-apple-macosx14.0.0"
 
 %VertexOut = type { <4 x float>, <2 x float> }
 
-; Function Attrs: mustprogress nofree nosync nounwind willreturn
-declare <4 x float> @air.read.t1f32(ptr addrspace(1) nocapture readonly, <2 x i16>) local_unnamed_addr #0
-
 ; Function Attrs: convergent mustprogress nofree nounwind willreturn
-declare <4 x float> @air.sample_texture_2d.v4f32(ptr addrspace(1) nocapture readonly, ptr addrspace(2) nocapture readonly, <2 x float>, i1, <2 x i32>, i1, float, float, i32) local_unnamed_addr #1
+declare <4 x float> @air.sample_texture_2d.v4f32(ptr addrspace(1) nocapture readonly, ptr addrspace(2) nocapture readonly, <2 x float>, i1, <2 x i32>, i1, float, float, i32) local_unnamed_addr #0
+
+; Function Attrs: mustprogress nofree nosync nounwind willreturn
+declare <4 x float> @air.read.t1f32(ptr addrspace(1) nocapture readonly, <2 x i16>) local_unnamed_addr #1
 
 ; Function Attrs: mustprogress nofree nounwind willreturn
 define <4 x float> @fragmentMain.sVertexOut.t1f32.t1f32.sm(%VertexOut %fragmentIn, ptr addrspace(1) nocapture readonly %tex1, ptr addrspace(1) nocapture readonly %tex2, ptr addrspace(2) nocapture readonly %smp) local_unnamed_addr #2 {
@@ -19,8 +19,8 @@ entry:
   ret <4 x float> %op
 }
 
-attributes #0 = { mustprogress nofree nosync nounwind willreturn }
-attributes #1 = { convergent mustprogress nofree nounwind willreturn }
+attributes #0 = { convergent mustprogress nofree nounwind willreturn }
+attributes #1 = { mustprogress nofree nosync nounwind willreturn }
 attributes #2 = { mustprogress nofree nounwind willreturn }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4, !5, !6, !7, !8}
