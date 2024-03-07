@@ -4,6 +4,11 @@ func functionWithDefaultArguments(a: int2, b: int2 = int2(0)) -> int2 {
     return a + b
 }
 
+// Overload to test if the compiler will be able to choose the correct overload
+func functionWithDefaultArguments(a: float2, b: float2 = float2(0.0)) -> float2 {
+    return a + b;
+}
+
 fragment testAdvancedFeatures() {
     var a = forwardDeclaredFunction(1, int3(1, 2, 3))
     var b = functionWithDefaultArguments(int2(1, 2))

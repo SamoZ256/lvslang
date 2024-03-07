@@ -12,6 +12,10 @@ ivec2 functionWithDefaultArguments(ivec2 a, ivec2 b) {
 	return (a + b);
 }
 
+vec2 functionWithDefaultArguments(vec2 a, vec2 b) {
+	return (a + b);
+}
+
 void testAdvancedFeatures();
 
 layout (location = 0) out void _outputColor;

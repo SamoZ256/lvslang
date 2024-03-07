@@ -7,6 +7,10 @@ int2 functionWithDefaultArguments(int2 a, int2 b) {
 	return (a + b);
 }
 
+float2 functionWithDefaultArguments(float2 a, float2 b) {
+	return (a + b);
+}
+
 fragment void testAdvancedFeatures() {
 	bool a = forwardDeclaredFunction(1, int3(1, 2, 3));
 	int2 b = functionWithDefaultArguments(int2(1, 2), int2(0));

@@ -277,9 +277,11 @@ irb::Type* CallExpressionAST::_initialize() {
             }
         } else {
             for (auto* decl : declarations) {
-                if (identifier == decl->getIdentifier()) {
-                    declaration = decl;
-                    break;
+                if (identifier.size() <= decl->getIdentifier().size() && identifier == decl->getIdentifier().substr(0, identifier.size())) {
+                    if (arguments.size() >= decl->getArgumentsWithoutDefaultValueCount()) {
+                        declaration = decl;
+                        break;
+                    }
                 }
             }
             if (!declaration) {

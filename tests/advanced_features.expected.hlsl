@@ -4,6 +4,10 @@ int2 functionWithDefaultArguments(int2 a, int2 b) {
 	return (a + b);
 }
 
+float2 functionWithDefaultArguments(float2 a, float2 b) {
+	return (a + b);
+}
+
 void testAdvancedFeatures();
 
 void_Output _testAdvancedFeatures() {

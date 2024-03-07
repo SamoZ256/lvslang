@@ -3,7 +3,7 @@ target triple = "air64-apple-macosx14.0.0"
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
 define i1 @forwardDeclaredFunction.i32.v3i32(i32 %a, <3 x i32> %b) local_unnamed_addr #0 {
-entry1:
+entry2:
   %0 = extractelement <3 x i32> %b, i64 0
   %op = icmp eq i32 %0, %a
   %1 = extractelement <3 x i32> %b, i64 1
@@ -23,8 +23,15 @@ entry:
 }
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
-define void @testAdvancedFeatures() local_unnamed_addr #0 {
+define <2 x float> @functionWithDefaultArguments.v2f32.v2f32(<2 x float> %a, <2 x float> %b) local_unnamed_addr #0 {
 entry0:
+  %op = fadd <2 x float> %a, %b
+  ret <2 x float> %op
+}
+
+; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
+define void @testAdvancedFeatures() local_unnamed_addr #0 {
+entry1:
   ret void
 }
 
