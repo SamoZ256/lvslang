@@ -504,6 +504,78 @@ int _getNextToken() {
         if (identifierStr == "color")
             return TOKEN_ATTRIB_COLOR;
         
+        // Macro
+        auto pos = macros.find(identifierStr);
+        if (pos != macros.end()) {
+            const auto& macro = pos->second;
+            std::vector<std::string> params;
+            if (lastChar == '(') {
+                do {
+                    lastChar = getNextChar();
+                    skipWhitespaces();
+                    std::string param;
+                    int32_t parenCount = 0;
+                    while (lastChar != 0 && (lastChar != ',' || parenCount > 0) && (lastChar != ')' || parenCount > 0)) {
+                        if (lastChar == '(')
+                            parenCount++;
+                        if (lastChar == ')')
+                            parenCount--;
+                        param += lastChar;
+                        lastChar = getNextChar();
+                    }
+                    params.push_back(param);
+                } while (lastChar == ',');
+                if (lastChar != ')') {
+                    logError("expected ')' to match the '(' in a macro call");
+                    lastChar = getNextChar();
+                    return 0;
+                }
+                lastChar = getNextChar();
+            }
+
+            if (params.size() != macro.arguments.size()) {
+                logError("expected " + std::to_string(macro.arguments.size()) + " arguments in a macro call, got " + std::to_string(params.size()) + " instead");
+                lastChar = getNextChar();
+                return 0;
+            }
+
+            std::string macroBody = macro.body;
+
+            // Replace parameters
+            for (uint32_t i = 0; i < macro.arguments.size(); i++) {
+                std::string param = macro.arguments[i];
+                std::string arg = params[i];
+                size_t pos = 0;
+                while ((pos = macroBody.find(param, pos)) != std::string::npos) {
+                    bool shouldReplace = true;
+
+                    // Check if it's a part of another identifier
+                    if (pos > 0) {
+                        char c = macroBody[pos - 1];
+                        if (isalpha(c) || c == '_')
+                            shouldReplace = false;
+                    }
+                    if (pos + param.length() < macroBody.length()) {
+                        char c = macroBody[pos + param.length()];
+                        if (isalnum(c) || c == '_')
+                            shouldReplace = false;
+                    }
+
+                    if (shouldReplace) {
+                        macroBody.replace(pos, param.length(), arg);
+                        pos += arg.length();
+                    }
+                }
+            }
+
+            source.macroStack.push_back({macroBody});
+
+            // Start consuming the macro
+            lastChar = getNextChar();
+
+            return _getNextToken();
+        }
+        
         return TOKEN_IDENTIFIER;
     }
 
@@ -518,7 +590,7 @@ int _getNextToken() {
         int op = getOperatorFromString(operatorStr);
         if (!op) {
             logError("unknown operator '" + operatorStr + "'");
-
+            lastChar = getNextChar();
             return 0;
         }
 
@@ -536,7 +608,7 @@ int _getNextToken() {
             lastChar = getNextChar();
         } while (isdigit(lastChar) || (lastChar == '.' && !dotUsed));
         switch (lastChar) {
-            // case 'd':
+            //case 'd':
             case 'f':
             case 'h':
             case 'i':
@@ -575,7 +647,7 @@ int _getNextToken() {
         lastChar = getNextChar();
         if (lastChar != '\'') {
             logError("Expected enclosing ' (single quote)");
-
+            lastChar = getNextChar();
             return 0;
         }
         lastChar = getNextChar();

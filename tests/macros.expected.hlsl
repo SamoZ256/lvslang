@@ -6,5 +6,6 @@ void_Output _fragmentMain() {
 }
 
 void fragmentMain() {
+	int a = abs((1 + (0 - 2)));
 }
 

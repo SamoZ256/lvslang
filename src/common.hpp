@@ -84,9 +84,12 @@ static std::map<GLSLVersion, std::string> glslVersionMap = {
     {GLSLVersion::_4_50, "450"}
 };
 
-struct Source {
-    uint32_t stringPos = 0;
+struct MacroSource {
+    std::string source;
+    uint32_t crntChar = 0;
+};
 
+struct Source {
     uint32_t crntLine = 0;
     uint32_t crntChar = 0;
 
@@ -94,6 +97,7 @@ struct Source {
     uint32_t crntDebugChar = 1;
 
     std::vector<std::string> source;
+    std::vector<MacroSource> macroStack;
 };
 
 extern Source source;
@@ -163,10 +167,31 @@ inline bool charIsOperator(char c) {
 }
 
 inline char getNextChar() {
+    // Macro
+    while (source.macroStack.size() > 0) {
+        auto& macroSource = source.macroStack.back();
+        if (macroSource.crntChar >= macroSource.source.size()) {
+            source.macroStack.pop_back();
+
+            // We need to go one character back
+            if (source.macroStack.size() > 0) {
+                source.macroStack.back().crntChar--;
+            } else {
+                if (source.crntChar > 0) {
+                    source.crntChar--;
+                } else {
+                    source.crntLine--;
+                    source.crntChar = source.source[source.crntLine].size() - 1;
+                }
+            }
+        } else {
+            return macroSource.source[macroSource.crntChar++];
+        }
+    }
+
     if (source.crntLine >= source.source.size())
         return 0; // EOF
-    if (source.stringPos == source.source[source.crntLine].size()) {
-        source.stringPos = 0;
+    if (source.crntChar == source.source[source.crntLine].size()) {
         source.crntChar = 0;
         source.crntDebugChar = 0;
         source.crntLine++;
@@ -174,10 +199,9 @@ inline char getNextChar() {
 
         return '\n';
     }
-    source.crntChar++;
     source.crntDebugChar = source.crntChar;
 
-    return source.source[source.crntLine][source.stringPos++];
+    return source.source[source.crntLine][source.crntChar++];
 }
 
 } // namespace lvslang

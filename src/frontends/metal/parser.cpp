@@ -487,7 +487,6 @@ BlockExpressionAST* parseBracesExpression() {
         if (!expr)
             return nullptr;
 
-        // Get rid of semicolons
         _consumeSemicolons(expr);
         
         expressions.push_back(expr);

@@ -16,5 +16,6 @@ void main() {
 }
 
 void fragmentMain() {
+	int a = abs((1 + (0 - 2)));
 }
 
