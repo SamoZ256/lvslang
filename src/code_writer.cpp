@@ -625,6 +625,9 @@ CodeValue* CodeWriter::codegenMemberAccessExpression(const MemberAccessExpressio
 }
 
 CodeValue* CodeWriter::codegenStructureDefinition(const StructureDefinitionAST* expression) {
+    if (expression->getIsSTD())
+        return new CodeValue{""};
+    
     std::string codeStr = "struct " + expression->getName() + " {\n";
     for (auto& member : expression->getMembers()) {
         std::string attributesEnd;

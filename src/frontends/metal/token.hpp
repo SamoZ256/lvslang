@@ -28,7 +28,7 @@ enum Token {
     TOKEN_CONST = -31,
     TOKEN_AUTO = -32,
     TOKEN_CLASS = -33,
-    TOKEN_STD_FUNCTION = -34,
+    TOKEN_STD = -34,
 
     // -------- Primary --------
     TOKEN_IDENTIFIER = -40,

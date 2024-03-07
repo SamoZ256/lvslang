@@ -31,7 +31,7 @@ enum Token {
     TOKEN_REGISTER = -32,
     TOKEN_MEMBER = -33,
     TOKEN_CLASS = -34,
-    TOKEN_STD_FUNCTION = -35,
+    TOKEN_STD = -35,
 
     // -------- Primary --------
     TOKEN_IDENTIFIER = -40,

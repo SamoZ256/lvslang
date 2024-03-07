@@ -976,7 +976,7 @@ FunctionPrototypeAST* parseExtern() {
 
 // TODO: support forward declaration
 // Structure declaration
-StructureDefinitionAST* parseStructureDeclaration() {
+StructureDefinitionAST* parseStructureDeclaration(bool isSTD = false) {
     getNextToken(); // 'struct'
     if (crntToken != TOKEN_IDENTIFIER) {
         logError("expected structure name after 'struct'");
@@ -1025,11 +1025,11 @@ StructureDefinitionAST* parseStructureDeclaration() {
     }
     getNextToken(); // ';'
 
-    return new StructureDefinitionAST(structName, members);
+    return new StructureDefinitionAST(structName, members, isSTD);
 }
 
 // TODO: rename to 'parseEnumDefinition'
-EnumDefinitionAST* parseEnumDeclaration() {
+EnumDefinitionAST* parseEnumDeclaration(bool isSTD = false) {
     getNextToken(); // 'enum'
 
     bool isClass = false;
@@ -1107,7 +1107,7 @@ EnumDefinitionAST* parseEnumDeclaration() {
     }
     getNextToken(); // '}'
 
-    return new EnumDefinitionAST(enumName, values, isClass);
+    return new EnumDefinitionAST(enumName, values, isClass, isSTD);
 }
 
 ExpressionAST* parseExpression(int expressionPrecedence) {
@@ -1161,9 +1161,19 @@ bool mainLoop(AST& ast) {
             getNextToken(); // 'constant'
             expression = parseVariableDeclarationExpression(_parseTypeWithAttributesExpression(), true, true);
             break;
-        case TOKEN_STD_FUNCTION:
-            getNextToken(); // 'STD_FUNCTION'
-            expression = parseFunctionDefinition(true, irb::FunctionRole::Normal);
+        case TOKEN_STD:
+            getNextToken(); // 'STD'
+            switch (crntToken) {
+            case TOKEN_TYPE_STRUCT:
+                expression = parseStructureDeclaration(true);
+                break;
+            case TOKEN_TYPE_ENUM:
+                expression = parseEnumDeclaration(true);
+                break;
+            default:
+                expression = parseFunctionDefinition(true, irb::FunctionRole::Normal);
+                break;
+            }
             break;
         case TOKEN_TYPE_ENUM_MIN ... TOKEN_TYPE_ENUM_MAX:
             if (crntToken == TOKEN_TYPE_STRUCT)

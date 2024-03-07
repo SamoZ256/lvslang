@@ -636,7 +636,7 @@ private:
 // Structure definition
 class StructureDefinitionAST : public ExpressionAST {
 public:
-    StructureDefinitionAST(const std::string& aName, const std::vector<irb::StructureMember>& aMembers) : name(aName), members(aMembers) {}
+    StructureDefinitionAST(const std::string& aName, const std::vector<irb::StructureMember>& aMembers, bool aIsSTD) : name(aName), members(aMembers), isSTD(aIsSTD) {}
 
     // Getters
     inline const std::string& getName() const {
@@ -647,9 +647,14 @@ public:
         return members;
     }
 
+    inline bool getIsSTD() const {
+        return isSTD;
+    }
+
 private:
     std::string name;
     std::vector<irb::StructureMember> members;
+    bool isSTD;
 
     irb::Type* _initialize() override;
 };
@@ -657,7 +662,7 @@ private:
 // Enumeration definition
 class EnumDefinitionAST : public ExpressionAST {
 public:
-    EnumDefinitionAST(const std::string& aName, const std::vector<EnumValue>& aValues, bool aIsClass) : name(aName), values(aValues), isClass(aIsClass) {}
+    EnumDefinitionAST(const std::string& aName, const std::vector<EnumValue>& aValues, bool aIsClass, bool aIsSTD) : name(aName), values(aValues), isClass(aIsClass), isSTD(aIsSTD) {}
 
     // Getters
     inline const std::string& getName() const {
@@ -672,10 +677,15 @@ public:
         return isClass;
     }
 
+    inline bool getIsSTD() const {
+        return isSTD;
+    }
+
 private:
     std::string name;
     std::vector<EnumValue> values;
     bool isClass;
+    bool isSTD;
 
     irb::Type* _initialize() override;
 };

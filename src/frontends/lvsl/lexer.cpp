@@ -395,8 +395,8 @@ int _getNextToken() {
             return TOKEN_MEMBER;
         if (identifierStr == "class")
             return TOKEN_CLASS;
-        if (identifierStr == "STD_FUNCTION")
-            return TOKEN_STD_FUNCTION;
+        if (identifierStr == "STD")
+            return TOKEN_STD;
         
         int type = getTypeFromString(identifierStr);
         if (type != 0)
