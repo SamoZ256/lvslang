@@ -1,0 +1,26 @@
+; SPIR-V
+; Version: 1.6
+; Generator: Khronos SPIR-V Tools Assembler; 0
+; Bound: 30
+; Schema: 0
+               OpCapability Shader
+               OpCapability Float16
+               OpCapability Int8
+               OpCapability Int16
+               OpExtension "SPV_KHR_8bit_storage"
+               OpExtension "SPV_KHR_16bit_storage"
+               OpExtension "SPV_AMD_gpu_shader_int16"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %2 "fragmentMain"
+               OpExecutionMode %2 OriginUpperLeft
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+         %28 = OpTypeFunction %void
+
+               ; Function 2
+          %2 = OpFunction %void None %28
+         %29 = OpLabel
+               OpReturn
+               OpFunctionEnd

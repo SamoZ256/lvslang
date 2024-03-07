@@ -326,16 +326,36 @@ int getOperatorFromString(const std::string& operatorStr) {
     return 0;
 }
 
-int lastChar = ' ';
+struct Macro {
+    std::vector<std::string> arguments;
+    std::string body;
+};
 
-void resetLastChar() {
+std::map<std::string, Macro> macros;
+
+int lastChar;
+
+void resetLexer() {
     lastChar = ' ';
+    macros.clear();
+}
+
+inline void skipWhitespaces() {
+    while (isspace(lastChar) && lastChar != '\n')
+        lastChar = getNextChar();
+}
+
+inline std::string getIdentifier() {
+    std::string str(1, lastChar);
+    while (isalnum(lastChar = getNextChar()) || lastChar == '_')
+        str += lastChar;
+
+    return str;
 }
 
 int _getNextToken() {
     // Whitespace
-    while (isspace(lastChar) && lastChar != '\n')
-        lastChar = getNextChar();
+    skipWhitespaces();
         
     if (lastChar == ';' || lastChar == '\n') {
         lastChar = getNextChar();
@@ -358,12 +378,63 @@ int _getNextToken() {
             return TOKEN_OPERATOR_ARITHMETIC_DIVIDE;
         }
     }
+
+    // Macros
+    while (lastChar == '#') {
+        if (isalpha(lastChar = getNextChar())) {
+            std::string macroKeyword = getIdentifier();
+            
+            if (macroKeyword == "define") { // Define
+                skipWhitespaces();
+                if (isalpha(lastChar) || lastChar == '_') {
+                    std::string macroName = getIdentifier();
+                    
+                    Macro macro;
+                    if (lastChar == '(') {
+                        do {
+                            lastChar = getNextChar(); // '(' or ','
+                            skipWhitespaces();
+                            macro.arguments.push_back(getIdentifier());
+                            skipWhitespaces();
+                        } while (lastChar == ',');
+                        if (lastChar != ')') {
+                            logError("expected ')' to match the '(' in the macro definition");
+                            lastChar = getNextChar();
+                            return 0;
+                        }
+                    } else {
+                        if (lastChar != ' ') {
+                            logError("expected space after macro name");
+                            lastChar = getNextChar();
+                            return 0;
+                        }
+                    }
+                    lastChar = getNextChar();
+
+                    while (lastChar != EOF && lastChar != '\n' && lastChar != '\r') {
+                        macro.body += lastChar;
+                        lastChar = getNextChar();
+                    }
+
+                    macros[macroName] = macro;
+                } else {
+                    logError("expected macro name");
+                    lastChar = getNextChar();
+                    return 0;
+                }
+            }
+        } else {
+            logError("expected macro after '#'");
+            lastChar = getNextChar();
+            return 0;
+        }
+        while (isspace(lastChar))
+            lastChar = getNextChar();   
+    }
     
     // Text
     if (isalpha(lastChar) || lastChar == '_') {
-        identifierStr = lastChar;
-        while (isalnum((lastChar = getNextChar())) || lastChar == '_')
-            identifierStr += lastChar;
+        identifierStr = getIdentifier();
 
         if (identifierStr == "func")
             return TOKEN_FUNC;

@@ -1145,7 +1145,7 @@ ExpressionAST* parseExpression(int expressionPrecedence) {
 // Main loop
 bool mainLoop(AST& ast) {
     // Reset
-    resetLastChar();
+    resetLexer();
 
     getNextToken();
     bool success = true;

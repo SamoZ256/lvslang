@@ -13,7 +13,7 @@ int getTypeFromString(const std::string& strType);
 
 int getOperatorFromString(const std::string& operatorStr);
 
-void resetLastChar();
+void resetLexer();
 
 int getNextToken();
 

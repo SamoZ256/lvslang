@@ -1128,7 +1128,7 @@ ExpressionAST* parseTopLevelTypeExpression() {
 // Main loop
 bool mainLoop(AST& ast) {
     // Reset
-    resetLastChar();
+    resetLexer();
 
     getNextToken();
     bool success = true;
