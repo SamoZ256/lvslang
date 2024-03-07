@@ -219,17 +219,23 @@ irb::Value* IRWriter::codegenFunctionDefinition(const FunctionDefinitionAST* exp
 }
 
 irb::Value* IRWriter::codegenFunctionCall(const CallExpressionAST* expression) {
-    std::vector<irb::Value*> argVs;
-    argVs.reserve(expression->getArguments().size());
-    for (const auto& arg : expression->getArguments()) {
-        irb::Value* argV = codegenExpression(arg);
-        if (!argV)
+    std::vector<irb::Value*> argVs(expression->getPrototype()->arguments().size());
+    for (uint32_t i = 0; i < expression->getArguments().size(); i++) {
+        argVs[i] = codegenExpression(expression->getArguments()[i]);
+        if (!argVs[i])
             return nullptr;
-        argVs.push_back(argV);
+    }
+    
+    // Default arguments
+    for (uint32_t i = expression->getArguments().size(); i < expression->getPrototype()->arguments().size(); i++) {
+        argVs[i] = codegenExpression(expression->getPrototype()->getDefaultValues()[i]);
+        if (!argVs[i])
+            return nullptr;
     }
 
+    // TODO: move this to SPIRV builder
     if (target == Target::SPIRV && !expression->getPrototype()->getIsSTDFunction()) {
-        for (uint32_t i = 0; i < expression->getArguments().size(); i++) {
+        for (uint32_t i = 0; i < argVs.size(); i++) {
             context.pushRegisterName("param");
             argVs[i] = builder->opVariable(new irb::PointerType(context, argVs[i]->getType(), irb::StorageClass::Function), argVs[i]);
         }

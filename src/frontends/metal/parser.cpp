@@ -915,6 +915,7 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, bool isSTDF
     }
 
     std::vector<irb::Argument> arguments;
+    std::vector<ExpressionAST*> defaultValues;
     do {
         getNextToken(); // '(' or ','
         if (crntToken == ')')
@@ -928,8 +929,16 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, bool isSTDF
             name = identifierStr;
             getNextToken(); // argument name
         }
+        ExpressionAST* defaultValue = nullptr;
+        if (crntToken == TOKEN_OPERATOR_ASSIGNMENT_ASSIGN) {
+            getNextToken(); // '='
+            defaultValue = parseExpression();
+            if (!defaultValue)
+                return nullptr;
+        }
         _parseAttributes(type, &argAttributes);
         arguments.push_back(irb::Argument{name, type, argAttributes});
+        defaultValues.push_back(defaultValue);
     } while (crntToken == ',');
     if (crntToken != ')') {
         logError("expected ')' to match the '('");
@@ -937,7 +946,7 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, bool isSTDF
     }
     getNextToken(); // ')'
 
-    return new FunctionPrototypeAST(functionName, functionType, arguments/*, attributes*/, isDefined, isSTDFunction, functionRole);
+    return new FunctionPrototypeAST(functionName, functionType, arguments/*, attributes*/, defaultValues, isDefined, isSTDFunction, functionRole);
 }
 
 // Function definition

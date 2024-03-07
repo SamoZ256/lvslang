@@ -324,7 +324,7 @@ private:
 // Function declaration
 class FunctionPrototypeAST : public ExpressionAST {
 public:
-    FunctionPrototypeAST(const std::string& aName, irb::Type* aReturnType, std::vector<irb::Argument> aArguments/*, const std::vector<int>& aAttributes*/, bool aIsDefined, bool aIsSTDFunction, irb::FunctionRole aFunctionRole) : _name(aName), returnType(aReturnType), _arguments(aArguments)/*, attributes(aAttributes)*/, isDefined(aIsDefined), isSTDFunction(aIsSTDFunction), functionRole(aFunctionRole) {}
+    FunctionPrototypeAST(const std::string& aName, irb::Type* aReturnType, std::vector<irb::Argument> aArguments/*, const std::vector<int>& aAttributes*/, const std::vector<ExpressionAST*> aDefaultValues, bool aIsDefined, bool aIsSTDFunction, irb::FunctionRole aFunctionRole) : _name(aName), returnType(aReturnType), _arguments(aArguments)/*, attributes(aAttributes)*/,defaultValues(aDefaultValues), isDefined(aIsDefined), isSTDFunction(aIsSTDFunction), functionRole(aFunctionRole) {}
 
     // Getters
     inline const std::string& name() const {
@@ -337,6 +337,14 @@ public:
 
     inline const irb::Attributes& getArgumentAttributes(uint32_t index) const {
         return _arguments[index].attributes;
+    }
+
+    inline const std::vector<ExpressionAST*>& getDefaultValues() const {
+        return defaultValues;
+    }
+
+    inline uint32_t getArgumentsWithoutDefaultValueCount() const {
+        return argumentsWithoutDefaultValue;
     }
 
     inline irb::Type* getReturnType() const {
@@ -381,11 +389,14 @@ private:
     irb::Type* returnType;
     std::vector<irb::Argument> _arguments;
     // std::vector<int> attributes;
+    std::vector<ExpressionAST*> defaultValues;
     bool isDefined;
     bool isSTDFunction;
     irb::FunctionRole functionRole;
 
     irb::Function* value = nullptr;
+
+    uint32_t argumentsWithoutDefaultValue = 0;
 
     // Redeclared function
     FunctionPrototypeAST* previousDeclaration = nullptr;

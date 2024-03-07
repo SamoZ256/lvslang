@@ -8,6 +8,10 @@
 
 bool forwardDeclaredFunction(int a, ivec3 b);
 
+ivec2 functionWithDefaultArguments(ivec2 a, ivec2 b) {
+	return (a + b);
+}
+
 void testAdvancedFeatures();
 
 layout (location = 0) out void _outputColor;
@@ -19,6 +23,8 @@ void main() {
 
 void testAdvancedFeatures() {
 	bool a = forwardDeclaredFunction(1, ivec3(1, 2, 3));
+	ivec2 b = functionWithDefaultArguments(ivec2(1, 2), ivec2(0));
+	ivec2 c = functionWithDefaultArguments(ivec2(1, 2), ivec2(3, 4));
 }
 
 bool forwardDeclaredFunction(int a, ivec3 b) {

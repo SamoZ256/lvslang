@@ -423,10 +423,15 @@ CodeValue* CodeWriter::codegenFunctionDefinition(const FunctionDefinitionAST* ex
 
 CodeValue* CodeWriter::codegenFunctionCall(const CallExpressionAST* expression) {
     std::string argsStr;
-    std::vector<CodeValue*> argVs(expression->getArguments().size());
-    for (uint32_t i = 0; i < expression->getArguments().size(); i++) {
-        ExpressionAST* arg = expression->getArguments()[i];
-        argVs[i] = codegenExpression(arg);
+    std::vector<CodeValue*> argVs(expression->getPrototype()->arguments().size());
+    for (uint32_t i = 0; i < expression->getArguments().size(); i++)
+        argVs[i] = codegenExpression(expression->getArguments()[i]);
+    
+    // Default arguments
+    for (uint32_t i = expression->getArguments().size(); i < expression->getPrototype()->arguments().size(); i++)
+        argVs[i] = codegenExpression(expression->getPrototype()->getDefaultValues()[i]);
+
+    for (uint32_t i = 0; i < argVs.size(); i++) {
         if (!argVs[i])
             return nullptr;
         if (i != 0)

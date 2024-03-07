@@ -125,6 +125,12 @@ irb::Type* BlockExpressionAST::_initialize() {
 }
 
 irb::Type* FunctionPrototypeAST::_initialize() {
+    if (defaultValues.size() != _arguments.size()) {
+        logError("function prototype has " + std::to_string(_arguments.size()) + " arguments, but " + std::to_string(defaultValues.size()) + " default values were provided");
+        return nullptr;
+    }
+
+    // Arguments
     uint32_t bufferBinding = 0, textureBinding = 0, samplerBinding = 0;
     for (uint32_t i = 0; i < _arguments.size(); i++) {
         irb::Argument& arg = _arguments[i];
@@ -158,7 +164,25 @@ irb::Type* FunctionPrototypeAST::_initialize() {
                 //pointerType->addAttribute(" noundef \"air-buffer-no-alias\"");
             }
         }
+        
+        if (defaultValues[i]) {
+            irb::Type* defaultValueType = defaultValues[i]->initialize();
+            if (!defaultValueType)
+                return nullptr;
+            if (!arg.type->equals(defaultValueType)) {
+                logError("default value of argument " + std::to_string(i + 1) + " has type '" + defaultValueType->getDebugName() + "', expected '" + arg.type->getDebugName() + "' instead");
+                return nullptr;
+            }
+
+            if (argumentsWithoutDefaultValue == 0)
+                argumentsWithoutDefaultValue = i;
+        } else if (argumentsWithoutDefaultValue != 0) {
+            logError("argument " + std::to_string(i + 1) + " has no default value, but previous arguments do");
+            return nullptr;
+        }
     }
+    if (argumentsWithoutDefaultValue == 0)
+        argumentsWithoutDefaultValue = _arguments.size();
 
     std::vector<irb::Type*> argumentTypes;
     argumentTypes.resize((_arguments.size()));
@@ -235,8 +259,11 @@ irb::Type* CallExpressionAST::_initialize() {
         if (declarations.size() == 1) {
             declaration = declarations[0];
 
-            if (declaration->arguments().size() != arguments.size()) {
-                logError(("Expected " + std::to_string(declaration->arguments().size()) + " arguments, got " + std::to_string(arguments.size()) + " instead").c_str());
+            if (arguments.size() < declaration->getArgumentsWithoutDefaultValueCount() || arguments.size() > declaration->arguments().size()) {
+                if (declaration->getArgumentsWithoutDefaultValueCount() == declaration->arguments().size())
+                    logError(("Expected " + std::to_string(declaration->arguments().size()) + " arguments, got " + std::to_string(arguments.size()) + " instead").c_str());
+                else
+                    logError(("Expected between " + std::to_string(declaration->getArgumentsWithoutDefaultValueCount()) + " and " + std::to_string(declaration->arguments().size()) + " arguments, got " + std::to_string(arguments.size()) + " instead").c_str());
                 return nullptr;
             }
             
@@ -409,7 +436,6 @@ irb::Type* MemberAccessExpressionAST::_initialize() {
         return nullptr;
     }
 }
-
 
 irb::Type* StructureDefinitionAST::_initialize() {
     if (context.structures[name]) {

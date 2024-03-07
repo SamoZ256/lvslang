@@ -1,7 +1,13 @@
 func forwardDeclaredFunction(a: int, b: int3) -> bool
 
+func functionWithDefaultArguments(a: int2, b: int2 = int2(0)) -> int2 {
+    return a + b
+}
+
 fragment testAdvancedFeatures() {
     var a = forwardDeclaredFunction(1, int3(1, 2, 3))
+    var b = functionWithDefaultArguments(int2(1, 2))
+    var c = functionWithDefaultArguments(int2(1, 2), int2(3, 4))
 }
 
 func forwardDeclaredFunction(a: int, b: int3) -> bool {
