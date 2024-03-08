@@ -383,9 +383,9 @@ int _getNextToken() {
     while (lastChar == '#') {
         if (isalpha(lastChar = getNextChar())) {
             std::string macroKeyword = getIdentifier();
+            skipWhitespaces();
             
             if (macroKeyword == "define") { // Define
-                skipWhitespaces();
                 if (isalpha(lastChar) || lastChar == '_') {
                     std::string macroName = getIdentifier();
                     
@@ -402,14 +402,9 @@ int _getNextToken() {
                             lastChar = getNextChar();
                             return 0;
                         }
-                    } else {
-                        if (lastChar != ' ') {
-                            logError("expected space after macro name");
-                            lastChar = getNextChar();
-                            return 0;
-                        }
+                        lastChar = getNextChar();
                     }
-                    lastChar = getNextChar();
+                    skipWhitespaces();
 
                     while (lastChar != EOF && lastChar != '\n' && lastChar != '\r') {
                         macro.body += lastChar;
@@ -422,6 +417,70 @@ int _getNextToken() {
                     lastChar = getNextChar();
                     return 0;
                 }
+            } else if (macroKeyword == "undef") { // Undefine
+                std::string macroName = getIdentifier();
+                macros.erase(macroName);
+            } else if (macroKeyword == "ifdef" || macroKeyword == "ifndef") { // If defined / not defined
+                std::string macroName = getIdentifier();
+                bool exprTrue = (macros.find(macroName) != macros.end());
+                if (macroKeyword == "ifndef")
+                    exprTrue = !exprTrue;
+                
+                while (lastChar != 0 && lastChar != '\n' && lastChar != '\r')
+                    lastChar = getNextChar();
+                lastChar = getNextChar();
+
+                std::string codeTrue;
+                while (lastChar != 0 && lastChar != '#') {
+                    codeTrue += lastChar;
+                    lastChar = getNextChar();
+                }
+                lastChar = getNextChar();
+
+                macroKeyword = getIdentifier();
+                std::string codeFalse;
+                if (macroKeyword == "else") { // Else
+                    while (lastChar != 0 && lastChar != '\n' && lastChar != '\r')
+                        lastChar = getNextChar();
+                    lastChar = getNextChar();
+
+                    while (lastChar != 0 && lastChar != '#') {
+                        codeFalse += lastChar;
+                        lastChar = getNextChar();
+                    }
+                    lastChar = getNextChar();
+
+                    macroKeyword = getIdentifier();
+                    if (macroKeyword == "endif") { // End if
+                        // Do nothing
+                    } else {
+                        logError("expected 'endif' after 'else'");
+                        lastChar = getNextChar();
+                        return 0;
+                    }
+                } else if (macroKeyword == "endif") { // End if
+                    // Do nothing
+                } else {
+                    logError("expected 'else' or 'endif' after 'ifdef' or 'ifndef'");
+                    lastChar = getNextChar();
+                    return 0;
+                }
+                lastChar = getNextChar();
+
+                bool pushedMacro = false;
+                if (exprTrue) {
+                    source.macroStack.push_back({codeTrue});
+                    pushedMacro = true;
+                } else if (!codeFalse.empty()) {
+                    source.macroStack.push_back({codeFalse});
+                    pushedMacro = true;
+                }
+                
+                // Start consuming the macro
+                if (pushedMacro)
+                    lastChar = getNextChar();
+                
+                return _getNextToken();
             }
         } else {
             logError("expected macro after '#'");

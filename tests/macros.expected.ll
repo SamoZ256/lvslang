@@ -7,7 +7,19 @@ entry:
   ret void
 }
 
+; Function Attrs: mustprogress nofree nosync nounwind willreturn
+define i32 @myAbs.i32(i32 %x) local_unnamed_addr #1 {
+entry0:
+  %common.ret.op = tail call i32 @llvm.abs.i32(i32 %x, i1 false)
+  ret i32 %common.ret.op
+}
+
+; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn
+declare i32 @llvm.abs.i32(i32, i1 immarg) #2
+
 attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn }
+attributes #1 = { mustprogress nofree nosync nounwind willreturn }
+attributes #2 = { nocallback nofree nosync nounwind speculatable willreturn }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4, !5, !6, !7, !8}
 !air.fragment = !{!9}

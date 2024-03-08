@@ -901,7 +901,6 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, bool isSTDF
     
     if (crntToken != TOKEN_IDENTIFIER) {
         logError("excpected function name");
-
         return nullptr;
     }
     std::string functionName = identifierStr;
@@ -909,7 +908,6 @@ FunctionPrototypeAST* parseFunctionPrototype(bool isDefined = false, bool isSTDF
 
     if (crntToken != '(') {
         logError("expected '(' after function name");
-
         return nullptr;
     }
 

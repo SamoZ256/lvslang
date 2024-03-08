@@ -181,7 +181,8 @@ inline char getNextChar() {
                     source.crntChar--;
                 } else {
                     source.crntLine--;
-                    source.crntChar = source.source[source.crntLine].size() - 1;
+                    // We don't use size - 1, since there is '\n' at the end of the line
+                    source.crntChar = source.source[source.crntLine].size();
                 }
             }
         } else {
