@@ -532,6 +532,12 @@ irb::Type* InitializerListExpressionAST::_initialize() {
             logError("not enough components in initializer to construct a matrix (got " + std::to_string(components.size()) + ", expected either " + std::to_string(columnCount) + " or 1)");
             return nullptr;
         }
+    } else if (listType->isStructure()) {
+        irb::Structure* structure = static_cast<irb::StructureType*>(listType)->getStructure();
+        if (components.size() != structure->members.size()) {
+            logError("structure initializer must have exactly " + std::to_string(structure->members.size()) + " values");
+            return nullptr;
+        }
     } else {
         logError("cannot use initializer list to create a type '" + listType->getDebugName() + "'");
         return nullptr;

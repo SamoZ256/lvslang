@@ -574,6 +574,11 @@ irb::Value* IRWriter::codegenInitializerListExpression(const InitializerListExpr
 
         return builder->opConstruct(matrixType, components);
     }
+    if (expression->getType()->isStructure()) {
+        context.pushRegisterName("constructed_structure");
+
+        return builder->opConstruct(expression->getType(), components);
+    }
 
     return nullptr;
 }
