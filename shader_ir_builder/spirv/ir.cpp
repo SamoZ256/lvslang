@@ -347,10 +347,7 @@ void SPIRVBuilder::opEntryPoint(Value* entryPoint, FunctionRole functionRole, co
         if (spirvVersionIsGreaterThanOrEqual(spirvVersion, SPIRVVersion::_1_4) || (storageClass == StorageClass::Input || storageClass == StorageClass::Output))
             code += " " + argValue->getName();
         
-        // HACK: create a new variable, since we need to have the 'Function' storage class
-        Value* loadedAndStoredArgValue = opVariable(new PointerType(context, type, StorageClass::Function));
-        opStore(loadedAndStoredArgValue, opLoad(argValue));
-        argValues.push_back(loadedAndStoredArgValue);
+        argValues.push_back(opLoad(argValue));
     }
 
     // -------- Call to entry point --------
@@ -593,12 +590,18 @@ Value* SPIRVBuilder::opFunctionCall(Value* funcV, const std::vector<Value*>& arg
     Value* returnV = getTypeValue(this, type->getReturnType());
     Value* value = new Value(context, returnV->getType(), context.popRegisterName());
     std::string code;
-    if (dynamic_cast<StandardFunctionValue*>(funcV))
+    bool isSTD = dynamic_cast<StandardFunctionValue*>(funcV);
+    if (isSTD)
         code = funcV->getName();
     else
         code = "OpFunctionCall " + returnV->getName() + " " + funcV->getName();
-    for (auto* arg : arguments)
+    for (auto* arg : arguments) {
+        if (!isSTD) {
+            context.pushRegisterName("param");
+            arg = opVariable(new PointerType(context, arg->getType(), StorageClass::Function), arg);
+        }
         code += " " + arg->getName();
+    }
     getSPIRVInsertBlock()->addCode(code, value);
 
     return value;

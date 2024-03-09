@@ -233,14 +233,6 @@ irb::Value* IRWriter::codegenFunctionCall(const CallExpressionAST* expression) {
             return nullptr;
     }
 
-    // TODO: move this to SPIRV builder
-    if (target == Target::SPIRV && !expression->getPrototype()->getIsSTDFunction()) {
-        for (uint32_t i = 0; i < argVs.size(); i++) {
-            context.pushRegisterName("param");
-            argVs[i] = builder->opVariable(new irb::PointerType(context, argVs[i]->getType(), irb::StorageClass::Function), argVs[i]);
-        }
-    }
-
     if (expression->getCallee() == "sample")
         return builder->opSample(expression->getPrototype()->getValue(), argVs[0], argVs[1], argVs[2]);
 

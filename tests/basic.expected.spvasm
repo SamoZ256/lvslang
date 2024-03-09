@@ -63,9 +63,9 @@
          %56 = OpTypeImage %float 2D 0 0 0 1 Unknown
 %_ptr_UniformConstant_56 = OpTypePointer UniformConstant %56
           %9 = OpVariable %_ptr_UniformConstant_56 UniformConstant
-         %59 = OpTypeSampler
-%_ptr_UniformConstant_59 = OpTypePointer UniformConstant %59
-         %10 = OpVariable %_ptr_UniformConstant_59 UniformConstant
+         %58 = OpTypeSampler
+%_ptr_UniformConstant_58 = OpTypePointer UniformConstant %58
+         %10 = OpVariable %_ptr_UniformConstant_58 UniformConstant
          %11 = OpVariable %_ptr_Output_v4float Output
          %63 = OpTypeSampledImage %56
 %_ptr_Input_v2float = OpTypePointer Input %v2float
@@ -99,7 +99,7 @@
         %154 = OpAccessChain %_ptr_Input_v2float %8 %uint_1
         %155 = OpLoad %v2float %154
          %99 = OpLoad %56 %9
-        %100 = OpLoad %59 %10
+        %100 = OpLoad %58 %10
         %138 = OpSampledImage %63 %99 %100
         %139 = OpImageSampleExplicitLod %v4float %138 %155 Lod %float_0
                OpStore %11 %139
