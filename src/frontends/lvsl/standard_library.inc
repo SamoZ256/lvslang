@@ -272,33 +272,70 @@
 "STD func tan(x: float) -> float\n" \
 "STD func tanh(x: float) -> float\n" \
 "// TODO: add transpose function\n" \
+"// TODO: don't always define this\n" \
+"#define __HAVE_MIN_LOD_CLAMP__\n" \
 "STD enum class Access {\n" \
 "    sample,\n" \
 "    read,\n" \
 "    write,\n" \
 "    read_write\n" \
 "};\n" \
-"STD struct bias {\n" \
+"STD struct Bias {\n" \
 "    member value: float\n" \
 "}\n" \
-"STD struct level {\n" \
+"STD struct Level {\n" \
 "    member lod: float\n" \
 "}\n" \
-"STD struct gradient2d {\n" \
+"STD struct Gradient2D {\n" \
 "    member dPdx: float2\n" \
 "    member dPdy: float2\n" \
 "}\n" \
-"STD struct min_lod_clamp {\n" \
+"#ifdef __HAVE_MIN_LOD_CLAMP__\n" \
+"STD struct MinLodClamp {\n" \
 "    member lod: float\n" \
 "}\n" \
+"#endif\n" \
 "// -------- 2D --------\n" \
 "// Sample\n" \
-"// TODO: add more overloads\n" \
 "STD func sample(texture: texture2D<char>, samplr: sampler, coord: float2, offset: int2 = int2(0)) -> char4\n" \
 "STD func sample(texture: texture2D<short>, samplr: sampler, coord: float2, offset: int2 = int2(0)) -> short4\n" \
 "STD func sample(texture: texture2D<int>, samplr: sampler, coord: float2, offset: int2 = int2(0)) -> int4\n" \
 "STD func sample(texture: texture2D<half>, samplr: sampler, coord: float2, offset: int2 = int2(0)) -> half4\n" \
 "STD func sample(texture: texture2D<float>, samplr: sampler, coord: float2, offset: int2 = int2(0)) -> float4\n" \
+"STD func sample(texture: texture2D<char>, samplr: sampler, coord: float2, options: struct Bias, offset: int2 = int2(0)) -> char4\n" \
+"STD func sample(texture: texture2D<short>, samplr: sampler, coord: float2, options: struct Bias, offset: int2 = int2(0)) -> short4\n" \
+"STD func sample(texture: texture2D<int>, samplr: sampler, coord: float2, options: struct Bias, offset: int2 = int2(0)) -> int4\n" \
+"STD func sample(texture: texture2D<half>, samplr: sampler, coord: float2, options: struct Bias, offset: int2 = int2(0)) -> half4\n" \
+"STD func sample(texture: texture2D<float>, samplr: sampler, coord: float2, options: struct Bias, offset: int2 = int2(0)) -> float4\n" \
+"STD func sample(texture: texture2D<char>, samplr: sampler, coord: float2, options: struct Level, offset: int2 = int2(0)) -> char4\n" \
+"STD func sample(texture: texture2D<short>, samplr: sampler, coord: float2, options: struct Level, offset: int2 = int2(0)) -> short4\n" \
+"STD func sample(texture: texture2D<int>, samplr: sampler, coord: float2, options: struct Level, offset: int2 = int2(0)) -> int4\n" \
+"STD func sample(texture: texture2D<half>, samplr: sampler, coord: float2, options: struct Level, offset: int2 = int2(0)) -> half4\n" \
+"STD func sample(texture: texture2D<float>, samplr: sampler, coord: float2, options: struct Level, offset: int2 = int2(0)) -> float4\n" \
+"#ifdef __HAVE_MIN_LOD_CLAMP__\n" \
+"STD func sample(texture: texture2D<char>, samplr: sampler, coord: float2, options: struct MinLodClamp, offset: int2 = int2(0)) -> char4\n" \
+"STD func sample(texture: texture2D<short>, samplr: sampler, coord: float2, options: struct MinLodClamp, offset: int2 = int2(0)) -> short4\n" \
+"STD func sample(texture: texture2D<int>, samplr: sampler, coord: float2, options: struct MinLodClamp, offset: int2 = int2(0)) -> int4\n" \
+"STD func sample(texture: texture2D<half>, samplr: sampler, coord: float2, options: struct MinLodClamp, offset: int2 = int2(0)) -> half4\n" \
+"STD func sample(texture: texture2D<float>, samplr: sampler, coord: float2, options: struct MinLodClamp, offset: int2 = int2(0)) -> float4\n" \
+"STD func sample(texture: texture2D<char>, samplr: sampler, coord: float2, biasOptions: struct Bias, minLodClampOptions: struct MinLodClamp, offset: int2 = int2(0)) -> char4\n" \
+"STD func sample(texture: texture2D<short>, samplr: sampler, coord: float2, biasOptions: struct Bias, minLodClampOptions: struct MinLodClamp, offset: int2 = int2(0)) -> short4\n" \
+"STD func sample(texture: texture2D<int>, samplr: sampler, coord: float2, biasOptions: struct Bias, minLodClampOptions: struct MinLodClamp, offset: int2 = int2(0)) -> int4\n" \
+"STD func sample(texture: texture2D<half>, samplr: sampler, coord: float2, biasOptions: struct Bias, minLodClampOptions: struct MinLodClamp, offset: int2 = int2(0)) -> half4\n" \
+"STD func sample(texture: texture2D<float>, samplr: sampler, coord: float2, biasOptions: struct Bias, minLodClampOptions: struct MinLodClamp, offset: int2 = int2(0)) -> float4\n" \
+"#endif\n" \
+"STD func sample(texture: texture2D<char>, samplr: sampler, coord: float2, options: struct Gradient2D, offset: int2 = int2(0)) -> char4\n" \
+"STD func sample(texture: texture2D<short>, samplr: sampler, coord: float2, options: struct Gradient2D, offset: int2 = int2(0)) -> short4\n" \
+"STD func sample(texture: texture2D<int>, samplr: sampler, coord: float2, options: struct Gradient2D, offset: int2 = int2(0)) -> int4\n" \
+"STD func sample(texture: texture2D<half>, samplr: sampler, coord: float2, options: struct Gradient2D, offset: int2 = int2(0)) -> half4\n" \
+"STD func sample(texture: texture2D<float>, samplr: sampler, coord: float2, options: struct Gradient2D, offset: int2 = int2(0)) -> float4\n" \
+"#ifdef __HAVE_MIN_LOD_CLAMP__\n" \
+"STD func sample(texture: texture2D<char>, samplr: sampler, coord: float2, gradOptions: struct Gradient2D, minLodClampOptions: struct MinLodClamp, offset: int2 = int2(0)) -> char4\n" \
+"STD func sample(texture: texture2D<short>, samplr: sampler, coord: float2, gradOptions: struct Gradient2D, minLodClampOptions: struct MinLodClamp, offset: int2 = int2(0)) -> short4\n" \
+"STD func sample(texture: texture2D<int>, samplr: sampler, coord: float2, gradOptions: struct Gradient2D, minLodClampOptions: struct MinLodClamp, offset: int2 = int2(0)) -> int4\n" \
+"STD func sample(texture: texture2D<half>, samplr: sampler, coord: float2, gradOptions: struct Gradient2D, minLodClampOptions: struct MinLodClamp, offset: int2 = int2(0)) -> half4\n" \
+"STD func sample(texture: texture2D<float>, samplr: sampler, coord: float2, gradOptions: struct Gradient2D, minLodClampOptions: struct MinLodClamp, offset: int2 = int2(0)) -> float4\n" \
+"#endif\n" \
 "// Read\n" \
 "// TODO: add more overloads\n" \
 "STD func read(texture: texture2D<char>, coord: ushort2) -> char4;\n" \

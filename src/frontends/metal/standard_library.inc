@@ -272,6 +272,8 @@
 "STD float tan(float x);\n" \
 "STD float tanh(float x);\n" \
 "// TODO: add transpose function\n" \
+"// TODO: don't always define this\n" \
+"#define __HAVE_MIN_LOD_CLAMP__\n" \
 "STD enum class access {\n" \
 "    sample,\n" \
 "    read,\n" \
@@ -288,17 +290,52 @@
 "    float2 dPdx;\n" \
 "    float2 dPdy;\n" \
 "};\n" \
+"#ifdef __HAVE_MIN_LOD_CLAMP__\n" \
 "STD struct min_lod_clamp {\n" \
 "    float lod;\n" \
 "};\n" \
+"#endif\n" \
 "// -------- 2D --------\n" \
 "// Sample\n" \
-"// TODO: add more overloads\n" \
 "STD char4 sample(texture2d<char> texture, sampler samplr, float2 coord, int2 offset = int2(0));\n" \
 "STD short4 sample(texture2d<short> texture, sampler samplr, float2 coord, int2 offset = int2(0));\n" \
 "STD int4 sample(texture2d<int> texture, sampler samplr, float2 coord, int2 offset = int2(0));\n" \
 "STD half4 sample(texture2d<half> texture, sampler samplr, float2 coord, int2 offset = int2(0));\n" \
 "STD float4 sample(texture2d<float> texture, sampler samplr, float2 coord, int2 offset = int2(0));\n" \
+"STD char4 sample(texture2d<char> texture, sampler samplr, float2 coord, struct bias options, int2 offset = int2(0));\n" \
+"STD short4 sample(texture2d<short> texture, sampler samplr, float2 coord, struct bias options, int2 offset = int2(0));\n" \
+"STD int4 sample(texture2d<int> texture, sampler samplr, float2 coord, struct bias options, int2 offset = int2(0));\n" \
+"STD half4 sample(texture2d<half> texture, sampler samplr, float2 coord, struct bias options, int2 offset = int2(0));\n" \
+"STD float4 sample(texture2d<float> texture, sampler samplr, float2 coord, struct bias options, int2 offset = int2(0));\n" \
+"STD char4 sample(texture2d<char> texture, sampler samplr, float2 coord, struct level options, int2 offset = int2(0));\n" \
+"STD short4 sample(texture2d<short> texture, sampler samplr, float2 coord, struct level options, int2 offset = int2(0));\n" \
+"STD int4 sample(texture2d<int> texture, sampler samplr, float2 coord, struct level options, int2 offset = int2(0));\n" \
+"STD half4 sample(texture2d<half> texture, sampler samplr, float2 coord, struct level options, int2 offset = int2(0));\n" \
+"STD float4 sample(texture2d<float> texture, sampler samplr, float2 coord, struct level options, int2 offset = int2(0));\n" \
+"#ifdef __HAVE_MIN_LOD_CLAMP__\n" \
+"STD char4 sample(texture2d<char> texture, sampler samplr, float2 coord, struct min_lod_clamp options, int2 offset = int2(0));\n" \
+"STD short4 sample(texture2d<short> texture, sampler samplr, float2 coord, struct min_lod_clamp options, int2 offset = int2(0));\n" \
+"STD int4 sample(texture2d<int> texture, sampler samplr, float2 coord, struct min_lod_clamp options, int2 offset = int2(0));\n" \
+"STD half4 sample(texture2d<half> texture, sampler samplr, float2 coord, struct min_lod_clamp options, int2 offset = int2(0));\n" \
+"STD float4 sample(texture2d<float> texture, sampler samplr, float2 coord, struct min_lod_clamp options, int2 offset = int2(0));\n" \
+"STD char4 sample(texture2d<char> texture, sampler samplr, float2 coord, struct bias biasOptions, struct min_lod_clamp minLodClampOptions, int2 offset = int2(0));\n" \
+"STD short4 sample(texture2d<short> texture, sampler samplr, float2 coord, struct bias biasOptions, struct min_lod_clamp minLodClampOptions, int2 offset = int2(0));\n" \
+"STD int4 sample(texture2d<int> texture, sampler samplr, float2 coord, struct bias biasOptions, struct min_lod_clamp minLodClampOptions, int2 offset = int2(0));\n" \
+"STD half4 sample(texture2d<half> texture, sampler samplr, float2 coord, struct bias biasOptions, struct min_lod_clamp minLodClampOptions, int2 offset = int2(0));\n" \
+"STD float4 sample(texture2d<float> texture, sampler samplr, float2 coord, struct bias biasOptions, struct min_lod_clamp minLodClampOptions, int2 offset = int2(0));\n" \
+"#endif\n" \
+"STD char4 sample(texture2d<char> texture, sampler samplr, float2 coord, struct gradient2d options, int2 offset = int2(0));\n" \
+"STD short4 sample(texture2d<short> texture, sampler samplr, float2 coord, struct gradient2d options, int2 offset = int2(0));\n" \
+"STD int4 sample(texture2d<int> texture, sampler samplr, float2 coord, struct gradient2d options, int2 offset = int2(0));\n" \
+"STD half4 sample(texture2d<half> texture, sampler samplr, float2 coord, struct gradient2d options, int2 offset = int2(0));\n" \
+"STD float4 sample(texture2d<float> texture, sampler samplr, float2 coord, struct gradient2d options, int2 offset = int2(0));\n" \
+"#ifdef __HAVE_MIN_LOD_CLAMP__\n" \
+"STD char4 sample(texture2d<char> texture, sampler samplr, float2 coord, struct gradient2d gradOptions, struct min_lod_clamp minLodClampOptions, int2 offset = int2(0));\n" \
+"STD short4 sample(texture2d<short> texture, sampler samplr, float2 coord, struct gradient2d gradOptions, struct min_lod_clamp minLodClampOptions, int2 offset = int2(0));\n" \
+"STD int4 sample(texture2d<int> texture, sampler samplr, float2 coord, struct gradient2d gradOptions, struct min_lod_clamp minLodClampOptions, int2 offset = int2(0));\n" \
+"STD half4 sample(texture2d<half> texture, sampler samplr, float2 coord, struct gradient2d gradOptions, struct min_lod_clamp minLodClampOptions, int2 offset = int2(0));\n" \
+"STD float4 sample(texture2d<float> texture, sampler samplr, float2 coord, struct gradient2d gradOptions, struct min_lod_clamp minLodClampOptions, int2 offset = int2(0));\n" \
+"#endif\n" \
 "// Read\n" \
 "// TODO: add more overloads\n" \
 "STD char4 read(texture2d<char> texture, ushort2 coord);\n" \
