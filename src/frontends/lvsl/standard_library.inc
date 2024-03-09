@@ -275,10 +275,10 @@
 "// TODO: don't always define this\n" \
 "#define __HAVE_MIN_LOD_CLAMP__\n" \
 "STD enum class Access {\n" \
-"    sample,\n" \
-"    read,\n" \
-"    write,\n" \
-"    read_write\n" \
+"    Sample,\n" \
+"    Read,\n" \
+"    Write,\n" \
+"    ReadWrite\n" \
 "};\n" \
 "STD struct Bias {\n" \
 "    member value: float\n" \

@@ -2,10 +2,10 @@
 #define __HAVE_MIN_LOD_CLAMP__
 
 STD enum class Access {
-    sample,
-    read,
-    write,
-    read_write
+    Sample,
+    Read,
+    Write,
+    ReadWrite
 };
 
 STD struct Bias {

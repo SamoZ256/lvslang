@@ -63,7 +63,25 @@ std::string getTypeNameBegin_Metal(irb::Type* type) {
     case irb::TypeID::Matrix:
         return getTypeNameBegin_Metal(type->getBaseType()->getBaseType()) + std::to_string(static_cast<irb::MatrixType*>(type)->getColumnCount()) + "x" + std::to_string(static_cast<irb::VectorType*>(type->getBaseType())->getComponentCount());
     case irb::TypeID::Texture:
-        return "texture" + textureViewTypeLUT_Metal[(int)static_cast<irb::TextureType*>(type)->getViewType()] + "<" + getTypeNameBegin_Metal(type->getBaseType()) + ">";
+        strTmp = ", access::";
+        switch (static_cast<irb::TextureType*>(type)->getAccess()) {
+        case irb::TextureAccess::Sample:
+            strTmp = "";
+            break;
+        case irb::TextureAccess::Read:
+            strTmp += "read";
+            break;
+        case irb::TextureAccess::Write:
+            strTmp += "write";
+            break;
+        case irb::TextureAccess::ReadWrite:
+            strTmp += "read_write";
+            break;
+        default:
+            break;
+        }
+
+        return "texture" + textureViewTypeLUT_Metal[(int)static_cast<irb::TextureType*>(type)->getViewType()] + "<" + getTypeNameBegin_Metal(type->getBaseType()) + strTmp + ">";
     case irb::TypeID::Sampler:
         return "sampler";
     default:
