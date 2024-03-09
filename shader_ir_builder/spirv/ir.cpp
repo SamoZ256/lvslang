@@ -635,7 +635,16 @@ Value* SPIRVBuilder::opConstruct(Type* type, const std::vector<Value*>& componen
             IRB_INVALID_ARGUMENT_WITH_REASON("components", "the number of components must match the number of columns of the matrix type");
             return nullptr;
         }
+    } else if (type->isStructure()) {
+        if (components.size() != static_cast<StructureType*>(type)->getStructure()->members.size()) {
+            IRB_INVALID_ARGUMENT_WITH_REASON("components", "the number of components must match the number of members of the structure type");
+            return nullptr;
+        }
+    } else {
+        IRB_INVALID_ARGUMENT_WITH_REASON("type", "type is not a vector, matrix or structure");
+        return nullptr;
     }
+    
     Value* typeV = getTypeValue(this, type);
     Value* value = new Value(context, type, context.popRegisterName());
     bool isAllConstants = true;

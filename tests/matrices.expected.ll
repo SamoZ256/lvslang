@@ -4,7 +4,7 @@ target triple = "air64-apple-macosx14.0.0"
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
 define <4 x float> @testMatrices() local_unnamed_addr #0 {
 entry:
-  ret <4 x float> <float 3.600000e+01, float 3.600000e+01, float 3.600000e+01, float 3.600000e+01>
+  ret <4 x float> <float 9.000000e+00, float 1.000000e+01, float 1.100000e+01, float 1.200000e+01>
 }
 
 attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn }

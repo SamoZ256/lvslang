@@ -511,12 +511,22 @@ irb::Value* IRWriter::codegenEnumValueExpression(const EnumValueExpressionAST* e
 irb::Value* IRWriter::codegenInitializerListExpression(const InitializerListExpressionAST* expression) {
     std::vector<irb::Value*> components;
     components.reserve(expression->getExpressions().size());
-    for (auto* expr : expression->getExpressions()) {
-        irb::Value* component = codegenExpression(expr);
+    for (uint32_t i = 0; i < expression->getExpressions().size(); i++) {
+        irb::Value* component = codegenExpression(expression->getExpressions()[i]);
         if (!component)
             return nullptr;
-        if (component->getType()->isScalar())
-            component = builder->opCast(component, (expression->getType()->isScalar() ? expression->getType() : expression->getType()->getBaseType()));
+        if (component->getType()->isScalar()) {
+            irb::Type* castTo;
+            if (expression->getType()->isVector())
+                castTo = expression->getType()->getBaseType();
+            else if (expression->getType()->isMatrix())
+                castTo = expression->getType()->getBaseType()->getBaseType();
+            else if (expression->getType()->isStructure())
+                castTo = static_cast<irb::StructureType*>(expression->getType())->getStructure()->members[i].type;
+            else
+                castTo = expression->getType();
+            component = builder->opCast(component, castTo);
+        }
         components.push_back(component);
     }
     
@@ -559,17 +569,34 @@ irb::Value* IRWriter::codegenInitializerListExpression(const InitializerListExpr
         // Fill the list in case it is just a one value initializer
         if (components.size() == 1) {
             components.reserve(matrixType->getColumnCount());
-            irb::Value* component;
             if (components[0]->getType()->isVector()) {
-                component = components[0];
+                for (uint8_t i = 1; i < matrixType->getColumnCount(); i++)
+                    components.push_back(components[0]);
             } else if (components[0]->getType()->isScalar()) {
-                component = builder->opConstruct(matrixType->getComponentType(), std::vector(matrixType->getComponentType()->getComponentCount(), components[0]));
+                irb::Value* component = components[0];
+                components.clear();
+
+                irb::ConstantValue* zero;
+                switch (component->getType()->getTypeID()) {
+                case irb::TypeID::Bool:
+                    zero = new irb::ConstantBool(context, false);
+                    break;
+                case irb::TypeID::Integer:
+                    zero = new irb::ConstantInt(context, 0, component->getType()->getBitCount(), component->getType()->getIsSigned());
+                    break;
+                case irb::TypeID::Float:
+                    zero = new irb::ConstantFloat(context, 0.0, component->getType()->getBitCount());
+                    break;
+                default:
+                    break;
+                }
+                irb::Value* zeroVector = builder->opConstruct(matrixType->getComponentType(), std::vector(matrixType->getComponentType()->getComponentCount(), builder->opConstant(zero)));
+                for (uint8_t i = 0; i < matrixType->getColumnCount(); i++)
+                    components.push_back(builder->opInsert(zeroVector, component, new irb::ConstantInt(context, i, 32, true)));
             } else {
                 logError("cannot initialize matrix with a value of type '" + components[0]->getType()->getDebugName() + "'");
                 return nullptr;
             }
-            for (uint8_t i = 1; i < matrixType->getColumnCount(); i++)
-                components.push_back(component);
         }
 
         return builder->opConstruct(matrixType, components);

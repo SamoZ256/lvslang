@@ -7,7 +7,7 @@ fragment fragmentMain(fragmentIn: struct VertexOut [[input]],
                       tex1: texture2D<float             > [[descriptor_set(1, 0)]],
                       tex2: texture2D<float, Access.read> [[descriptor_set(1, 1)]],
                       smp: sampler [[descriptor_set(0, 0)]]) -> float4 {
-    var sampled1 = sample(tex1, smp, fragmentIn.texCoord)
+    var sampled1 = sample(tex1, smp, fragmentIn.texCoord, struct Bias(0.2), int2(64))
     var sampled2 = read(tex2, ushort2(0))
     
     return sampled1 * sampled2

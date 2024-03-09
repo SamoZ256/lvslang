@@ -396,11 +396,26 @@ void AIRBuilder::opBranchCond(Value* cond, Block* blockTrue, Block* blockFalse) 
 }
 
 Value* AIRBuilder::opConstruct(Type* type, const std::vector<Value*>& components) {
-    if (!type->isVector() && !type->isMatrix()){
-        IRB_INVALID_ARGUMENT_WITH_REASON("type", "type is not vector or matrix");
+    if (type->isVector()) {
+        if (components.size() != static_cast<VectorType*>(type)->getComponentCount()) {
+            IRB_INVALID_ARGUMENT_WITH_REASON("components", "the number of components must match the number of components of the vector type");
+            return nullptr;
+        }
+    } else if (type->isMatrix()) {
+        if (components.size() != static_cast<MatrixType*>(type)->getColumnCount()) {
+            IRB_INVALID_ARGUMENT_WITH_REASON("components", "the number of components must match the number of columns of the matrix type");
+            return nullptr;
+        }
+    } else if (type->isStructure()) {
+        if (components.size() != static_cast<StructureType*>(type)->getStructure()->members.size()) {
+            IRB_INVALID_ARGUMENT_WITH_REASON("components", "the number of components must match the number of members of the structure type");
+            return nullptr;
+        }
+    } else {
+        IRB_INVALID_ARGUMENT_WITH_REASON("type", "type is not a vector, matrix or structure");
         return nullptr;
     }
-
+    
     context.popRegisterName();
     bool allComponentsAreConstant = true;
     for (uint8_t i = 0; i < components.size(); i++) {
@@ -420,8 +435,10 @@ Value* AIRBuilder::opConstruct(Type* type, const std::vector<Value*>& components
             llvmComponents.push_back(static_cast<llvm::Constant*>(getValueLLVMHandle(component)));
         if (type->isVector())
             value->setHandle(llvm::ConstantVector::get(llvmComponents));
-        else
+        else if (type->isMatrix())
             value->setHandle(llvm::ConstantArray::get(static_cast<llvm::ArrayType*>(getTypeLLVMHandle(type)), llvmComponents));
+        else
+            value->setHandle(llvm::ConstantStruct::get(static_cast<llvm::StructType*>(getTypeLLVMHandle(type)), llvmComponents));
 
         return value;
     } else {
@@ -1030,11 +1047,11 @@ Value* AIRBuilder::_opMatrixTimesMatrix(Value* matrix1, Value* matrix2) {
         vec->setHandle(llvm::UndefValue::get(getTypeLLVMHandle(vec->getType())));
         for (uint8_t j = 0; j < matrixType->getComponentType()->getComponentCount(); j++) {
             Value* crnt = zero;
-            Value* matrix2Row = opExtract(matrix2, new ConstantInt(context, j, 32, true));
             for (uint8_t k = 0; k < matrixType->getComponentType()->getComponentCount(); k++) {
                 Value* crnt1 = opExtract(matrix1, new ConstantInt(context, k, 32, true));
-                crnt1 = opExtract(crnt1, new ConstantInt(context, i, 32, true));
-                Value* crnt2 = opExtract(matrix2Row, new ConstantInt(context, k, 32, true));
+                crnt1 = opExtract(crnt1, new ConstantInt(context, j, 32, true));
+                Value* crnt2 = opExtract(matrix2, new ConstantInt(context, i, 32, true));
+                crnt2 = opExtract(crnt2, new ConstantInt(context, k, 32, true));
                 crnt = opOperation(crnt, opOperation(crnt1, crnt2, crnt1->getType(), Operation::Multiply), crnt->getType(), Operation::Add);
             }
             vec = opInsert(vec, crnt, new ConstantInt(context, j, 32, true));
